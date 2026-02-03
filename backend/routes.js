@@ -29,7 +29,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuração do Multer (Upload de Arquivos)
-const uploadDir = path.join(__dirname, "../src/assets/uploads");
+const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -46,7 +46,22 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limite de 5MB por arquivo
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB por arquivo
+    files: 5,
+  },
+  fileFilter: (req, file, cb) => {
+    const allowed = new Set([
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ]);
+    if (allowed.has(file.mimetype)) {
+      return cb(null, true);
+    }
+    return cb(new Error("Tipo de arquivo não permitido"));
+  },
 });
 
 // Rotas Públicas
@@ -55,14 +70,14 @@ router.post("/login", login);
 router.post(
   "/support/ticket",
   authMiddleware,
-  upload.array("attachments"),
+  upload.array("attachments", 5),
   createSupportTicket
 );
-router.post("/support", upload.array("attachments"), saveSupportMessage);
+router.post("/support", upload.array("attachments", 5), saveSupportMessage);
 router.post(
   "/support/ticket/:id/reply",
   authMiddleware,
-  upload.array("attachments"),
+  upload.array("attachments", 5),
   addReply
 ); // Nova rota de resposta
 router.get("/support/ticket/:id/replies", authMiddleware, getTicketReplies); // Nova rota de listagem de respostas
@@ -90,6 +105,6 @@ router.put(
 );
 
 // Rota temporária para listar clientes (Acesse via navegador: http://localhost:3000/clients)
-router.get("/clients", getClients);
+router.get("/clients", authMiddleware, adminAuthMiddleware, getClients);
 
 export default router;

@@ -17,7 +17,7 @@ export async function login(req, res) {
     if (!userIdentifier || !password) {
       return res
         .status(400)
-        .json({ error: "Email/Login e password_hash obrigatórios" });
+        .json({ error: "Email/Login e password obrigatórios" });
     }
 
     const result = await pool.query(

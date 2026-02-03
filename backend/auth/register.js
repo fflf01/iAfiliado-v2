@@ -5,7 +5,7 @@ import { pool } from "../db.js";
 /**
  * Registra um novo cliente. Valida campos obrigatórios, verifica email/login únicos,
  * faz hash da senha com bcrypt, insere em clients e retorna JWT.
- * @param {import("express").Request} req - Body: name, login, email, password_hash; opcional: phone, Tipo_Cliente, Tele_An, Rede_An
+ * @param {import("express").Request} req - Body: name, login, email, password ou password_hash; opcional: phone, Tipo_Cliente, Tele_An, Rede_An
  * @param {import("express").Response} res - 201 { message, user, token } | 400 | 409 | 500
  */
 export async function register(req, res) {
@@ -14,6 +14,7 @@ export async function register(req, res) {
       name,
       login,
       email,
+      password,
       password_hash,
       phone,
       Tipo_Cliente,
@@ -21,7 +22,9 @@ export async function register(req, res) {
       Rede_An,
     } = req.body;
 
-    if (!name || !login || !email || !password_hash) {
+    const rawPassword = password || password_hash;
+
+    if (!name || !login || !email || !rawPassword) {
       return res.status(400).json({ error: "Campos obrigatórios ausentes" });
     }
 
@@ -39,7 +42,7 @@ export async function register(req, res) {
       return res.status(409).json({ error: "Este login já está em uso." });
     }
 
-    const hashedPassword = await bcrypt.hash(password_hash, 10);
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     const result = await pool.query(
       `
