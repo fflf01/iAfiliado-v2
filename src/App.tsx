@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
@@ -20,8 +20,6 @@ import Suporte from "./pages/Suporte";
 import Comissoes from "./pages/Comissoes";
 import SuporteCliente from "./pages/SuporteCliente";
 import SuporteAdmin from "./pages/suporteadmin";
-import LinkPage from "./pages/link";
-import CarteiraPage from "./pages/carteira";
 
 const queryClient = new QueryClient();
 
@@ -36,14 +34,11 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/cadastro" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          {/* As rotas do dashboard agora são aninhadas para melhor organização e fluxo */}
-          <Route path="/dashboard" element={<Dashboard />}>
-            <Route index element={<Navigate to="links" replace />} />
-            <Route path="links" element={<LinkPage />} />
-            <Route path="carteira" element={<CarteiraPage />} />
-            {/* A rota de plataformas agora também fica dentro do layout do dashboard */}
-            <Route path="plataformas" element={<Plataformas />} />
-          </Route>
+          {/* As rotas do dashboard compartilham o mesmo layout */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/links" element={<Dashboard />} />
+          <Route path="/dashboard/carteira" element={<Dashboard />} />
+          <Route path="/dashboard/plataformas" element={<Dashboard />} />
           <Route path="/esqueci-senha" element={<ForgotPassword />} />
           <Route path="/como-funciona" element={<ComoFunciona />} />
           <Route path="/plataformas" element={<Plataformas />} />

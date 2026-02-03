@@ -161,24 +161,6 @@ const Carteira = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <Crown className="w-8 h-8 text-primary" />
-            <span className="text-xl font-display font-bold text-gradient-neon">
-              iAfiliado
-            </span>
-          </Link>
-          <Link to="/dashboard">
-            <Button variant="outline" size="sm" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar ao Dashboard
-            </Button>
-          </Link>
-        </div>
-      </header>
-
       <main className="container mx-auto px-4 py-8">
         {/* Page Title */}
         <div className="mb-8">
@@ -278,7 +260,7 @@ const Carteira = () => {
                 <label className="block text-sm text-muted-foreground mb-2">
                   Método de Saque
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   <button
                     onClick={() => setSelectedMethod("pix")}
                     className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-1 ${
@@ -289,28 +271,6 @@ const Carteira = () => {
                   >
                     <QrCode className="w-5 h-5" />
                     <span className="text-xs">PIX</span>
-                  </button>
-                  <button
-                    onClick={() => setSelectedMethod("ted")}
-                    className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-1 ${
-                      selectedMethod === "ted"
-                        ? "border-primary bg-primary/10"
-                        : "border-border/50 hover:border-primary/30"
-                    }`}
-                  >
-                    <Building2 className="w-5 h-5" />
-                    <span className="text-xs">TED</span>
-                  </button>
-                  <button
-                    onClick={() => setSelectedMethod("card")}
-                    className={`p-3 rounded-lg border transition-all flex flex-col items-center gap-1 ${
-                      selectedMethod === "card"
-                        ? "border-primary bg-primary/10"
-                        : "border-border/50 hover:border-primary/30"
-                    }`}
-                  >
-                    <CreditCard className="w-5 h-5" />
-                    <span className="text-xs">Cartão</span>
                   </button>
                 </div>
               </div>
@@ -329,8 +289,6 @@ const Carteira = () => {
                 </h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>• PIX: Processamento em até 1 hora</li>
-                  <li>• TED: Processamento em até 24 horas</li>
-                  <li>• Cartão: Processamento em até 3 dias úteis</li>
                 </ul>
               </div>
             </div>

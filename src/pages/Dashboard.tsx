@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -38,6 +38,8 @@ import {
 } from "recharts";
 import "@/Stilos/stilo.scss";
 import PlataformasD from "./Plataformas_D";
+import LinkPage from "@/link";
+import CarteiraPage from "@/pages/carteira";
 
 // Define a interface do usuário para tipagem
 interface User {
@@ -98,38 +100,42 @@ const affiliateLinks = [
   },
 ];
 
-const stats = [
+const baseStats = [
   {
     title: "Total de Cliques",
-    value: "3.870",
-    change: "+12.5%",
+    value: 3870,
+    change: 12.5,
     isPositive: true,
     icon: MousePointer,
     color: "primary",
+    format: "number",
   },
   {
     title: "Conversões",
-    value: "241",
-    change: "+8.2%",
+    value: 241,
+    change: 8.2,
     isPositive: true,
     icon: Users,
     color: "secondary",
+    format: "number",
   },
   {
     title: "Comissão Total",
-    value: "R$ 4.850",
-    change: "+15.3%",
+    value: 4850,
+    change: 15.3,
     isPositive: true,
     icon: DollarSign,
     color: "primary",
+    format: "currency",
   },
   {
     title: "Taxa de Conversão",
-    value: "6.2%",
-    change: "-0.8%",
+    value: 6.2,
+    change: -0.8,
     isPositive: false,
     icon: TrendingUp,
     color: "secondary",
+    format: "percent",
   },
 ];
 
@@ -139,8 +145,15 @@ const Dashboard = () => {
   const location = useLocation();
   const activeView = location.pathname.includes("/plataformas")
     ? "plataformas"
-    : "dashboard";
-  const [dateRange, setDateRange] = useState("7d");
+    : location.pathname.includes("/links")
+      ? "links"
+      : location.pathname.includes("/carteira")
+        ? "carteira"
+        : "dashboard";
+  const [dateRange, setDateRange] = useState("7");
+  const [selectedHouse, setSelectedHouse] = useState("todas");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
@@ -153,11 +166,22 @@ const Dashboard = () => {
       id: "plataformas",
       path: "/dashboard/plataformas",
     },
-    { icon: Crown, label: "Meus Links", path: "/como-funciona" },
-    { icon: Rocket, label: "Carteira", path: "/como-funciona" },
+    {
+      icon: Crown,
+      label: "Meus Links",
+      id: "links",
+      path: "/dashboard/links",
+    },
+    {
+      icon: Rocket,
+      label: "Carteira",
+      id: "carteira",
+      path: "/dashboard/carteira",
+    },
     {
       icon: HelpCircle,
       label: "fale com suporte",
+      id: "suporte",
       path: user?.is_admin ? "/suporteadmin" : "/suporte-cliente",
     },
   ];
@@ -222,8 +246,8 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
         {/* Sidebar */}
-        <aside className="w-full lg:w-64 shrink-0">
-          <Card className="bg-card/50 border-border/50 p-4 sticky top-24">
+        <aside className="w-full lg:w-64 shrink-0 mt-6 lg:mt-2">
+          <Card className="bg-card/50 border-border/50 p-4">
             <nav className="flex flex-col gap-2">
               {sidebarItems.map((item, index) => {
                 const isActive = item.id === activeView;
@@ -248,19 +272,38 @@ const Dashboard = () => {
           {activeView === "dashboard" ? (
             <>
               {/* Page Title */}
-              <div className="mb-8">
-                <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
-                  <span className="text-foreground">Painel do </span>
-                  <span className="texto-gradiente-destaque">Afiliado</span>
-                </h1>
-                <p className="text-muted-foreground">
-                  Acompanhe suas estatísticas e gerencie seus links de afiliado
-                </p>
+              <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
+                    <span className="text-foreground">Painel do </span>
+                    <span className="texto-gradiente-destaque">Afiliado</span>
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Acompanhe suas estatísticas e gerencie seus links de afiliado
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                  <label className="text-sm text-muted-foreground">
+                    Casa afiliada
+                  </label>
+                  <select
+                    className="h-10 px-3 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                    value={selectedHouse}
+                    onChange={(e) => setSelectedHouse(e.target.value)}
+                  >
+                    <option value="todas">Todas as casas</option>
+                    <option value="bet365">Bet365</option>
+                    <option value="betano">Betano</option>
+                    <option value="stake">Stake</option>
+                    <option value="1xbet">1xBet</option>
+                    <option value="sportingbet">Sportingbet</option>
+                  </select>
+                </div>
               </div>
 
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {stats.map((stat, index) => (
+                {filteredStats.map((stat, index) => (
                   <Card
                     key={index}
                     className="bg-card/80 border-border/50 p-6 hover:border-primary/30 transition-all duration-300"
@@ -319,17 +362,44 @@ const Dashboard = () => {
                         value={dateRange}
                         onChange={(e) => setDateRange(e.target.value)}
                       >
-                        <option value="7d">Últimos 7 dias</option>
-                        <option value="30d">Último mês</option>
-                        <option value="yesterday">Ontem</option>
+                        <option value="1">Ontem</option>
+                        <option value="7">Última Semana</option>
+                        <option value="30">Último Mês</option>
                         <option value="custom">Selecionar data</option>
                       </select>
                     </div>
+                    {dateRange === "custom" && (
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <input
+                          type="date"
+                          value={customStartDate}
+                          onChange={(e) => setCustomStartDate(e.target.value)}
+                          max={customEndDate || undefined}
+                          className="h-10 px-3 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <span className="text-muted-foreground text-sm">até</span>
+                        <input
+                          type="date"
+                          value={customEndDate}
+                          onChange={(e) => setCustomEndDate(e.target.value)}
+                          min={customStartDate || undefined}
+                          className="h-10 px-3 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        {customStartDate &&
+                          customEndDate &&
+                          customEndDate < customStartDate && (
+                            <span className="text-destructive text-xs">
+                              A data final deve ser igual ou posterior à data
+                              inicial.
+                            </span>
+                          )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="h-[350px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={performanceData}>
+                    <AreaChart data={filteredPerformanceData}>
                       <defs>
                         <linearGradient
                           id="colorDepositos"
@@ -416,113 +486,14 @@ const Dashboard = () => {
                 </div>
               </Card>
 
-              {/* Links and Payment History */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Affiliate Links */}
-                <Card id="links" className="bg-card/80 border-border/50 p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h2 className="text-xl font-display font-bold text-foreground">
-                        Links de Afiliado
-                      </h2>
-                      <p className="text-muted-foreground text-sm">
-                        Copie e compartilhe seus links
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <ExternalLink className="w-4 h-4" />
-                      Novo Link
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {affiliateLinks.map((link) => (
-                      <div
-                        key={link.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-all"
-                      >
-                        <div className="flex-1 min-w-0 mr-4">
-                          <p className="font-medium text-foreground mb-1">
-                            {link.name}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {link.url}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(link.url, link.id)}
-                          className="shrink-0"
-                        >
-                          {copiedLink === link.id ? (
-                            <Check className="w-4 h-4 texto-destaque" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
 
-                {/* Payment History */}
-                <Card className="bg-card/80 border-border/50 p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h2 className="text-xl font-display font-bold text-foreground">
-                        Histórico de Pagamentos
-                      </h2>
-                      <p className="text-muted-foreground text-sm">
-                        Seus últimos pagamentos
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Ver Todos
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {paymentHistory.map((payment) => (
-                      <div
-                        key={payment.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`p-2 rounded-lg ${
-                              payment.status === "pago"
-                                ? "bg-principal-suave texto-destaque"
-                                : "bg-secundario-suave texto-secundario"
-                            }`}
-                          >
-                            <DollarSign className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">
-                              R$ {payment.valor.toFixed(2)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {payment.data} • {payment.metodo}
-                            </p>
-                          </div>
-                        </div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            payment.status === "pago"
-                              ? "bg-principal-suave texto-destaque"
-                              : "bg-secundario-suave texto-secundario"
-                          }`}
-                        >
-                          {payment.status === "pago" ? "Pago" : "Pendente"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </div>
             </>
           ) : activeView === "plataformas" ? (
             <PlataformasD />
+          ) : activeView === "links" ? (
+            <LinkPage />
+          ) : activeView === "carteira" ? (
+            <CarteiraPage />
           ) : null}
         </main>
       </div>
@@ -532,3 +503,42 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+  const houseMultipliers: Record<string, number> = {
+    todas: 1,
+    bet365: 0.85,
+    betano: 0.7,
+    stake: 1.1,
+    "1xbet": 0.6,
+    sportingbet: 0.75,
+  };
+
+  const currentMultiplier = houseMultipliers[selectedHouse] ?? 1;
+
+  const filteredStats = useMemo(() => {
+    return baseStats.map((stat) => {
+      const scaledValue = stat.value * currentMultiplier;
+      const formattedValue =
+        stat.format === "currency"
+          ? `R$ ${scaledValue.toLocaleString("pt-BR", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}`
+          : stat.format === "percent"
+          ? `${scaledValue.toFixed(1)}%`
+          : Math.round(scaledValue).toLocaleString("pt-BR");
+
+      return {
+        ...stat,
+        value: formattedValue,
+      };
+    });
+  }, [currentMultiplier]);
+
+  const filteredPerformanceData = useMemo(() => {
+    return performanceData.map((item) => ({
+      ...item,
+      cliques: Math.round(item.cliques * currentMultiplier),
+      conversoes: Math.round(item.conversoes * currentMultiplier),
+      comissao: Math.round(item.comissao * currentMultiplier),
+    }));
+  }, [currentMultiplier]);

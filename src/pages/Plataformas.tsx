@@ -5,11 +5,6 @@ import "@/Stilos/stilo.scss";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 
-// Import Swiper styles
-import "swiper/css";
-import "swiper/css/pagination";
-import "swiper/css/navigation";
-
 const Plataformas = () => {
   return (
     <div className="min-h-screen bg-background">
