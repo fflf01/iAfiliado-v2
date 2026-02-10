@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
 
 const ForgotPassword = () => {
   const { toast } = useToast();

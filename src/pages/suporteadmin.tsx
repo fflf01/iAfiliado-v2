@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -58,7 +59,7 @@ const SuporteAdmin = () => {
       if (!token) return;
 
       try {
-        const response = await fetch("http://localhost:3000/support/messages", {
+        const response = await fetch(`${API_BASE_URL}/support/messages`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -117,7 +118,7 @@ const SuporteAdmin = () => {
       const token = localStorage.getItem("token");
       try {
         const response = await fetch(
-          `http://localhost:3000/support/ticket/${selectedTicket}/replies`,
+          `${API_BASE_URL}/support/ticket/${selectedTicket}/replies`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -171,7 +172,7 @@ const SuporteAdmin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/support/ticket/${selectedTicket}/reply`,
+        `${API_BASE_URL}/support/ticket/${selectedTicket}/reply`,
         {
           method: "POST",
           headers: {
@@ -386,7 +387,7 @@ const SuporteAdmin = () => {
                               {message.attachments.map((filename, idx) => (
                                 <img
                                   key={idx}
-                                  src={`http://localhost:3000/uploads/${filename}`}
+                                  src={`${API_BASE_URL}/uploads/${filename}`}
                                   alt="Anexo"
                                   className="max-w-full rounded-lg border border-border/50"
                                   style={{ maxHeight: "200px" }}

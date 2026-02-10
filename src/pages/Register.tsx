@@ -14,10 +14,9 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
 import IAfiliadoSection from "@/components/IAfiliadoSection";
-
-const API_BASE_URL = "http://localhost:3000";
+import { API_BASE_URL } from "@/lib/api";
 
 const Register = () => {
   const { toast } = useToast();

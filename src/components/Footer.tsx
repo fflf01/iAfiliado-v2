@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Crown, Mail, MessageCircle } from "lucide-react";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
 
 const Footer = () => {
   return (

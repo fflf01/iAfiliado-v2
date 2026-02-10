@@ -229,10 +229,17 @@ export async function updateSupportMessage(req, res) {
   }
 }
 
+function canAccessTicket(ticket, user) {
+  if (!user) return false;
+  if (user.is_admin) return true;
+  if (ticket.user_id && ticket.user_id === user.id) return true;
+  return false;
+}
+
 /**
  * Adiciona resposta a um ticket. Requer authMiddleware. multipart: message, opcional attachments.
  * @param {import("express").Request} req - params.id (ticket_id); req.user; body.message; req.files
- * @param {import("express").Response} res - 201 objeto da resposta (com attachments) | 400 | 404 | 500
+ * @param {import("express").Response} res - 201 objeto da resposta (com attachments) | 400 | 403 | 404 | 500
  */
 export async function addReply(req, res) {
   try {
@@ -259,6 +266,10 @@ export async function addReply(req, res) {
       return res.status(404).json({ error: "Ticket não encontrado." });
     }
     const ticket = ticketResult.rows[0];
+
+    if (!canAccessTicket(ticket, req.user)) {
+      return res.status(403).json({ error: "Sem permissÃ£o para responder." });
+    }
 
     // Se quem está respondendo é o dono do ticket, é 'user', senão é 'support' (admin)
     const senderType = ticket.user_id === userId ? "user" : "support";
@@ -312,11 +323,22 @@ export async function addReply(req, res) {
 /**
  * Lista respostas de um ticket. Requer authMiddleware.
  * @param {import("express").Request} req - params.id (ticket_id)
- * @param {import("express").Response} res - 200 array de respostas com anexos | 500
+ * @param {import("express").Response} res - 200 array de respostas com anexos | 403 | 404 | 500
  */
 export async function getTicketReplies(req, res) {
   try {
     const { id } = req.params;
+    const ticketResult = await pool.query(
+      "SELECT * FROM support_messages WHERE id = $1",
+      [id]
+    );
+    if (ticketResult.rows.length === 0) {
+      return res.status(404).json({ error: "Ticket nÃ£o encontrado." });
+    }
+    const ticket = ticketResult.rows[0];
+    if (!canAccessTicket(ticket, req.user)) {
+      return res.status(403).json({ error: "Sem permissÃ£o para acessar." });
+    }
     const result = await pool.query(
       "SELECT * FROM support_replies WHERE ticket_id = $1 ORDER BY created_at ASC",
       [id]

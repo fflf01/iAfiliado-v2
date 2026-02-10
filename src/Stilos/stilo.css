@@ -1,0 +1,120 @@
+.btn-principal {
+  background-color: var(--cor-principal) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 30px var(--cor-sombra);
+  transition: all 0.3s ease;
+}
+
+.btn-principal:hover {
+  background-color: var(--cor-principal-hover) !important;
+  box-shadow: 0 0 60px var(--cor-sombra);
+}
+
+.btn-principal-outline {
+  border: 1px solid var(--cor-principal) !important;
+  color: var(--cor-principal) !important;
+  background-color: transparent !important;
+  transition: all 0.3s ease;
+}
+
+.btn-principal-outline:hover {
+  background-color: var(--cor-principal-suave) !important;
+}
+
+.texto-destaque {
+  color: var(--cor-texto-destaque) !important;
+}
+
+.texto-gradiente-destaque {
+  background: linear-gradient(
+    to right,
+    var(--cor-gradiente-inicio),
+    var(--cor-gradiente-fim)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-principal {
+  background-color: var(--cor-principal) !important;
+}
+
+.bg-principal-suave {
+  background-color: var(--cor-principal-suave) !important;
+}
+
+.hover-bg-principal:hover {
+  background-color: var(--cor-principal) !important;
+  color: white !important;
+}
+
+.focus-borda-principal:focus {
+  border-color: var(--cor-principal) !important;
+  --tw-ring-color: var(--cor-principal-suave) !important;
+  box-shadow: 0 0 0 1px var(--cor-principal);
+}
+
+.borda-principal {
+  border-color: var(--cor-principal) !important;
+}
+
+.texto-secundario {
+  color: var(--cor-secundaria) !important;
+}
+
+.bg-secundario {
+  background-color: var(--cor-secundaria) !important;
+}
+
+.bg-secundario-suave {
+  background-color: var(--cor-secundaria-suave) !important;
+}
+
+.borda-secundaria {
+  border-color: var(--cor-secundaria) !important;
+}
+
+.borda-secundaria-suave {
+  border-color: var(--cor-secundaria-borda-suave) !important;
+}
+
+.texto-gradiente-secundario {
+  background: linear-gradient(
+    to right,
+    var(--cor-secundaria),
+    var(--cor-secundaria-gradiente-fim)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.swiper {
+  width: 100%;
+  padding: 50px 0;
+  background-color: transparent;
+}
+
+.swiper-slide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s;
+}
+
+.swiper-slide img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: grayscale(0%);
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  color: var(--swiper-accent) !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: var(--swiper-accent) !important;
+}

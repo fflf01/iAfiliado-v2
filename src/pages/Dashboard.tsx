@@ -36,7 +36,8 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
+import { API_BASE_URL } from "@/lib/api";
 import PlataformasD from "./Plataformas_D";
 import LinkPage from "@/link";
 import CarteiraPage from "@/pages/carteira";
@@ -139,7 +140,6 @@ const baseStats = [
   },
 ];
 
-const API_BASE_URL = "http://localhost:3000";
 
 const Dashboard = () => {
   const location = useLocation();
@@ -207,6 +207,46 @@ const Dashboard = () => {
     setCopiedLink(id);
     setTimeout(() => setCopiedLink(null), 2000);
   };
+
+  const houseMultipliers: Record<string, number> = {
+    todas: 1,
+    bet365: 0.85,
+    betano: 0.7,
+    stake: 1.1,
+    "1xbet": 0.6,
+    sportingbet: 0.75,
+  };
+
+  const currentMultiplier = houseMultipliers[selectedHouse] ?? 1;
+
+  const filteredStats = useMemo(() => {
+    return baseStats.map((stat) => {
+      const scaledValue = stat.value * currentMultiplier;
+      const formattedValue =
+        stat.format === "currency"
+          ? `R$ ${scaledValue.toLocaleString("pt-BR", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}`
+          : stat.format === "percent"
+          ? `${scaledValue.toFixed(1)}%`
+          : Math.round(scaledValue).toLocaleString("pt-BR");
+
+      return {
+        ...stat,
+        value: formattedValue,
+      };
+    });
+  }, [currentMultiplier]);
+
+  const filteredPerformanceData = useMemo(() => {
+    return performanceData.map((item) => ({
+      ...item,
+      cliques: Math.round(item.cliques * currentMultiplier),
+      conversoes: Math.round(item.conversoes * currentMultiplier),
+      comissao: Math.round(item.comissao * currentMultiplier),
+    }));
+  }, [currentMultiplier]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -503,42 +543,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-  const houseMultipliers: Record<string, number> = {
-    todas: 1,
-    bet365: 0.85,
-    betano: 0.7,
-    stake: 1.1,
-    "1xbet": 0.6,
-    sportingbet: 0.75,
-  };
-
-  const currentMultiplier = houseMultipliers[selectedHouse] ?? 1;
-
-  const filteredStats = useMemo(() => {
-    return baseStats.map((stat) => {
-      const scaledValue = stat.value * currentMultiplier;
-      const formattedValue =
-        stat.format === "currency"
-          ? `R$ ${scaledValue.toLocaleString("pt-BR", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}`
-          : stat.format === "percent"
-          ? `${scaledValue.toFixed(1)}%`
-          : Math.round(scaledValue).toLocaleString("pt-BR");
-
-      return {
-        ...stat,
-        value: formattedValue,
-      };
-    });
-  }, [currentMultiplier]);
-
-  const filteredPerformanceData = useMemo(() => {
-    return performanceData.map((item) => ({
-      ...item,
-      cliques: Math.round(item.cliques * currentMultiplier),
-      conversoes: Math.round(item.conversoes * currentMultiplier),
-      comissao: Math.round(item.comissao * currentMultiplier),
-    }));
-  }, [currentMultiplier]);

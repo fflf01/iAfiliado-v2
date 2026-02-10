@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
+import { API_BASE_URL } from "@/lib/api";
 
 const contactMethods = [
   {
@@ -123,7 +124,7 @@ const Suporte = () => {
         }
       }
 
-      const response = await fetch("http://localhost:3000/support", {
+      const response = await fetch(`${API_BASE_URL}/support`, {
         method: "POST",
         // Não definir Content-Type header manualmente com FormData, o browser faz isso
         body: formDataToSend,

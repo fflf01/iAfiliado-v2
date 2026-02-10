@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -62,7 +63,7 @@ const SuporteCliente = () => {
 
       try {
         const response = await fetch(
-          "http://localhost:3000/support/my-messages",
+          `${API_BASE_URL}/support/my-messages`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -120,7 +121,7 @@ const SuporteCliente = () => {
       const token = localStorage.getItem("token");
       try {
         const response = await fetch(
-          `http://localhost:3000/support/ticket/${selectedTicket}/replies`,
+          `${API_BASE_URL}/support/ticket/${selectedTicket}/replies`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -177,7 +178,7 @@ const SuporteCliente = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/support/ticket/${selectedTicket}/reply`,
+        `${API_BASE_URL}/support/ticket/${selectedTicket}/reply`,
         {
           method: "POST",
           headers: {
@@ -252,7 +253,7 @@ const SuporteCliente = () => {
     });
 
     try {
-      const response = await fetch("http://localhost:3000/support/ticket", {
+      const response = await fetch(`${API_BASE_URL}/support/ticket`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -529,12 +530,12 @@ const SuporteCliente = () => {
                                 {message.attachments.map((filename, idx) => (
                                   <a
                                     key={idx}
-                                    href={`http://localhost:3000/uploads/${filename}`}
+                                    href={`${API_BASE_URL}/uploads/${filename}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                   >
                                     <img
-                                      src={`http://localhost:3000/uploads/${filename}`}
+                                      src={`${API_BASE_URL}/uploads/${filename}`}
                                       alt="Anexo"
                                       className="max-w-full rounded-lg border border-border/50 hover:opacity-90 transition-opacity"
                                       style={{ maxHeight: "200px" }}

@@ -46,7 +46,6 @@ app.use(
 app.use(express.json());
 
 const uploadsPath = path.join(__dirname, "uploads");
-console.log("O servidor está procurando imagens em:", uploadsPath);
 
 app.use("/uploads", express.static(uploadsPath));
 
@@ -71,5 +70,5 @@ app.use((err, req, res, next) => {
 const port = Number(process.env.PORT) || 3000;
 
 app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
+  // Intencionalmente sem logs para manter o console limpo.
 });

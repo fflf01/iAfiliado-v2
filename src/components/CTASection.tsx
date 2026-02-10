@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Gift } from "lucide-react";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
 
 const CTASection = () => {
   return (

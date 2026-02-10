@@ -19,7 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
+import { API_BASE_URL } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -46,7 +47,7 @@ const SuporteMensagens = () => {
       if (!token) return;
 
       try {
-        const response = await fetch("http://localhost:3000/support/messages", {
+        const response = await fetch(`${API_BASE_URL}/support/messages`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

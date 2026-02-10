@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import "@/Stilos/stilo.scss";
+import "@/Stilos/stilo.css";
 
 const steps = [
   {
