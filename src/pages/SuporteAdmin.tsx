@@ -4,38 +4,28 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Crown,
   ArrowLeft,
   MessageSquare,
   Send,
   User,
-  Bot,
   Clock,
   CheckCheck,
   Paperclip,
   Smile,
-  Phone,
-  Video,
   MoreVertical,
   Search,
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { API_BASE_URL } from "@/lib/api";
+import { apiGet, apiPostForm, API_BASE_URL } from "@/lib/api-client";
+import { getStatusColor, type ChatMessage } from "@/lib/support-utils";
+import { formatTime } from "@/lib/format";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
-interface Message {
-  id: string;
-  content: string;
-  sender: "user" | "support";
-  timestamp: string;
-  read: boolean;
-  attachments?: string[];
-}
-
-interface Ticket {
+interface AdminTicket {
   id: string;
   subject: string;
-  name: string; // Nome do cliente
+  name: string;
   status: "aberto" | "em_andamento" | "resolvido";
   lastMessage: string;
   updatedAt: string;
@@ -46,186 +36,117 @@ const SuporteAdmin = () => {
   const { toast } = useToast();
   const [selectedTicket, setSelectedTicket] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [tickets, setTickets] = useState<AdminTicket[]>([]);
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const { attachments, handleFileChange, removeFile, clearFiles } = useFileUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Busca TODOS os tickets (Rota de Admin)
   useEffect(() => {
     const fetchTickets = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       try {
-        const response = await fetch(`${API_BASE_URL}/support/messages`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const data = await apiGet<any[]>("/support/messages");
+
+        const mappedTickets: AdminTicket[] = data.map((item) => ({
+          id: item.id.toString(),
+          subject: item.subject || "Sem assunto",
+          name: item.name || "Cliente",
+          status: item.status || "aberto",
+          lastMessage: item.message,
+          updatedAt: new Date(item.created_at).toLocaleDateString("pt-BR"),
+          unreadCount: 0,
+        }));
+
+        setTickets(mappedTickets);
+
+        const initialMessages: Record<string, ChatMessage[]> = {};
+        data.forEach((item) => {
+          initialMessages[item.id.toString()] = [
+            {
+              id: `msg-${item.id}`,
+              content: item.message,
+              sender: "user",
+              timestamp: formatTime(item.created_at),
+              read: true,
+              attachments: item.attachments?.map((a: any) => a.filename),
+            },
+          ];
         });
-
-        if (response.ok) {
-          const data = await response.json();
-
-          const mappedTickets: Ticket[] = data.map((item: any) => ({
-            id: item.id.toString(),
-            subject: item.subject || "Sem assunto",
-            name: item.name || "Cliente",
-            status: item.status || "aberto",
-            lastMessage: item.message,
-            updatedAt: new Date(item.created_at).toLocaleDateString("pt-BR"),
-            unreadCount: 0,
-          }));
-
-          setTickets(mappedTickets);
-
-          // Popula as mensagens iniciais
-          const initialMessages: Record<string, Message[]> = {};
-          data.forEach((item: any) => {
-            initialMessages[item.id.toString()] = [
-              {
-                id: `msg-${item.id}`,
-                content: item.message,
-                sender: "user", // A mensagem inicial é sempre do usuário
-                timestamp: new Date(item.created_at).toLocaleTimeString(
-                  "pt-BR",
-                  { hour: "2-digit", minute: "2-digit" },
-                ),
-                read: true,
-                attachments: item.attachments?.map((a: any) => a.filename),
-              },
-            ];
-          });
-          // Atualiza as mensagens iniciais preservando o histórico dos chats já carregados
-          setMessages((prev) => ({ ...initialMessages, ...prev }));
-        }
+        setMessages((prev) => ({ ...initialMessages, ...prev }));
       } catch (error) {
         console.error("Erro ao buscar tickets:", error);
       }
     };
 
     fetchTickets();
-    const interval = setInterval(fetchTickets, 5000); // Atualiza lista de tickets a cada 5s
+    const interval = setInterval(fetchTickets, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Busca respostas quando um ticket é selecionado
+  // Busca respostas quando um ticket e selecionado
   useEffect(() => {
     if (!selectedTicket) return;
 
     const fetchReplies = async () => {
-      const token = localStorage.getItem("token");
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/support/ticket/${selectedTicket}/replies`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        if (response.ok) {
-          const replies = await response.json();
+        const replies = await apiGet<any[]>(`/support/ticket/${selectedTicket}/replies`);
 
-          const mappedReplies: Message[] = replies.map((r: any) => ({
-            id: `reply-${r.id}`,
-            content: r.message,
-            sender: r.sender_type,
-            timestamp: new Date(r.created_at).toLocaleTimeString("pt-BR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            read: true,
-            attachments: r.attachments?.map((a: any) => a.filename),
-          }));
+        const mappedReplies: ChatMessage[] = replies.map((r) => ({
+          id: `reply-${r.id}`,
+          content: r.message,
+          sender: r.sender_type,
+          timestamp: formatTime(r.created_at),
+          read: true,
+          attachments: r.attachments?.map((a: any) => a.filename),
+        }));
 
-          setMessages((prev) => {
-            const currentMsgs = prev[selectedTicket] || [];
-            const initialMsg = currentMsgs[0]; // Mantém a mensagem original do ticket
-            return {
-              ...prev,
-              [selectedTicket]: initialMsg
-                ? [initialMsg, ...mappedReplies]
-                : mappedReplies,
-            };
-          });
-        }
+        setMessages((prev) => {
+          const currentMsgs = prev[selectedTicket] || [];
+          const initialMsg = currentMsgs[0];
+          return {
+            ...prev,
+            [selectedTicket]: initialMsg ? [initialMsg, ...mappedReplies] : mappedReplies,
+          };
+        });
       } catch (error) {
         console.error("Erro ao buscar respostas:", error);
       }
     };
 
     fetchReplies();
-    const interval = setInterval(fetchReplies, 3000); // Atualiza o chat atual a cada 3s
+    const interval = setInterval(fetchReplies, 3000);
     return () => clearInterval(interval);
   }, [selectedTicket]);
 
   const sendMessage = async () => {
-    if ((!newMessage.trim() && attachments.length === 0) || !selectedTicket)
-      return;
+    if ((!newMessage.trim() && attachments.length === 0) || !selectedTicket) return;
 
-    const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("message", newMessage);
-    attachments.forEach((file) => {
-      formData.append("attachments", file);
-    });
+    attachments.forEach((file) => formData.append("attachments", file));
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/support/ticket/${selectedTicket}/reply`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        },
-      );
+      const reply = await apiPostForm<any>(`/support/ticket/${selectedTicket}/reply`, formData);
 
-      if (response.ok) {
-        const reply = await response.json();
-        const newMsg: Message = {
-          id: `reply-${reply.id}`,
-          content: reply.message,
-          sender: "support", // Admin enviando
-          timestamp: new Date().toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          read: true,
-        };
+      const newMsg: ChatMessage = {
+        id: `reply-${reply.id}`,
+        content: reply.message,
+        sender: "support",
+        timestamp: formatTime(new Date().toISOString()),
+        read: true,
+      };
 
-        setMessages((prev) => ({
-          ...prev,
-          [selectedTicket]: [...(prev[selectedTicket] || []), newMsg],
-        }));
+      setMessages((prev) => ({
+        ...prev,
+        [selectedTicket]: [...(prev[selectedTicket] || []), newMsg],
+      }));
 
-        setNewMessage("");
-        setAttachments([]);
-        toast({
-          title: "Resposta enviada",
-          description: "O cliente foi notificado.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao enviar mensagem.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "aberto":
-        return "bg-secondary/10 text-secondary";
-      case "em_andamento":
-        return "bg-primary/10 text-primary";
-      case "resolvido":
-        return "bg-muted text-muted-foreground";
-      default:
-        return "";
+      setNewMessage("");
+      clearFiles();
+      toast({ title: "Resposta enviada", description: "O cliente foi notificado." });
+    } catch {
+      toast({ title: "Erro", description: "Falha ao enviar mensagem.", variant: "destructive" });
     }
   };
 
@@ -233,18 +154,11 @@ const SuporteAdmin = () => {
     (t) =>
       t.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.id.includes(searchTerm),
+      t.id.includes(searchTerm)
   );
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setAttachments(Array.from(e.target.files));
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
@@ -314,9 +228,7 @@ const SuporteAdmin = () => {
                         SUP-{ticket.id}
                       </span>
                       <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStatusColor(
-                          ticket.status,
-                        )}`}
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStatusColor(ticket.status)}`}
                       >
                         {ticket.status}
                       </span>
@@ -368,9 +280,7 @@ const SuporteAdmin = () => {
                     <div
                       key={message.id}
                       className={`flex ${
-                        message.sender === "support" // Se for suporte (admin)
-                          ? "justify-end" // Direita
-                          : "justify-start" // Esquerda (Cliente)
+                        message.sender === "support" ? "justify-end" : "justify-start"
                       }`}
                     >
                       <div
@@ -381,25 +291,22 @@ const SuporteAdmin = () => {
                         }`}
                       >
                         <p className="text-sm">{message.content}</p>
-                        {message.attachments &&
-                          message.attachments.length > 0 && (
-                            <div className="mt-2 space-y-2">
-                              {message.attachments.map((filename, idx) => (
-                                <img
-                                  key={idx}
-                                  src={`${API_BASE_URL}/uploads/${filename}`}
-                                  alt="Anexo"
-                                  className="max-w-full rounded-lg border border-border/50"
-                                  style={{ maxHeight: "200px" }}
-                                />
-                              ))}
-                            </div>
-                          )}
+                        {message.attachments && message.attachments.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {message.attachments.map((filename, idx) => (
+                              <img
+                                key={idx}
+                                src={`${API_BASE_URL}/uploads/${filename}`}
+                                alt="Anexo"
+                                className="max-w-full rounded-lg border border-border/50"
+                                style={{ maxHeight: "200px" }}
+                              />
+                            ))}
+                          </div>
+                        )}
                         <div
                           className={`flex items-center gap-1 mt-1 ${
-                            message.sender === "support"
-                              ? "justify-end"
-                              : "justify-start"
+                            message.sender === "support" ? "justify-end" : "justify-start"
                           }`}
                         >
                           <span
@@ -446,11 +353,7 @@ const SuporteAdmin = () => {
                             </div>
                           )}
                           <button
-                            onClick={() =>
-                              setAttachments((prev) =>
-                                prev.filter((_, i) => i !== index),
-                              )
-                            }
+                            onClick={() => removeFile(index)}
                             className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="w-3 h-3" />

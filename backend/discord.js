@@ -63,7 +63,7 @@ async function sendToDiscord(payload, files) {
       });
     }
   } catch (error) {
-    console.error("❌ Falha no Webhook do Discord:", error.message);
+    console.error("Falha no Webhook do Discord:", error.message);
   }
 }
 
@@ -73,7 +73,7 @@ async function sendToDiscord(payload, files) {
  */
 export async function enviarTicketDiscord(ticket) {
   if (!DISCORD_WEBHOOK_URL) {
-    console.warn("⚠️ DISCORD_WEBHOOK_URL não definida no arquivo .env");
+    console.warn("DISCORD_WEBHOOK_URL nao definida no arquivo .env");
     return;
   }
 

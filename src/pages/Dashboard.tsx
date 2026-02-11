@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Footer from "@/components/Footer";
@@ -9,9 +9,6 @@ import {
   Users,
   DollarSign,
   MousePointer,
-  Copy,
-  Check,
-  ExternalLink,
   LogOut,
   Calendar,
   ArrowUpRight,
@@ -20,13 +17,9 @@ import {
   Link as LinkIcon,
   Wallet,
   HelpCircle,
-  FileText,
-  Gem,
   Rocket,
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -37,19 +30,10 @@ import {
   Area,
 } from "recharts";
 import "@/Stilos/stilo.css";
-import { API_BASE_URL } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import PlataformasD from "./Plataformas_D";
-import LinkPage from "@/link";
-import CarteiraPage from "@/pages/carteira";
-
-// Define a interface do usuário para tipagem
-interface User {
-  id: number;
-  name: string;
-  login: string;
-  email: string;
-  is_admin: boolean;
-}
+import LinkPage from "@/LinkPage";
+import CarteiraPage from "@/pages/Carteira";
 
 // Mock data for charts
 const performanceData = [
@@ -143,6 +127,8 @@ const baseStats = [
 
 const Dashboard = () => {
   const location = useLocation();
+  const { user, logout } = useAuth();
+
   const activeView = location.pathname.includes("/plataformas")
     ? "plataformas"
     : location.pathname.includes("/links")
@@ -150,63 +136,19 @@ const Dashboard = () => {
       : location.pathname.includes("/carteira")
         ? "carteira"
         : "dashboard";
+
   const [dateRange, setDateRange] = useState("7");
   const [selectedHouse, setSelectedHouse] = useState("todas");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
-  const [copiedLink, setCopiedLink] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const navigate = useNavigate();
 
   const sidebarItems = [
     { icon: LinkIcon, label: "DashBoard", id: "dashboard", path: "/dashboard" },
-    {
-      icon: Wallet,
-      label: "Casas Parceiras",
-      id: "plataformas",
-      path: "/dashboard/plataformas",
-    },
-    {
-      icon: Crown,
-      label: "Meus Links",
-      id: "links",
-      path: "/dashboard/links",
-    },
-    {
-      icon: Rocket,
-      label: "Carteira",
-      id: "carteira",
-      path: "/dashboard/carteira",
-    },
-    {
-      icon: HelpCircle,
-      label: "fale com suporte",
-      id: "suporte",
-      path: user?.is_admin ? "/suporteadmin" : "/suporte-cliente",
-    },
+    { icon: Wallet, label: "Casas Parceiras", id: "plataformas", path: "/dashboard/plataformas" },
+    { icon: Crown, label: "Meus Links", id: "links", path: "/dashboard/links" },
+    { icon: Rocket, label: "Carteira", id: "carteira", path: "/dashboard/carteira" },
+    { icon: HelpCircle, label: "Fale com Suporte", id: "suporte", path: user?.is_admin ? "/suporteadmin" : "/suporte-cliente" },
   ];
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error("Erro ao analisar dados do usuário:", error);
-      }
-    }
-  }, [navigate]);
-
-  const copyToClipboard = (link: string, id: string) => {
-    navigator.clipboard.writeText(link);
-    setCopiedLink(id);
-    setTimeout(() => setCopiedLink(null), 2000);
-  };
 
   const houseMultipliers: Record<string, number> = {
     todas: 1,
@@ -274,12 +216,10 @@ const Dashboard = () => {
                 </Button>
               </Link>
             )}
-            <Link to="/login">
-              <Button variant="outline" size="sm" className="gap-2">
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Sair</span>
-              </Button>
-            </Link>
+            <Button variant="outline" size="sm" className="gap-2" onClick={logout}>
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </Button>
           </div>
         </div>
       </header>

@@ -1,62 +1,84 @@
-# Afiliado Trabalho — Plataforma de Afiliados
+# iAfiliado v2 — Plataforma de Afiliados
 
-Plataforma web para gestão de afiliados, com autenticação, painel administrativo e sistema de suporte com tickets.
+Plataforma web para gestao de afiliados, com autenticacao, painel administrativo, sistema de suporte com tickets e integracao com Discord.
 
 ## Tecnologias
 
 ### Frontend
 
-- **React** + **TypeScript**
+- **React 18** + **TypeScript**
 - **Vite** — build e dev server
 - **Tailwind CSS** + **shadcn/ui** — interface
-- **React Router** — rotas
-- **React Hook Form** + **Zod** — formulários e validação
-- **TanStack Query** — requisições e cache
+- **React Router** — rotas com protecao (ProtectedRoute)
+- **React Hook Form** + **Zod** — formularios e validacao
+- **TanStack Query** — requisicoes e cache
 
 ### Backend
 
-- **Node.js** + **Express**
-- **PostgreSQL** — banco de dados
-- **JWT** — autenticação
-- **bcrypt** — hash de senhas
-- **Multer** — upload de arquivos (anexos em tickets)
-- **dotenv** — variáveis de ambiente
+- **Node.js** + **Express 5**
+- **PostgreSQL** (Supabase) — banco de dados com SSL
+- **JWT** (`jsonwebtoken`) — autenticacao
+- **bcrypt** — hash de senhas (salt rounds: 10)
+- **Multer** — upload de arquivos (5MB, JPEG/PNG/WebP/PDF)
+- **helmet** — headers de seguranca (CSP, HSTS, X-Frame-Options)
+- **express-rate-limit** — protecao contra brute-force
+- **express-validator** — validacao e sanitizacao de input
+- **dotenv** — variaveis de ambiente
+- **Discord Webhook** — notificacoes de tickets
 
-## Pré-requisitos
+## Pre-requisitos
 
-- Node.js (recomendado: LTS)
-- PostgreSQL
-- npm ou bun
+- Node.js (recomendado: LTS 20+)
+- PostgreSQL (ou Supabase)
+- npm
 
 ## Quick Start
 
-### 1. Clonar e instalar dependências
+### 1. Clonar e instalar dependencias
 
 ```sh
 git clone <URL_DO_REPOSITORIO>
-cd afiliado_trab
+cd iAfiliado-v2
 npm install
 ```
 
-### 2. Variáveis de ambiente
+### 2. Variaveis de ambiente
 
-Copie o arquivo de exemplo e preencha os valores (crie `.env` na raiz ou em `backend/`, conforme onde o servidor for executado):
+Copie o exemplo e preencha com suas credenciais:
 
 ```sh
-cp backend/.env.example .env
+cp backend/.env.example backend/.env
 ```
 
-Edite o `.env` com suas credenciais (banco de dados, `JWT_SECRET`). O backend lê o `.env` na raiz ou em `backend/`. Veja [docs/DATABASE.md](docs/DATABASE.md) para o schema completo.
+Variaveis obrigatorias:
+
+| Variavel | Descricao |
+| --- | --- |
+| `DB_HOST` | Host do PostgreSQL (ex: `db.xxx.supabase.co`) |
+| `DB_PORT` | Porta (padrao: `5432`) |
+| `DB_NAME` | Nome do banco (padrao: `postgres`) |
+| `DB_USER` | Usuario do banco |
+| `DB_PASSWORD` | Senha do banco |
+| `JWT_SECRET` | Chave secreta para assinatura JWT |
+| `CORS_ORIGINS` | Origens permitidas em producao (separadas por virgula) |
+| `DISCORD_WEBHOOK_URL` | URL do webhook Discord para notificacoes |
+
+Frontend (opcional, para build de producao):
+
+| Variavel | Descricao |
+| --- | --- |
+| `VITE_API_BASE_URL` | URL base da API (padrao: `http://localhost:3000`) |
 
 ### 3. Banco de dados
 
-Crie o banco no PostgreSQL. As tabelas necessárias são: `clients`, `support_messages`, `support_replies`, `support_attachments`. O schema detalhado e a ordem de criação estão em **[docs/DATABASE.md](docs/DATABASE.md)**. Para criar/atualizar as tabelas de suporte, execute:
+O projeto usa PostgreSQL. As tabelas necessarias sao:
 
-```sh
-node backend/update_support_schema.js
-```
+- `clients` — usuarios e afiliados
+- `support_messages` — tickets de suporte
+- `support_replies` — respostas aos tickets
+- `support_attachments` — anexos de tickets/respostas
 
-(A tabela `clients` e a estrutura inicial de `support_messages` precisam existir antes; consulte DATABASE.md.)
+Consulte [docs/DATABASE.md](docs/DATABASE.md) para o schema completo e ordem de criacao.
 
 ### 4. Executar o projeto
 
@@ -76,101 +98,139 @@ node backend/server.js
 
 API em: `http://localhost:3000`
 
-Para desenvolvimento, é necessário ter os dois rodando (front em 5173, back em 3000).
+Para desenvolvimento, ambos precisam estar rodando.
 
-## Scripts disponíveis
+## Scripts disponiveis
 
-| Comando                     | Descrição                            |
-| --------------------------- | ------------------------------------ |
-| `npm run dev`               | Sobe o frontend (Vite)               |
-| `npm run build`             | Build de produção do frontend        |
-| `npm run preview`           | Preview do build                     |
-| `npm run lint`              | Executa o ESLint                     |
-| `npm run test`              | Executa os testes (Vitest)           |
-| `npm run test:e2e`          | Testes E2E no navegador (Playwright) |
-| `npm run test:e2e:security` | Apenas testes E2E de segurança       |
-| `npm run test:e2e:ui`       | Playwright em modo UI (debug)        |
-
-O backend é iniciado manualmente: `node backend/server.js`.
-
-### Testes E2E e segurança
-
-Os testes E2E rodam no navegador (Chromium) e incluem **testes de segurança** em `e2e/security/`:
-
-- **auth-redirect**: redirecionamento para `/login` ao acessar `/dashboard` sem autenticação.
-- **login-invalid**: credenciais inválidas não devem fazer login nem redirecionar; exibição de feedback de erro.
-- **admin-access**: acesso à rota admin sem login; API retorna 403 para usuário não-admin em `/support/messages`.
-- **xss-basic**: payloads XSS nos campos de login/senha não são executados (conteúdo escapado).
-
-Para rodar: ter o **backend** em `http://localhost:3000` (para testes de login/admin). O Playwright sobe o frontend automaticamente em `http://localhost:8080`. Execute:
-
-```sh
-npm run test:e2e
-# ou só os testes de segurança:
-npm run test:e2e:security
-```
+| Comando | Descricao |
+| --- | --- |
+| `npm run dev` | Sobe o frontend (Vite) |
+| `npm run build` | Build de producao do frontend |
+| `npm run preview` | Preview do build |
+| `npm run lint` | Executa o ESLint |
+| `npm run test` | Executa os testes (Vitest) |
+| `npm run test:e2e` | Testes E2E (Playwright) |
+| `npm run test:e2e:security` | Apenas testes E2E de seguranca |
 
 ## Estrutura do projeto
 
 ```
-afiliado_trab/
-├── backend/           # API Express
-│   ├── auth/          # Registro, login, middlewares de auth
-│   ├── controllers/
+iAfiliado-v2/
+├── backend/
+│   ├── auth/              # Login, registro, middlewares de auth
+│   ├── config/
+│   │   └── constants.js   # Constantes centralizadas (AUTH, UPLOAD, TICKET, RATE_LIMIT)
 │   ├── middleware/
-│   ├── support/       # Tickets e mensagens de suporte
-│   ├── db.js          # Pool PostgreSQL
-│   ├── discord.js     # Integração Discord (notificações)
-│   ├── routes.js      # Rotas da API
-│   └── server.js      # Entrada do servidor
-├── src/               # Frontend React
-│   ├── components/    # Componentes e UI
-│   ├── pages/         # Páginas (Login, Dashboard, Suporte, etc.)
+│   │   ├── errorHandler.js  # asyncHandler + error handler centralizado
+│   │   └── adminAuthMiddleware.js
+│   ├── support/
+│   │   └── message.js     # CRUD de tickets, respostas e anexos
+│   ├── utils/
+│   │   └── jwt.js         # Geracao centralizada de tokens JWT
+│   ├── db.js              # Pool PostgreSQL com SSL automatico
+│   ├── discord.js         # Integracao Discord (webhook)
+│   ├── routes.js          # Rotas, validacao e rate limiting
+│   ├── server.js          # Entrada do servidor
+│   ├── .env               # Variaveis de ambiente (nao versionado)
+│   └── .env.example       # Exemplo de configuracao
+├── src/
+│   ├── components/
+│   │   ├── ui/            # Componentes shadcn/ui
+│   │   ├── ProtectedRoute.tsx  # Protecao de rotas (auth + admin)
+│   │   └── ...
 │   ├── hooks/
-│   └── lib/
+│   │   ├── useAuth.ts          # Estado reativo de autenticacao
+│   │   ├── useFileUpload.ts    # Upload de arquivos
+│   │   ├── useCopyToClipboard.ts
+│   │   └── usePolling.ts       # Polling periodico com cleanup
+│   ├── lib/
+│   │   ├── api-client.ts  # API client centralizado (get/post/postForm/put)
+│   │   ├── auth.ts        # Utilitarios de autenticacao (token/user)
+│   │   ├── format.ts      # Formatadores (telefone, moeda, data)
+│   │   ├── support-utils.ts  # Utilitarios de suporte (cores, status, prioridade)
+│   │   └── utils.ts       # Utilitarios gerais (cn)
+│   ├── pages/
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── SuporteCliente.tsx
+│   │   ├── SuporteAdmin.tsx
+│   │   ├── Suporte.tsx
+│   │   ├── Carteira.tsx
+│   │   └── ...
+│   ├── types/
+│   │   └── index.ts       # Interfaces TypeScript (User, Ticket, Reply, etc.)
+│   └── App.tsx            # Roteamento e providers
+├── docs/                  # Documentacao tecnica
 ├── public/
-├── docs/              # Documentação técnica
 └── package.json
 ```
 
-## Documentação
+## Arquitetura
 
-| Documento                                    | Descrição                                                                         |
-| -------------------------------------------- | --------------------------------------------------------------------------------- |
-| [docs/API.md](docs/API.md)                   | Endpoints da API, exemplos de request/response e códigos de erro                  |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Visão geral da arquitetura e fluxos (auth, suporte)                               |
-| [docs/DATABASE.md](docs/DATABASE.md)         | Schema do banco (clients, support_messages, support_replies, support_attachments) |
-| [CONTRIBUTING.md](CONTRIBUTING.md)           | Como contribuir, padrões de código e processo de desenvolvimento                  |
+### Backend
 
-Resumo da API:
+- **Constantes centralizadas** (`config/constants.js`): magic numbers e strings em um unico lugar
+- **JWT centralizado** (`utils/jwt.js`): geracao de token sem duplicacao
+- **Error handler** (`middleware/errorHandler.js`): `asyncHandler` elimina try-catch repetitivos; error handler trata erros do Multer, Postgres (23505) e retorna mensagens seguras em producao
+- **Validacao** (`routes.js`): express-validator sanitiza e valida todos os inputs antes de chegarem aos handlers
+- **Rate limiting**: global (100 req/15min) e especifico para auth (10 req/15min)
+- **Seguranca**: helmet (CSP, HSTS, X-Frame-Options), bcrypt (salt 10), JWT com expiracao de 1 dia, CORS configuravel
 
-- **Públicas:** `POST /register`, `POST /login`, `POST /support`, `GET /clients`
-- **Autenticadas:** `GET /profile`, criação de ticket com usuário, respostas, minhas mensagens
-- **Admin:** `GET /admin`, `GET /support/messages`, `PUT /support/messages/:id`
+### Frontend
 
-## Autenticação
+- **API Client** (`lib/api-client.ts`): auto-attach de Bearer token, validacao de content-type, error handling padronizado
+- **Auth centralizado** (`lib/auth.ts` + `hooks/useAuth.ts`): substitui ~15 acessos diretos a localStorage
+- **Hooks reutilizaveis**: `useFileUpload`, `useCopyToClipboard`, `usePolling` eliminam duplicacao
+- **Tipagem completa** (`types/index.ts`): interfaces para User, Ticket, Reply, Attachment, ApiError
+- **ProtectedRoute**: protecao de rotas com verificacao de auth e permissao admin
 
-- Login e registro retornam um **token JWT** no corpo da resposta.
-- Para rotas protegidas, envie no header: `Authorization: Bearer <token>`.
-- O token expira em **1 dia** (configurável no código).
+## Documentacao
 
-## Suporte
+| Documento | Descricao |
+| --- | --- |
+| [docs/API.md](docs/API.md) | Endpoints da API, exemplos e codigos de erro |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Visao geral da arquitetura e fluxos |
+| [docs/DATABASE.md](docs/DATABASE.md) | Schema do banco de dados |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Como contribuir e padroes de codigo |
 
-- Tickets podem ser criados **sem login** (`POST /support`) ou **logado** (`POST /support/ticket`).
-- Usuários logados podem ver suas mensagens em `GET /support/my-messages`.
-- Admins listam todas as mensagens em `GET /support/messages` e podem atualizar status/prioridade com `PUT /support/messages/:id`.
-- Anexos: multipart/form-data, limite de 5 MB por arquivo; servidos em `/uploads`.
+### Resumo da API
+
+**Publicas:**
+- `POST /register` — Cadastro de usuario
+- `POST /login` — Autenticacao
+- `POST /support` — Criar ticket publico
+
+**Autenticadas (Bearer token):**
+- `GET /profile` — Perfil do usuario
+- `POST /support/ticket` — Criar ticket (logado)
+- `POST /support/ticket/:id/reply` — Responder ticket
+- `GET /support/ticket/:id/replies` — Listar respostas
+- `GET /support/my-messages` — Meus tickets
+
+**Admin (auth + is_admin):**
+- `GET /support/messages` — Todos os tickets
+- `PUT /support/messages/:id` — Atualizar status/prioridade
+- `GET /clients` — Listar clientes
+
+## Autenticacao
+
+- Login e registro retornam um **token JWT** no corpo da resposta
+- Rotas protegidas: `Authorization: Bearer <token>`
+- Token expira em **1 dia** (configuravel em `backend/config/constants.js`)
+- Dados sensiveis (telefone) **nao** sao incluidos no token
 
 ## Troubleshooting
 
-| Problema                        | Possível causa                                                  | Solução                                                                                                                                                                    |
-| ------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Banco não conecta               | `DB_PASSWORD` ausente ou incorreto, PostgreSQL não está rodando | Verifique o `.env` e que o PostgreSQL está ativo. Confira a mensagem no console ao subir o backend.                                                                        |
-| 401 ao acessar rotas protegidas | Token inválido ou expirado                                      | Faça login novamente para obter um novo token. Verifique se o header é `Authorization: Bearer <token>`.                                                                    |
-| 403 em rotas de admin           | Usuário não é admin                                             | Apenas usuários com `is_admin = true` podem acessar `/admin` e rotas de suporte admin.                                                                                     |
-| CORS ao chamar API do front     | Backend não permite origem do frontend                          | O backend usa `cors()` sem restrição de origem em desenvolvimento. Confirme que a API está em `http://localhost:3000` e que o front usa essa URL.                          |
-| 404 em `/uploads/...`           | Pasta de uploads inexistente ou caminho errado                  | O servidor serve uploads de `src/assets/uploads`. O Multer cria a pasta ao receber o primeiro upload. Verifique que `server.js` monta `express.static` no caminho correto. |
+| Problema | Solucao |
+| --- | --- |
+| Banco nao conecta | Verifique `DB_*` no `.env`. Para Supabase, SSL e habilitado automaticamente. |
+| 401 em rotas protegidas | Token invalido/expirado. Faca login novamente. |
+| 403 em rotas de admin | Apenas `is_admin = true` pode acessar. |
+| CORS em producao | Configure `CORS_ORIGINS` no `.env` com as origens do frontend. |
+| "Muitas requisicoes" | Rate limiting ativo. Aguarde 15 minutos. |
+| Upload falha | Limite: 5MB por arquivo, 5 arquivos. Tipos: JPEG, PNG, WebP, PDF. |
 
-## Licença
+## Licenca
 
 ISC

@@ -16,8 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { apiPostForm } from "@/lib/api-client";
+import { formatPhoneNumber } from "@/lib/format";
 import "@/Stilos/stilo.css";
-import { API_BASE_URL } from "@/lib/api";
 
 const contactMethods = [
   {
@@ -124,29 +125,20 @@ const Suporte = () => {
         }
       }
 
-      const response = await fetch(`${API_BASE_URL}/support`, {
-        method: "POST",
-        // Não definir Content-Type header manualmente com FormData, o browser faz isso
-        body: formDataToSend,
-      });
+      const data = await apiPostForm<{ id: string }>("/support", formDataToSend);
 
-      if (response.ok) {
-        const data = await response.json();
-        toast({
-          title: `Mensagem enviada! Protocolo ${data.id}`,
-          description: "Responderemos em até 24 horas.",
-        });
-        setFormData({
-          name: "",
-          email: "",
-          subject: "",
-          phone: "",
-          message: "",
-        });
-        setAttachments(null);
-      }
+      toast({
+        title: `Mensagem enviada! Protocolo ${data.id}`,
+        description: "Responderemos em ate 24 horas.",
+      });
+      setFormData({ name: "", email: "", subject: "", phone: "", message: "" });
+      setAttachments(null);
     } catch (error) {
-      console.error("Erro ao enviar mensagem:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao enviar mensagem.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -325,13 +317,9 @@ const Suporte = () => {
                 <Input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => {
-                    let value = e.target.value.replace(/\D/g, "");
-                    if (value.length > 11) value = value.slice(0, 11);
-                    value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
-                    value = value.replace(/(\d)(\d{4})$/, "$1-$2");
-                    setFormData({ ...formData, phone: value });
-                  }}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })
+                  }
                   placeholder="(00) 00000-0000"
                   className="bg-muted border-border"
                 />

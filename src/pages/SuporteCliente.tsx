@@ -5,11 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Crown,
   ArrowLeft,
   MessageSquare,
   Send,
-  User,
   Bot,
   Clock,
   CheckCheck,
@@ -21,18 +19,13 @@ import {
   X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { API_BASE_URL } from "@/lib/api";
+import { apiGet, apiPostForm, API_BASE_URL } from "@/lib/api-client";
+import { getUser } from "@/lib/auth";
+import { getStatusColor, getStatusLabel, type ChatMessage } from "@/lib/support-utils";
+import { formatTime } from "@/lib/format";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
-interface Message {
-  id: string;
-  content: string;
-  sender: "user" | "support";
-  timestamp: string;
-  read: boolean;
-  attachments?: string[];
-}
-
-interface Ticket {
+interface TicketView {
   id: string;
   subject: string;
   status: "aberto" | "em_andamento" | "resolvido";
@@ -48,63 +41,43 @@ const SuporteCliente = () => {
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [newTicketSubject, setNewTicketSubject] = useState("");
   const [newTicketMessage, setNewTicketMessage] = useState("");
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const { attachments, handleFileChange, removeFile, clearFiles } = useFileUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-
-  const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [tickets, setTickets] = useState<TicketView[]>([]);
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
 
   // Busca tickets do backend ao carregar
   useEffect(() => {
     const fetchTickets = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/support/my-messages`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
+        const data = await apiGet<any[]>("/support/my-messages");
+
+        const mappedTickets: TicketView[] = data.map((item) => ({
+          id: item.id.toString(),
+          subject: item.subject || "Sem assunto",
+          status: item.status || "aberto",
+          lastMessage: item.message,
+          updatedAt: new Date(item.created_at).toLocaleDateString("pt-BR"),
+          unreadCount: 0,
+        }));
+
+        setTickets(mappedTickets);
+
+        const initialMessages: Record<string, ChatMessage[]> = {};
+        data.forEach((item) => {
+          initialMessages[item.id.toString()] = [
+            {
+              id: `msg-${item.id}`,
+              content: item.message,
+              sender: "user",
+              timestamp: formatTime(item.created_at),
+              read: true,
+              attachments: item.attachments?.map((a: any) => a.filename),
             },
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-
-          // Mapeia os dados do backend para o formato do frontend
-          const mappedTickets: Ticket[] = data.map((item: any) => ({
-            id: item.id.toString(),
-            subject: item.subject || "Sem assunto",
-            status: item.status || "aberto",
-            lastMessage: item.message, // Usa a mensagem inicial como última mensagem por enquanto
-            updatedAt: new Date(item.created_at).toLocaleDateString("pt-BR"),
-            unreadCount: 0,
-          }));
-
-          setTickets(mappedTickets);
-
-          // Popula as mensagens iniciais
-          const initialMessages: Record<string, Message[]> = {};
-          data.forEach((item: any) => {
-            initialMessages[item.id.toString()] = [
-              {
-                id: `msg-${item.id}`,
-                content: item.message,
-                sender: "user",
-                timestamp: new Date(item.created_at).toLocaleTimeString(
-                  "pt-BR",
-                  { hour: "2-digit", minute: "2-digit" },
-                ),
-                read: true,
-                attachments: item.attachments?.map((a: any) => a.filename),
-              },
-            ];
-          });
-          setMessages(initialMessages);
-        }
+          ];
+        });
+        setMessages(initialMessages);
       } catch (error) {
         console.error("Erro ao buscar tickets:", error);
       }
@@ -113,208 +86,100 @@ const SuporteCliente = () => {
     fetchTickets();
   }, []);
 
-  // Busca respostas quando um ticket é selecionado
+  // Busca respostas quando um ticket e selecionado
   useEffect(() => {
     if (!selectedTicket) return;
 
     const fetchReplies = async () => {
-      const token = localStorage.getItem("token");
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/support/ticket/${selectedTicket}/replies`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        if (response.ok) {
-          const replies = await response.json();
+        const replies = await apiGet<any[]>(`/support/ticket/${selectedTicket}/replies`);
 
-          const mappedReplies: Message[] = replies.map((r: any) => ({
-            id: `reply-${r.id}`,
-            content: r.message,
-            sender: r.sender_type,
-            timestamp: new Date(r.created_at).toLocaleTimeString("pt-BR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            read: true,
-            attachments: r.attachments?.map((a: any) => a.filename),
-          }));
+        const mappedReplies: ChatMessage[] = replies.map((r) => ({
+          id: `reply-${r.id}`,
+          content: r.message,
+          sender: r.sender_type,
+          timestamp: formatTime(r.created_at),
+          read: true,
+          attachments: r.attachments?.map((a: any) => a.filename),
+        }));
 
-          // Combina a mensagem inicial com as respostas
-          setMessages((prev) => {
-            const currentMessages = prev[selectedTicket] || [];
-            const initialMsg =
-              currentMessages.length > 0 ? currentMessages[0] : null;
-            return {
-              ...prev,
-              [selectedTicket]: initialMsg
-                ? [initialMsg, ...mappedReplies]
-                : mappedReplies,
-            };
-          });
-        }
+        setMessages((prev) => {
+          const currentMessages = prev[selectedTicket] || [];
+          const initialMsg = currentMessages.length > 0 ? currentMessages[0] : null;
+          return {
+            ...prev,
+            [selectedTicket]: initialMsg ? [initialMsg, ...mappedReplies] : mappedReplies,
+          };
+        });
       } catch (error) {
         console.error("Erro ao buscar respostas:", error);
       }
     };
 
     fetchReplies();
-    const intervalId = setInterval(fetchReplies, 3000); // Atualiza a cada 3 segundos
-
+    const intervalId = setInterval(fetchReplies, 3000);
     return () => clearInterval(intervalId);
   }, [selectedTicket]);
 
   const sendMessage = async () => {
-    if ((!newMessage.trim() && attachments.length === 0) || !selectedTicket)
-      return;
+    if ((!newMessage.trim() && attachments.length === 0) || !selectedTicket) return;
 
-    const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("message", newMessage);
-    attachments.forEach((file) => {
-      formData.append("attachments", file);
-    });
+    attachments.forEach((file) => formData.append("attachments", file));
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/support/ticket/${selectedTicket}/reply`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        },
-      );
+      const reply = await apiPostForm<any>(`/support/ticket/${selectedTicket}/reply`, formData);
 
-      if (response.ok) {
-        const reply = await response.json();
-        // Atualiza a UI localmente (ou poderia recarregar as respostas)
-        const newMsg: Message = {
-          id: `reply-${reply.id}`,
-          content: reply.message,
-          sender: "user",
-          timestamp: new Date().toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          read: true,
-          attachments: reply.attachments?.map((a: any) => a.filename),
-        };
+      const newMsg: ChatMessage = {
+        id: `reply-${reply.id}`,
+        content: reply.message,
+        sender: "user",
+        timestamp: formatTime(new Date().toISOString()),
+        read: true,
+        attachments: reply.attachments?.map((a: any) => a.filename),
+      };
 
-        setMessages((prev) => ({
-          ...prev,
-          [selectedTicket]: [...(prev[selectedTicket] || []), newMsg],
-        }));
+      setMessages((prev) => ({
+        ...prev,
+        [selectedTicket]: [...(prev[selectedTicket] || []), newMsg],
+      }));
 
-        setNewMessage("");
-        setAttachments([]);
-        toast({
-          title: "Mensagem enviada",
-          description: "Sua resposta foi registrada.",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Falha ao enviar mensagem.",
-        variant: "destructive",
-      });
+      setNewMessage("");
+      clearFiles();
+      toast({ title: "Mensagem enviada", description: "Sua resposta foi registrada." });
+    } catch {
+      toast({ title: "Erro", description: "Falha ao enviar mensagem.", variant: "destructive" });
     }
   };
 
   const createTicket = async () => {
     if (!newTicketSubject.trim() || !newTicketMessage.trim()) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha o assunto e a mensagem.",
-        variant: "destructive",
-      });
+      toast({ title: "Campos obrigatorios", description: "Preencha o assunto e a mensagem.", variant: "destructive" });
       return;
     }
 
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
-    const user = userStr
-      ? JSON.parse(userStr)
-      : { name: "Cliente", email: "", phone: "" };
+    const user = getUser() || { name: "Cliente", email: "", phone: "" };
 
     const formData = new FormData();
     formData.append("name", user.name);
     formData.append("email", user.email);
-    formData.append("phone", user.phone);
+    formData.append("phone", user.phone || "");
     formData.append("subject", newTicketSubject);
     formData.append("message", newTicketMessage);
     formData.append("priority", "high");
-
-    attachments.forEach((file) => {
-      formData.append("attachments", file);
-    });
+    attachments.forEach((file) => formData.append("attachments", file));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/support/ticket`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        toast({
-          title: `Ticket ${data.id} criado`,
-          description:
-            "Seu ticket foi criado com sucesso. Recarregue a página para vê-lo na lista.",
-        });
-        setShowNewTicket(false);
-        setNewTicketSubject("");
-        setNewTicketMessage("");
-        setAttachments([]);
-        // Opcional: Recarregar a lista de tickets aqui chamando fetchTickets novamente
-        window.location.reload();
-      } else {
-        throw new Error("Falha ao criar ticket");
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar o ticket. Tente novamente.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "aberto":
-        return "bg-secondary/10 text-secondary";
-      case "em_andamento":
-        return "bg-primary/10 text-primary";
-      case "resolvido":
-        return "bg-muted text-muted-foreground";
-      default:
-        return "";
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "aberto":
-        return "Aberto";
-      case "em_andamento":
-        return "Em Andamento";
-      case "resolvido":
-        return "Resolvido";
-      default:
-        return status;
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setAttachments(Array.from(e.target.files));
+      const data = await apiPostForm<{ id: string }>("/support/ticket", formData);
+      toast({ title: `Ticket ${data.id} criado`, description: "Seu ticket foi criado com sucesso." });
+      setShowNewTicket(false);
+      setNewTicketSubject("");
+      setNewTicketMessage("");
+      clearFiles();
+      window.location.reload();
+    } catch {
+      toast({ title: "Erro", description: "Nao foi possivel criar o ticket. Tente novamente.", variant: "destructive" });
     }
   };
 
@@ -401,7 +266,7 @@ const SuporteCliente = () => {
                           ticket.status,
                         )}`}
                       >
-                        {getStatusText(ticket.status)}
+                        {getStatusLabel(ticket.status)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
@@ -594,11 +459,7 @@ const SuporteCliente = () => {
                             </div>
                           )}
                           <button
-                            onClick={() =>
-                              setAttachments((prev) =>
-                                prev.filter((_, i) => i !== index),
-                              )
-                            }
+                            onClick={() => removeFile(index)}
                             className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="w-3 h-3" />

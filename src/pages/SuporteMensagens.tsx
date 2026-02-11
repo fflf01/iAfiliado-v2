@@ -10,7 +10,6 @@ import {
   Clock,
   AlertCircle,
   CheckCircle,
-  Filter,
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,8 +18,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { apiGet } from "@/lib/api-client";
 import "@/Stilos/stilo.css";
-import { API_BASE_URL } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -43,30 +42,18 @@ const SuporteMensagens = () => {
 
   useEffect(() => {
     const fetchMessages = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       try {
-        const response = await fetch(`${API_BASE_URL}/support/messages`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Mapeia os dados do backend para o formato da interface Message
-          const mappedMessages: Message[] = data.map((msg: any) => ({
-            id: msg.id.toString(),
-            subject: msg.subject,
-            preview: msg.message,
-            sender: msg.name,
-            date: msg.created_at,
-            status: msg.status || "unread",
-            priority: msg.priority || "medium",
-          }));
-          setMessages(mappedMessages);
-        }
+        const data = await apiGet<any[]>("/support/messages");
+        const mappedMessages: Message[] = data.map((msg) => ({
+          id: msg.id.toString(),
+          subject: msg.subject,
+          preview: msg.message,
+          sender: msg.name,
+          date: msg.created_at,
+          status: msg.status || "unread",
+          priority: msg.priority || "medium",
+        }));
+        setMessages(mappedMessages);
       } catch (error) {
         console.error("Erro ao buscar mensagens:", error);
       }

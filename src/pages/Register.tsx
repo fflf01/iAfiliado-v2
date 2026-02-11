@@ -14,9 +14,12 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiPost } from "@/lib/api-client";
+import { setAuth, clearAuth } from "@/lib/auth";
+import { formatPhoneNumber } from "@/lib/format";
+import type { AuthResponse } from "@/types";
 import "@/Stilos/stilo.css";
 import IAfiliadoSection from "@/components/IAfiliadoSection";
-import { API_BASE_URL } from "@/lib/api";
 
 const Register = () => {
   const { toast } = useToast();
@@ -35,17 +38,8 @@ const Register = () => {
   });
 
   useEffect(() => {
-    // Garante que não haja sessão ativa ao tentar criar uma nova conta
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearAuth();
   }, []);
-
-  const formatPhoneNumber = (value: string) => {
-    let phoneValue = value.replace(/\D/g, "");
-    if (phoneValue.length > 11) phoneValue = phoneValue.slice(0, 11);
-    phoneValue = phoneValue.replace(/^(\d{2})(\d)/g, "($1) $2");
-    return phoneValue.replace(/(\d)(\d{4})$/, "$1-$2");
-  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -110,51 +104,28 @@ const Register = () => {
 
     setIsLoading(true);
 
-    const data = {
-      name: formData.nome,
-      login: formData.login,
-      email: formData.email,
-      password_hash: formData.password,
-      phone: formData.telefone,
-      Tipo_Cliente: formData.iAfiliadoType,
-      Tele_An:
-        formData.iAfiliadoType !== "influencer" ? formData.analysisContact : "",
-      Rede_An:
-        formData.iAfiliadoType === "influencer" ? formData.analysisContact : "",
-    };
-
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+      const responseData = await apiPost<AuthResponse>("/register", {
+        name: formData.nome,
+        login: formData.login,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.telefone,
+        Tipo_Cliente: formData.iAfiliadoType,
+        Tele_An:
+          formData.iAfiliadoType !== "influencer" ? formData.analysisContact : "",
+        Rede_An:
+          formData.iAfiliadoType === "influencer" ? formData.analysisContact : "",
       });
 
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(
-          "Erro de conexão: O servidor retornou HTML em vez de JSON. Verifique se o backend está rodando na porta correta."
-        );
-      }
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || "Erro ao realizar cadastro");
-      }
-
-      // Salva o token e redireciona
-      localStorage.setItem("token", responseData.token);
-      localStorage.setItem("user", JSON.stringify(responseData.user));
+      setAuth(responseData.token, responseData.user);
 
       toast({
         title: "Cadastro realizado!",
-        description: "Bem-vindo! Você já está logado.",
+        description: "Bem-vindo! Voce ja esta logado.",
       });
 
-      navigate("/dashboard"); // Redireciona para a área logada (ajuste a rota conforme necessário)
+      navigate("/dashboard");
     } catch (error) {
       toast({
         variant: "destructive",

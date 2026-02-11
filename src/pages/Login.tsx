@@ -5,24 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiPost } from "@/lib/api-client";
+import { setAuth, clearAuth } from "@/lib/auth";
+import type { AuthResponse } from "@/types";
 import "@/Stilos/stilo.css";
-import { API_BASE_URL } from "@/lib/api";
 
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    login: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ login: "", password: "" });
 
   useEffect(() => {
-    // Limpa o token ao entrar na página de login para evitar redirecionamento automático
-    // e garantir que o usuário precise se autenticar novamente.
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearAuth();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,45 +31,14 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      console.log("Tentando fazer login em:", `${API_BASE_URL}/login`);
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          login: formData.login,
-          password: formData.password,
-        }),
+      const data = await apiPost<AuthResponse>("/login", {
+        login: formData.login,
+        password: formData.password,
       });
 
-      console.log("Status da resposta:", response.status);
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(
-          "Erro de conexão: O servidor retornou uma resposta inesperada."
-        );
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao fazer login");
-      }
-
-      console.log("Dados recebidos:", data);
-
-      // 1️⃣ Salva o token
-      localStorage.setItem("token", data.token);
-      // Salva o objeto do usuário inteiro para uso posterior (ex: verificar se é admin)
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      // 2️⃣ Redireciona
-      console.log("Redirecionando para /dashboard...");
+      setAuth(data.token, data.user);
       navigate("/dashboard");
     } catch (err) {
-      console.error(err);
       toast({
         variant: "destructive",
         title: "Erro",
