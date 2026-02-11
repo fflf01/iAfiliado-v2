@@ -47,7 +47,7 @@ app.use(
         }
       : false,
     crossOriginEmbedderPolicy: false,
-  })
+  }),
 );
 
 // --- Rate Limiting global ---
@@ -58,7 +58,7 @@ app.use(
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Muitas requisicoes. Tente novamente mais tarde." },
-  })
+  }),
 );
 
 // --- CORS ---
@@ -76,12 +76,13 @@ app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (!isProduction && corsOrigins.length === 0) return callback(null, true);
+      if (!isProduction && corsOrigins.length === 0)
+        return callback(null, true);
       if (corsOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Origem nao permitida pelo CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 // --- Body parser com limite ---
@@ -102,3 +103,11 @@ const port = Number(process.env.PORT) || 3000;
 app.listen(port, () => {
   if (!isProduction) console.log(`Servidor rodando na porta ${port}`);
 });
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(3000, () => {
+    console.log("Servidor local rodando");
+  });
+}
+
+module.exports = app;

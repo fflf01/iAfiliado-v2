@@ -180,7 +180,7 @@ const LinkPage = () => {
             </div>
             <div className="flex items-end gap-2">
               <Button variant="neon" onClick={createNewLink} className="flex-1">
-                Links
+                Criar Link
               </Button>
               <Button
                 variant="outline"
