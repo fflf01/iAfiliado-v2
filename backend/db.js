@@ -1,44 +1,57 @@
 /**
- * Pool de conexoes PostgreSQL com SSL automatico para hosts remotos.
+ * Conexao SQLite com better-sqlite3.
+ * Configura WAL, foreign keys, busy timeout e carrega o schema.
  * @module db
  */
 
-import pg from "pg";
+import Database from "better-sqlite3";
 import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Carrega .env antes de acessar process.env (imports ES Module sao hoisted)
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-const { Pool } = pg;
+// Caminho do banco (configuravel via .env)
+const dbPath = process.env.DB_PATH
+  ? path.resolve(__dirname, process.env.DB_PATH)
+  : path.join(__dirname, "data", "iafiliado.db");
+
+// Garante que o diretorio existe
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+// Abre o banco
+const db = new Database(dbPath);
+
+// PRAGMAs de seguranca e performance
+db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
+db.pragma("busy_timeout = 5000");
+
+// Carrega e executa o schema (CREATE TABLE IF NOT EXISTS — idempotente)
+const schemaPath = path.join(__dirname, "schema.sql");
+if (fs.existsSync(schemaPath)) {
+  const schemaSql = fs.readFileSync(schemaPath, "utf-8");
+  db.exec(schemaSql);
+}
+
+// Verifica saude do banco na inicializacao
 const isProduction = process.env.NODE_ENV === "production";
-
-const dbConfig = {
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME || "postgres",
-  user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD,
-  statement_timeout: 30000, // 30s timeout para queries
-};
-
-if (!dbConfig.password) {
-  console.warn("Aviso: DB_PASSWORD nao definido nas variaveis de ambiente.");
+if (!isProduction) {
+  const integrity = db.pragma("integrity_check");
+  const status = integrity[0]?.integrity_check || "ok";
+  if (status === "ok") {
+    console.log("SQLite conectado:", dbPath);
+  } else {
+    console.error("AVISO: integrity_check retornou:", status);
+  }
 }
 
-// SSL automatico para hosts remotos (ex: Supabase)
-if (dbConfig.host !== "localhost" && dbConfig.host !== "127.0.0.1") {
-  dbConfig.ssl = { rejectUnauthorized: false };
-}
-
-export const pool = new Pool(dbConfig);
-
-pool
-  .query("SELECT 1")
-  .then(() => {
-    if (!isProduction) console.log("Conectado ao PostgreSQL");
-  })
-  .catch((err) => console.error("Erro ao conectar ao PostgreSQL:", err.message));
+export default db;

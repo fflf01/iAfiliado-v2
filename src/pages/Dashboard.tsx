@@ -205,7 +205,7 @@ const Dashboard = () => {
             <span className="text-muted-foreground hidden sm:block">
               Olá,{" "}
               <span className="text-foreground font-medium">
-                {user?.name || "Afiliado"}
+                {user?.full_name || "Afiliado"}
               </span>
             </span>
             {user?.is_admin && (

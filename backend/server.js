@@ -14,6 +14,7 @@ import { fileURLToPath } from "url";
 import routes from "./routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { RATE_LIMIT } from "./config/constants.js";
+import db from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,6 +92,11 @@ app.use(express.json({ limit: "1mb" }));
 // --- Uploads estaticos ---
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// --- Health check (antes das rotas — nao requer auth nem rate limit) ---
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok", uptime: Math.floor(process.uptime()) });
+});
+
 // --- Rotas ---
 app.use(routes);
 
@@ -100,8 +106,32 @@ app.use(errorHandler);
 // --- Inicializa servidor ---
 const port = Number(process.env.PORT) || 3000;
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
+
+// --- Graceful shutdown (fecha DB e conexoes antes de encerrar) ---
+function shutdown(signal) {
+  console.log(`\n${signal} recebido. Encerrando servidor...`);
+  server.close(() => {
+    try {
+      db.close();
+      console.log("Banco SQLite fechado.");
+    } catch {
+      // banco ja fechado
+    }
+    console.log("Servidor encerrado.");
+    process.exit(0);
+  });
+
+  // Forca encerramento apos 10s se o server.close nao completar
+  setTimeout(() => {
+    console.error("Timeout no shutdown. Forcando encerramento.");
+    process.exit(1);
+  }, 10_000);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 export default app;

@@ -1,7 +1,7 @@
 /**
  * Middleware centralizado de tratamento de erros.
  * asyncHandler elimina try-catch repetitivos nos route handlers.
- * errorHandler trata erros conhecidos (Postgres, Multer) e retorna respostas seguras.
+ * errorHandler trata erros conhecidos (SQLite, Multer) e retorna respostas seguras.
  * @module middleware/errorHandler
  */
 
@@ -41,15 +41,30 @@ export function errorHandler(err, req, res, _next) {
     return res.status(400).json({ error: "Tipo de arquivo nao permitido." });
   }
 
-  // Violacao de unicidade do Postgres (email/login duplicado)
-  if (err.code === "23505") {
-    if (err.detail?.includes("email")) {
+  // Violacao de unicidade do SQLite (email/username duplicado)
+  if (err.message && err.message.includes("UNIQUE constraint failed")) {
+    if (err.message.includes("email")) {
       return res.status(409).json({ error: "Este e-mail ja esta em uso." });
     }
-    if (err.detail?.includes("login")) {
+    if (err.message.includes("username")) {
       return res.status(409).json({ error: "Este login ja esta em uso." });
     }
     return res.status(409).json({ error: "Registro duplicado." });
+  }
+
+  // Violacao de NOT NULL do SQLite
+  if (err.message && err.message.includes("NOT NULL constraint failed")) {
+    return res.status(400).json({ error: "Campo obrigatorio nao preenchido." });
+  }
+
+  // Violacao de CHECK constraint do SQLite
+  if (err.message && err.message.includes("CHECK constraint failed")) {
+    return res.status(400).json({ error: "Valor invalido para o campo." });
+  }
+
+  // Violacao de FOREIGN KEY do SQLite
+  if (err.message && err.message.includes("FOREIGN KEY constraint failed")) {
+    return res.status(400).json({ error: "Referencia invalida." });
   }
 
   // Log do erro para debugging (apenas em desenvolvimento mostra stack)

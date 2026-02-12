@@ -4,11 +4,11 @@
  */
 
 import bcrypt from "bcrypt";
-import { pool } from "../db.js";
+import db from "../db.js";
 import { generateToken } from "../utils/jwt.js";
 
 /**
- * Autentica por email ou login e senha. Compara senha com bcrypt e retorna JWT.
+ * Autentica por email ou username e senha. Compara senha com bcrypt e retorna JWT.
  * @param {import("express").Request} req - Body: email ou login, password
  * @param {import("express").Response} res - 200 { message, user, token } | 400 | 401
  */
@@ -20,16 +20,14 @@ export async function login(req, res) {
     return res.status(400).json({ error: "Email/Login e senha sao obrigatorios." });
   }
 
-  const result = await pool.query(
-    "SELECT id, name, login, email, phone, password_hash, is_admin FROM clients WHERE email = $1 OR login = $1",
-    [identifier]
-  );
+  const user = db
+    .prepare("SELECT id, username, full_name, email, phone, password_hash, is_admin FROM users WHERE email = ? OR username = ?")
+    .get(identifier, identifier);
 
-  if (result.rowCount === 0) {
+  if (!user) {
     return res.status(401).json({ error: "Credenciais invalidas." });
   }
 
-  const user = result.rows[0];
   const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
   if (!passwordMatch) {
@@ -45,10 +43,18 @@ export async function login(req, res) {
 }
 
 /**
- * Retorna o usuario autenticado (payload do JWT em req.user).
+ * Retorna o perfil atualizado do usuario autenticado (dados frescos do DB).
  * @param {import("express").Request} req
- * @param {import("express").Response} res - 200 { message, user }
+ * @param {import("express").Response} res - 200 { message, user } | 404
  */
 export function getProfile(req, res) {
-  res.json({ message: "Usuario autenticado.", user: req.user });
+  const user = db
+    .prepare("SELECT id, username, full_name, email, phone, is_admin FROM users WHERE id = ?")
+    .get(req.user.id);
+
+  if (!user) {
+    return res.status(404).json({ error: "Usuario nao encontrado." });
+  }
+
+  res.json({ message: "Usuario autenticado.", user });
 }

@@ -159,10 +159,10 @@ const SuporteCliente = () => {
       return;
     }
 
-    const user = getUser() || { name: "Cliente", email: "", phone: "" };
+    const user = getUser() || { full_name: "Cliente", email: "", phone: "" };
 
     const formData = new FormData();
-    formData.append("name", user.name);
+    formData.append("name", user.full_name);
     formData.append("email", user.email);
     formData.append("phone", user.phone || "");
     formData.append("subject", newTicketSubject);

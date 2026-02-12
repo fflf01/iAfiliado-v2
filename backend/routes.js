@@ -39,6 +39,15 @@ const authLimiter = rateLimit({
   message: { error: "Muitas tentativas de autenticacao. Tente em 15 minutos." },
 });
 
+// --- Rate Limiting para suporte (evita spam de tickets) ---
+const supportLimiter = rateLimit({
+  windowMs: RATE_LIMIT.SUPPORT.WINDOW_MS,
+  max: RATE_LIMIT.SUPPORT.MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Muitas requisicoes de suporte. Tente novamente mais tarde." },
+});
+
 // --- Multer (Upload de arquivos) ---
 
 /**
@@ -120,9 +129,9 @@ router.post("/register", authLimiter, registerRules, handleValidationErrors, asy
 router.post("/login", authLimiter, loginRules, handleValidationErrors, asyncHandler(login));
 
 // --- Rotas de suporte ---
-router.post("/support", upload.array("attachments", UPLOAD.MAX_FILES), supportRules, handleValidationErrors, asyncHandler(saveSupportMessage));
-router.post("/support/ticket", authMiddleware, upload.array("attachments", UPLOAD.MAX_FILES), supportRules, handleValidationErrors, asyncHandler(createSupportTicket));
-router.post("/support/ticket/:id/reply", authMiddleware, upload.array("attachments", UPLOAD.MAX_FILES), replyRules, handleValidationErrors, asyncHandler(addReply));
+router.post("/support", supportLimiter, upload.array("attachments", UPLOAD.MAX_FILES), supportRules, handleValidationErrors, asyncHandler(saveSupportMessage));
+router.post("/support/ticket", authMiddleware, supportLimiter, upload.array("attachments", UPLOAD.MAX_FILES), supportRules, handleValidationErrors, asyncHandler(createSupportTicket));
+router.post("/support/ticket/:id/reply", authMiddleware, supportLimiter, upload.array("attachments", UPLOAD.MAX_FILES), replyRules, handleValidationErrors, asyncHandler(addReply));
 router.get("/support/ticket/:id/replies", authMiddleware, ticketIdRule, handleValidationErrors, asyncHandler(getTicketReplies));
 router.get("/support/my-messages", authMiddleware, asyncHandler(getClientMessages));
 

@@ -2,8 +2,8 @@
 
 export interface User {
   id: number;
-  name: string;
-  login: string;
+  full_name: string;
+  username: string;
   email: string;
   phone?: string;
   is_admin: boolean;
@@ -40,7 +40,6 @@ export interface Attachment {
   filename: string;
   path: string;
   mimetype: string;
-  created_at: string;
 }
 
 export interface ApiError {

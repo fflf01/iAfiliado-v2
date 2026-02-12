@@ -4,14 +4,14 @@
  */
 
 import bcrypt from "bcrypt";
-import { pool } from "../db.js";
+import db from "../db.js";
 import { generateToken } from "../utils/jwt.js";
 import { AUTH } from "../config/constants.js";
 
 /**
- * Registra um novo cliente. Faz hash da senha, insere no banco e retorna JWT.
+ * Registra um novo usuario. Faz hash da senha, insere no banco e retorna JWT.
  * Validacao de campos e formato e feita pelo express-validator em routes.js.
- * Unicidade e garantida pela constraint do banco (catch no errorHandler).
+ * Unicidade e garantida pela constraint UNIQUE (catch no errorHandler).
  * @param {import("express").Request} req
  * @param {import("express").Response} res - 201 { message, user, token }
  */
@@ -27,14 +27,17 @@ export async function register(req, res) {
 
   const hashedPassword = await bcrypt.hash(password, AUTH.SALT_ROUNDS);
 
-  const result = await pool.query(
-    `INSERT INTO clients (name, login, email, password_hash, phone, tipo_cliente, tele_an, rede_an)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id, name, login, email, phone, is_admin`,
-    [name, login, email, hashedPassword, phone, Tipo_Cliente, Tele_An, Rede_An]
-  );
+  const result = db
+    .prepare(
+      `INSERT INTO users (username, full_name, email, password_hash, phone, tipo_cliente, tele_an, rede_an)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(login, name, email, hashedPassword, phone || null, Tipo_Cliente || null, Tele_An || null, Rede_An || null);
 
-  const user = result.rows[0];
+  const user = db
+    .prepare("SELECT id, username, full_name, email, phone, is_admin FROM users WHERE id = ?")
+    .get(result.lastInsertRowid);
+
   const token = generateToken(user);
 
   return res.status(201).json({
@@ -49,9 +52,9 @@ export async function register(req, res) {
  * @param {import("express").Request} req
  * @param {import("express").Response} res - 200 array de clientes
  */
-export async function getClients(req, res) {
-  const result = await pool.query(
-    "SELECT id, name, login, email, phone, is_admin FROM clients ORDER BY id DESC"
-  );
-  res.json(result.rows);
+export function getClients(req, res) {
+  const users = db
+    .prepare("SELECT id, username, full_name, email, phone, is_admin FROM users ORDER BY id DESC")
+    .all();
+  res.json(users);
 }
