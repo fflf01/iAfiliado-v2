@@ -1,6 +1,11 @@
 # === Etapa 1: Build ===
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# API_BASE_URL injetada em build-time (Vite substitui no bundle)
+ARG VITE_API_BASE_URL=/api
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 COPY package*.json ./
 RUN npm ci
 COPY . .

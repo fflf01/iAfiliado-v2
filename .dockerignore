@@ -1,5 +1,18 @@
 node_modules
-backend
+npm-debug.log*
+dist
 .git
-.env
+
+# Backend (tem seu proprio Dockerfile)
+backend/node_modules
+backend/data
+backend/uploads
+backend/.env
+
+# Testes e configs de dev
 *.md
+.vscode
+.cursor
+.eslintcache
+coverage
+.nyc_output

@@ -1,9 +1,16 @@
 node_modules
 npm-debug.log*
+
+# Dados locais (persistidos via volumes Docker)
 uploads
 data/*.db
 data/*.db-wal
 data/*.db-shm
 data/backups/
+
+# Segredos (injetados via env_file no docker-compose)
+.env
 .env.example
+
+# Documentacao
 *.md
