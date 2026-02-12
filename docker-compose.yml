@@ -1,9 +1,10 @@
 services:
   backend:
     build: ./backend
-    env_file: ./backend/.env
     environment:
       NODE_ENV: development
+    volumes:
+      - backend-uploads:/app/uploads
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -14,4 +15,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    depends_on:
+      - backend
     restart: unless-stopped
+
+volumes:
+  backend-uploads:
