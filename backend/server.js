@@ -101,13 +101,7 @@ app.use(errorHandler);
 const port = Number(process.env.PORT) || 3000;
 
 app.listen(port, () => {
-  if (!isProduction) console.log(`Servidor rodando na porta ${port}`);
+  console.log(`Servidor rodando na porta ${port}`);
 });
-
-if (process.env.NODE_ENV !== "production") {
-  app.listen(3000, () => {
-    console.log("Servidor local rodando");
-  });
-}
 
 export default app;
