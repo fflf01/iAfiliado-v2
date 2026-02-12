@@ -42,14 +42,15 @@ if (fs.existsSync(schemaPath)) {
   db.exec(schemaSql);
 }
 
-// Verifica saude do banco na inicializacao
+// Log de conexao (visivel em qualquer ambiente)
+console.log("SQLite conectado:", dbPath);
+
+// Verifica saude do banco na inicializacao (apenas em dev)
 const isProduction = process.env.NODE_ENV === "production";
 if (!isProduction) {
   const integrity = db.pragma("integrity_check");
   const status = integrity[0]?.integrity_check || "ok";
-  if (status === "ok") {
-    console.log("SQLite conectado:", dbPath);
-  } else {
+  if (status !== "ok") {
     console.error("AVISO: integrity_check retornou:", status);
   }
 }

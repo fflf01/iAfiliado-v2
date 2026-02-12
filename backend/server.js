@@ -69,16 +69,16 @@ const corsOrigins = (process.env.CORS_ORIGINS || "")
   .filter(Boolean);
 
 if (isProduction && corsOrigins.length === 0) {
-  console.error("CORS_ORIGINS nao definido em producao. Configure no .env.");
-  process.exit(1);
+  console.warn(
+    "AVISO: CORS_ORIGINS nao definido em producao. Todas as origens serao permitidas.",
+  );
 }
 
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (!isProduction && corsOrigins.length === 0)
-        return callback(null, true);
+      if (corsOrigins.length === 0) return callback(null, true);
       if (corsOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Origem nao permitida pelo CORS"));
     },
@@ -108,6 +108,14 @@ const port = Number(process.env.PORT) || 3000;
 
 const server = app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
+});
+
+server.on("error", (err) => {
+  console.error(
+    `Erro critico ao iniciar servidor na porta ${port}:`,
+    err.message,
+  );
+  process.exit(1);
 });
 
 // --- Graceful shutdown (fecha DB e conexoes antes de encerrar) ---
