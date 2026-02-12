@@ -1,0 +1,18 @@
+services:
+ backend:
+ build: ./backend
+ environment:
+ NODE_ENV: development
+ SUPABASE_URL: "VITE_SUPABASE_UR"
+ SUPABASE_ANON_KEY: "VITE_SUPABASE_ANON_KEY"
+ # Se o backend precisar de privilégios elevados (admin), use SOMENTE no backend:
+ # SUPABASE_SERVICE_ROLE_KEY: "SUA_SERVICE_ROLE_KEY"
+ ports:
+ - "3000:3000"
+ restart: unless-stopped
+
+ frontend:
+ build: ./frontend
+ ports:
+ - "8080:8080"
+ restart: unless-stopped
