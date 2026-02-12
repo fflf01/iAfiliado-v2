@@ -32,8 +32,8 @@ import {
 import "@/Stilos/stilo.css";
 import { useAuth } from "@/hooks/useAuth";
 import PlataformasD from "./Plataformas_D";
-import LinkPage from "@/LinkPage";
-import CarteiraPage from "@/pages/Carteira";
+import LinkPage from "./LinkPage";
+import CarteiraPage from "./Carteira";
 
 // Mock data for charts
 const performanceData = [
