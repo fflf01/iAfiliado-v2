@@ -196,13 +196,13 @@ const Dashboard = () => {
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl font-display font-bold texto-gradiente-secundario">
-              <img src="/iAfiliado.png" alt="iAfiliado" className="h-36" />
+            <span className="font-display font-bold texto-gradiente-secundario">
+              <img src="/iAfiliado.png" alt="iAfiliado" className="h-44 md:h-48" />
             </span>
           </Link>
 
           <div className="flex items-center gap-4">
-            <span className="text-muted-foreground hidden sm:block">
+            <span className="text-sm text-muted-foreground hidden sm:block">
               Olá,{" "}
               <span className="text-foreground font-medium">
                 {user?.full_name || "Afiliado"}
@@ -240,7 +240,7 @@ const Dashboard = () => {
                 return (
                   <Link key={index} to={item.path || "#"} className={className}>
                     <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                   </Link>
                 );
               })}
@@ -254,11 +254,11 @@ const Dashboard = () => {
               {/* Page Title */}
               <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
+                  <h1 className="text-2xl md:text-3xl font-display font-bold mb-2">
                     <span className="text-foreground">Painel do </span>
                     <span className="texto-gradiente-destaque">Afiliado</span>
                   </h1>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     Acompanhe suas estatísticas e gerencie seus links de afiliado
                   </p>
                 </div>
@@ -316,7 +316,7 @@ const Dashboard = () => {
                     <p className="text-muted-foreground text-sm mb-1">
                       {stat.title}
                     </p>
-                    <p className="text-2xl font-display font-bold text-foreground">
+                    <p className="text-xl font-display font-bold text-foreground">
                       {stat.value}
                     </p>
                   </Card>
@@ -327,7 +327,7 @@ const Dashboard = () => {
               <Card className="bg-card/80 border-border/50 p-6 mb-8">
                 <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
                   <div>
-                    <h2 className="text-xl font-display font-bold text-foreground">
+                    <h2 className="text-lg font-display font-bold text-foreground">
                       Depósitos e FTDs
                     </h2>
                     <p className="text-muted-foreground text-sm">
