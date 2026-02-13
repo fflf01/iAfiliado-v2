@@ -3,11 +3,6 @@ services:
     build: ./backend
     environment:
       - NODE_ENV=production
-      - JWT_SECRET=${JWT_SECRET}
-      - DB_PATH=${DB_PATH}
-      - CORS_ORIGINS=${CORS_ORIGINS}
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
-
     volumes:
       - /docker/iafiliado/backend/.env:/app/.env:ro
       - backend-data:/app/data
