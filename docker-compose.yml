@@ -3,12 +3,12 @@ services:
     build: ./backend
     environment:
       - NODE_ENV=production
+    expose:
+      - "3000"
     volumes:
       - /docker/iafiliado/backend/.env:/app/.env:ro
       - backend-data:/app/data
       - backend-uploads:/app/uploads
-    ports:
-      - "3000:3000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
