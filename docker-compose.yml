@@ -23,8 +23,7 @@ services:
       args:
         VITE_API_BASE_URL: /api
     ports:
-      - "443:8080"
-      - "443:443"
+      - "8080"
     depends_on:
       backend:
         condition: service_healthy
