@@ -77,9 +77,14 @@ if (isProduction && corsOrigins.length === 0) {
 app.use(
   cors({
     origin: (origin, callback) => {
+      // Sem Origin (ex: chamadas server-to-server, healthcheck)
       if (!origin) return callback(null, true);
+      // Nenhuma origem configurada — aceita tudo
       if (corsOrigins.length === 0) return callback(null, true);
+      // Origem na lista de permitidas
       if (corsOrigins.includes(origin)) return callback(null, true);
+      // Log para diagnostico antes de rejeitar
+      console.warn(`CORS bloqueou origem: ${origin} (permitidas: ${corsOrigins.join(", ")})`);
       return callback(new Error("Origem nao permitida pelo CORS"));
     },
     credentials: true,
