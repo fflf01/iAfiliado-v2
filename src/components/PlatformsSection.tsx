@@ -9,14 +9,14 @@ import "swiper/css/navigation";
 
 const PlatformsSection = () => {
   return (
-    <section className="py-24 px-4 relative overflow-hidden">
+    <section className="py-14 px-4 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-principal-suave opacity-50 rounded-full blur-[200px]" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secundario-suave rounded-full blur-[180px]" />
 
       <div className="container mx-auto relative z-10">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
             Plataformas{" "}
             <span className="texto-gradiente-destaque">Parceiras</span>
           </h2>

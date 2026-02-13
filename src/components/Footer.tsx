@@ -4,17 +4,17 @@ import "@/Stilos/stilo.css";
 
 const Footer = () => {
   return (
-    <footer className="py-16 px-4 border-t border-border/30 bg-casino-dark">
+    <footer className="py-10 px-4 border-t border-border/30 bg-casino-dark">
       <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl font-display font-bold texto-gradiente-secundario">
-                <img src="/iAfiliado.png" alt="iAfiliado" className="h-36" />
+                <img src="/iAfiliado.png" alt="iAfiliado" className="h-20" />
               </span>
             </div>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
               O programa de afiliados mais lucrativo do Brasil. Transforme sua
               audiência em renda passiva.
             </p>

@@ -6,7 +6,7 @@ import heroBg from "@/assets/hero-casino-bg.jpg";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -23,10 +23,10 @@ const HeroSection = () => {
       <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-secundario-suave rounded-full blur-[150px] animate-pulse" />
 
       {/* Content */}
-      <div className="container mx-auto px-4 relative z-10 pt-20">
-        <div className="max-w-4xl mx-auto text-center">
+      <div className="container mx-auto px-4 relative z-10 pt-16">
+        <div className="max-w-3xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secundario-suave border borda-secundaria-suave mb-8 animate-float">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secundario-suave border borda-secundaria-suave mb-6 animate-float">
             <span className="w-2 h-2 rounded-full bg-principal animate-pulse" />
             <span className="texto-secundario text-sm font-semibold uppercase tracking-wider">
               Programa de Afiliados #1 do Brasil
@@ -34,7 +34,7 @@ const HeroSection = () => {
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-6 leading-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black mb-4 leading-tight">
             <span className="text-foreground">Ganhe </span>
             <span className="texto-gradiente-secundario">Dinheiro</span>
             <br />
@@ -43,16 +43,16 @@ const HeroSection = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
             Torne-se um afiliado de sucesso e ganhe comissões de até{" "}
             <span className="texto-secundario font-semibold">50%</span>{" "}
             indicando as melhores plataformas de casino online do mercado.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Link to="/login">
-              <Button size="xl" className="btn-principal group h-auto py-6">
+              <Button size="lg" className="btn-principal group">
                 Começar Agora
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -66,9 +66,9 @@ const HeroSection = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+          <div className="grid grid-cols-3 gap-6 max-w-xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold texto-gradiente-secundario mb-1">
+              <div className="text-2xl md:text-3xl font-display font-bold texto-gradiente-secundario mb-1">
                 R$2M+
               </div>
               <div className="text-sm text-muted-foreground">
@@ -76,7 +76,7 @@ const HeroSection = () => {
               </div>
             </div>
             <div className="text-center border-x border-border/50">
-              <div className="text-3xl md:text-4xl font-display font-bold texto-gradiente-destaque mb-1">
+              <div className="text-2xl md:text-3xl font-display font-bold texto-gradiente-destaque mb-1">
                 5.000+
               </div>
               <div className="text-sm text-muted-foreground">
@@ -84,7 +84,7 @@ const HeroSection = () => {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold texto-gradiente-secundario mb-1">
+              <div className="text-2xl md:text-3xl font-display font-bold texto-gradiente-secundario mb-1">
                 50%
               </div>
               <div className="text-sm text-muted-foreground">

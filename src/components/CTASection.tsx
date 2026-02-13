@@ -5,7 +5,7 @@ import "@/Stilos/stilo.css";
 
 const CTASection = () => {
   return (
-    <section className="py-24 px-4 relative overflow-hidden">
+    <section className="py-14 px-4 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-casino-surface/50 to-background" />
 
@@ -16,15 +16,15 @@ const CTASection = () => {
       <div className="container mx-auto relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           {/* Icon */}
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-gold mb-8 shadow-gold animate-float">
-            <Gift className="w-10 h-10 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-gold mb-6 shadow-gold animate-float">
+            <Gift className="w-7 h-7 text-primary-foreground" />
           </div>
           {/* Heading */}
-          <h2 className="text-4xl md:text-6xl font-display font-black mb-6">
+          <h2 className="text-3xl md:text-4xl font-display font-black mb-4">
             Pronto para{" "}
             <span className="texto-gradiente-secundario">Lucrar</span>?
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
             Cadastre-se agora e receba acesso exclusivo ao nosso programa de
             afiliados.
             <span className="texto-secundario font-semibold">
@@ -33,7 +33,7 @@ const CTASection = () => {
             </span>{" "}
             para os primeiros 100 afiliados!
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <Link to="/cadastro">
               <Button size="xl" className="btn-principal group">
                 Cadastrar Grátis

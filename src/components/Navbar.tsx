@@ -30,7 +30,7 @@ const Navbar = () => {
           <img
             src="/iAfiliado.png"
             alt="iAfiliado"
-            className="h-20 md:h-24 w-auto transition-transform duration-300 hover:scale-105"
+            className="h-14 md:h-16 w-auto transition-transform duration-300 hover:scale-105"
           />
         </Link>
 
