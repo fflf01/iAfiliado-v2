@@ -22,17 +22,20 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          # Registra o host confiável
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          # Registra a chave pública do servidor (ED25519)
+          ssh-keyscan -t ed25519 ${{ secrets.SERVER_HOST }} > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-          # Inicia o agente SSH
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_ed25519
+          # Debug seguro
+          echo "Known hosts configurado:"
+          cat ~/.ssh/known_hosts
 
       - name: Deploy no servidor
         run: |
-          ssh -o StrictHostKeyChecking=yes ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_ed25519 \
+              -o UserKnownHostsFile=~/.ssh/known_hosts \
+              -o StrictHostKeyChecking=yes \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd /docker/iafiliado
             git pull
             docker compose down
