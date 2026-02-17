@@ -18,24 +18,31 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          # Cria a chave privada a partir do secret
+          # Cria a chave privada
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          # Registra a chave pública do servidor (ED25519)
-          ssh-keyscan -t ed25519 ${{ secrets.SERVER_HOST }} > ~/.ssh/known_hosts
+          # Normaliza o host (remove \n e \r invisíveis)
+          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n')
+
+          echo "Host normalizado: $HOST"
+
+          # Registra a chave ED25519 do servidor
+          ssh-keyscan -t ed25519 "$HOST" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-          # Debug seguro
-          echo "Known hosts configurado:"
+          echo "known_hosts configurado:"
           cat ~/.ssh/known_hosts
 
       - name: Deploy no servidor
         run: |
+          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n')
+
           ssh -i ~/.ssh/id_ed25519 \
               -o UserKnownHostsFile=~/.ssh/known_hosts \
               -o StrictHostKeyChecking=yes \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+              -o IdentitiesOnly=yes \
+              ${{ secrets.SERVER_USER }}@$HOST << 'EOF'
             cd /docker/iafiliado
             git pull
             docker compose down
