@@ -18,33 +18,43 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          # Cria a chave privada
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          # Usamos printf para garantir que a chave seja escrita exatamente como está no Secret,
+          # preservando quebras de linha e evitando problemas de escape do shell.
+          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
-          # Normaliza o host (remove \n e \r invisíveis)
-          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n')
+          # Normaliza o host (remove espaços, \n e \r invisíveis que podem corromper o comando)
+          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n ')
+          echo "Host normalizado configurado."
 
-          echo "Host normalizado: $HOST"
-
-          # Registra a chave ED25519 do servidor
-          ssh-keyscan -t ed25519 "$HOST" > ~/.ssh/known_hosts
+          # Registra as chaves do servidor no known_hosts para evitar ataques MITM
+          # Tentamos capturar tanto ed25519 quanto rsa para maior compatibilidade
+          ssh-keyscan -t ed25519 "$HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa "$HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
-
-          echo "known_hosts configurado:"
-          cat ~/.ssh/known_hosts
 
       - name: Deploy no servidor
         run: |
-          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n')
+          # Redefinimos o HOST no escopo deste passo
+          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n ')
 
-          ssh -i ~/.ssh/id_ed25519 \
-              -o UserKnownHostsFile=~/.ssh/known_hosts \
+          # Adicionamos o parâmetro -v (verbose) para que, se falhar, o log mostre o motivo real.
+          # O uso de 'EOF' (com aspas) impede que o shell local tente expandir variáveis do script remoto.
+          ssh -v -i ~/.ssh/id_ed25519 \
               -o StrictHostKeyChecking=yes \
               -o IdentitiesOnly=yes \
               ${{ secrets.SERVER_USER }}@$HOST << 'EOF'
+            set -e
+            echo "Conectado ao servidor. Iniciando comandos de deploy..."
+            
             cd /docker/iafiliado
+            
+            echo "Atualizando código com git pull..."
             git pull
+            
+            echo "Reiniciando containers com Docker Compose..."
             docker compose down
             docker compose up -d --build
+            
+            echo "Deploy finalizado com sucesso!"
           EOF
