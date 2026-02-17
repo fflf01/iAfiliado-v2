@@ -4,57 +4,95 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout do código
+      - name: Checkout do codigo
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Preparar variaveis
+        shell: bash
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
         run: |
+          set -Eeuo pipefail
+
+          HOST="$(echo "${SERVER_HOST:-}" | tr -d '\r\n ')"
+          USER="$(echo "${SERVER_USER:-}" | tr -d '\r\n ')"
+
+          if [[ -z "$HOST" ]]; then
+            echo "Secret SERVER_HOST nao definido." >&2
+            exit 1
+          fi
+
+          if [[ -z "$USER" ]]; then
+            echo "Secret SERVER_USER nao definido." >&2
+            exit 1
+          fi
+
+          echo "DEPLOY_HOST=$HOST" >> "$GITHUB_ENV"
+          echo "DEPLOY_USER=$USER" >> "$GITHUB_ENV"
+
+      - name: Setup SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -Eeuo pipefail
+          umask 077
+
           mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          printf "%s\n" "${SSH_PRIVATE_KEY:-}" > ~/.ssh/id_ed25519
 
-          # Usamos printf para garantir que a chave seja escrita exatamente como está no Secret,
-          # preservando quebras de linha e evitando problemas de escape do shell.
-          printf "%s\n" "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          if [[ ! -s ~/.ssh/id_ed25519 ]]; then
+            echo "Secret SSH_PRIVATE_KEY nao definido." >&2
+            exit 1
+          fi
 
-          # Normaliza o host (remove espaços, \n e \r invisíveis que podem corromper o comando)
-          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n ')
-          echo "Host normalizado configurado."
+          {
+            ssh-keyscan -T 10 -H -t ed25519 "$DEPLOY_HOST" 2>/dev/null || true
+            ssh-keyscan -T 10 -H -t rsa "$DEPLOY_HOST" 2>/dev/null || true
+          } >> ~/.ssh/known_hosts
 
-          # Registra as chaves do servidor no known_hosts para evitar ataques MITM
-          # Tentamos capturar tanto ed25519 quanto rsa para maior compatibilidade
-          ssh-keyscan -t ed25519 "$HOST" >> ~/.ssh/known_hosts
-          ssh-keyscan -t rsa "$HOST" >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          if [[ ! -s ~/.ssh/known_hosts ]]; then
+            echo "Nao foi possivel obter host key para $DEPLOY_HOST." >&2
+            exit 1
+          fi
 
       - name: Deploy no servidor
+        shell: bash
         run: |
-          # Redefinimos o HOST no escopo deste passo
-          HOST=$(echo "${{ secrets.SERVER_HOST }}" | tr -d '\r\n ')
+          set -Eeuo pipefail
 
-          # Adicionamos o parâmetro -v (verbose) para que, se falhar, o log mostre o motivo real.
-          # O uso de 'EOF' (com aspas) impede que o shell local tente expandir variáveis do script remoto.
-          ssh -v -i ~/.ssh/id_ed25519 \
+          ssh -i ~/.ssh/id_ed25519 \
+              -o BatchMode=yes \
+              -o ConnectTimeout=15 \
               -o StrictHostKeyChecking=yes \
               -o IdentitiesOnly=yes \
-              ${{ secrets.SERVER_USER }}@$HOST << 'EOF'
-            set -e
+              "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+            set -Eeuo pipefail
             echo "Conectado ao servidor. Iniciando comandos de deploy..."
-            
+
             cd /docker/iafiliado
-            
-            echo "Atualizando código com git pull..."
-            git pull
-            
+
+            echo "Atualizando codigo com git pull --ff-only..."
+            git pull --ff-only
+
             echo "Reiniciando containers com Docker Compose..."
-            docker compose down
-            docker compose up -d --build
-            
+            docker compose up -d --build --remove-orphans
+            docker compose ps
+
             echo "Deploy finalizado com sucesso!"
           EOF
