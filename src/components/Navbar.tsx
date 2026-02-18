@@ -38,25 +38,25 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8">
           <Link
             to="/como-funciona"
-            className="text-sm text-muted-foreground hover:texto-secundario transition-colors"
+            className="text-xs text-muted-foreground hover:texto-secundario transition-colors"
           >
             Como Funciona
           </Link>
           <Link
             to="/plataformas"
-            className="text-sm text-muted-foreground hover:texto-secundario transition-colors"
+            className="text-xs text-muted-foreground hover:texto-secundario transition-colors"
           >
             Plataformas
           </Link>
           <Link
             to="/comissoes"
-            className="text-sm text-muted-foreground hover:texto-secundario transition-colors"
+            className="text-xs text-muted-foreground hover:texto-secundario transition-colors"
           >
             Comissões
           </Link>
           <Link
             to="/suporte"
-            className="text-sm text-muted-foreground hover:texto-secundario transition-colors"
+            className="text-xs text-muted-foreground hover:texto-secundario transition-colors"
           >
             Suporte
           </Link>
@@ -68,13 +68,13 @@ const Navbar = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="text-muted-foreground hover:text-foreground"
+              className="text-xs text-muted-foreground hover:text-foreground"
             >
               Login
             </Button>
           </Link>
           <Link to="/cadastro">
-            <Button className="btn-principal" size="sm">
+            <Button className="btn-principal text-xs" size="sm">
               Cadastrar
             </Button>
           </Link>
@@ -99,36 +99,36 @@ const Navbar = () => {
           <div className="container mx-auto px-4 flex flex-col gap-4">
             <Link
               to="/como-funciona"
-              className="text-foreground hover:texto-secundario transition-colors py-2"
+              className="text-sm text-foreground hover:texto-secundario transition-colors py-2"
             >
               Como Funciona
             </Link>
             <Link
               to="/plataformas"
-              className="text-foreground hover:texto-secundario transition-colors py-2"
+              className="text-sm text-foreground hover:texto-secundario transition-colors py-2"
             >
               Plataformas
             </Link>
             <Link
               to="/comissoes"
-              className="text-foreground hover:texto-secundario transition-colors py-2"
+              className="text-sm text-foreground hover:texto-secundario transition-colors py-2"
             >
               Comissões
             </Link>
             <Link
               to="/suporte"
-              className="text-foreground hover:texto-secundario transition-colors py-2"
+              className="text-sm text-foreground hover:texto-secundario transition-colors py-2"
             >
               Suporte
             </Link>
             <div className="flex gap-4 pt-4 border-t border-border/50">
               <Link to="/login" className="flex-1">
-                <Button variant="goldOutline" size="sm" className="w-full">
+                <Button variant="goldOutline" size="sm" className="w-full text-xs">
                   Login
                 </Button>
               </Link>
               <Link to="/cadastro" className="flex-1">
-                <Button className="w-full btn-principal" size="sm">
+                <Button className="w-full btn-principal text-xs" size="sm">
                   Cadastrar
                 </Button>
               </Link>
