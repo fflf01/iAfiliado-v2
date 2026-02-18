@@ -165,7 +165,7 @@ const SuporteAdmin = () => {
             <img
               src="/iAfiliado.png"
               alt="iAfiliado"
-              className="h-36 w-auto transition-transform duration-300 hover:scale-105"
+              className="h-40 w-auto transition-transform duration-300 hover:scale-105"
             />
           </Link>
           <Link to="/dashboard">

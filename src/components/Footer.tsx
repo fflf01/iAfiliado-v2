@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl font-display font-bold texto-gradiente-secundario">
-                <img src="/iAfiliado.png" alt="iAfiliado" className="h-20" />
+                <img src="/iAfiliado.png" alt="iAfiliado" className="h-24" />
               </span>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
