@@ -19,7 +19,7 @@ services:
 
   frontend:
     build:
-      context: /docker/iafiliado/frontend
+      context: .
       args:
         VITE_API_BASE_URL: /api
     ports:

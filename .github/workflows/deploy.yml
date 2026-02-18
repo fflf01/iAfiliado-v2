@@ -2,66 +2,105 @@
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  DEFAULT_DEPLOY_PATH: /docker/iafiliado
+
 jobs:
   deploy:
+    name: Deploy em Produção
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout do codigo
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Preparar variaveis
+      - name: Validar secrets e preparar variáveis
+        id: vars
         shell: bash
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -Eeuo pipefail
-          HOST="$(echo "${SERVER_HOST:-}" | tr -d '\r\n ')"
-          USER="$(echo "${SERVER_USER:-}" | tr -d '\r\n ')"
-          echo "DEPLOY_HOST=$HOST" >> "$GITHUB_ENV"
-          echo "DEPLOY_USER=$USER" >> "$GITHUB_ENV"
 
-      - name: Setup SSH
+          clean() { echo "$1" | tr -d '\r\n '; }
+
+          HOST="$(clean "${SERVER_HOST:-}")"
+          USER="$(clean "${SERVER_USER:-}")"
+          PORT="$(clean "${SERVER_PORT:-22}")"
+          PATH_REMOTE="$(clean "${DEPLOY_PATH:-$DEFAULT_DEPLOY_PATH}")"
+
+          [[ -n "$HOST" ]] || { echo "::error::SERVER_HOST não configurado."; exit 1; }
+          [[ -n "$USER" ]] || { echo "::error::SERVER_USER não configurado."; exit 1; }
+          [[ "$PORT" =~ ^[0-9]+$ ]] || { echo "::error::SERVER_PORT inválido: $PORT"; exit 1; }
+
+          {
+            echo "DEPLOY_HOST=$HOST"
+            echo "DEPLOY_USER=$USER"
+            echo "DEPLOY_PORT=$PORT"
+            echo "DEPLOY_PATH=$PATH_REMOTE"
+          } >> "$GITHUB_ENV"
+
+      - name: Configurar SSH
         shell: bash
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           set -Eeuo pipefail
-          umask 077
-          mkdir -p ~/.ssh
-          printf "%s\n" "${SSH_PRIVATE_KEY:-}" > ~/.ssh/id_ed25519
-          # Criamos um known_hosts vazio para evitar erros de arquivo inexistente
-          touch ~/.ssh/known_hosts
 
-      - name: Deploy no servidor
+          [[ -n "${SSH_PRIVATE_KEY:-}" ]] || { echo "::error::SSH_PRIVATE_KEY não configurado."; exit 1; }
+
+          install -m 700 -d ~/.ssh
+          printf "%s" "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Executar deploy remoto
         shell: bash
         run: |
           set -Eeuo pipefail
-          # Usamos StrictHostKeyChecking=no para ignorar a falha do ssh-keyscan
-          # Isso nos permite testar se a autenticação por chave está funcionando
-          ssh -i ~/.ssh/id_ed25519 \
+
+          ssh -p "$DEPLOY_PORT" \
               -o BatchMode=yes \
               -o ConnectTimeout=15 \
-              -o StrictHostKeyChecking=no \
-              -o UserKnownHostsFile=/dev/null \
-              "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+              "$DEPLOY_USER@$DEPLOY_HOST" << EOF
             set -Eeuo pipefail
-            echo "Conectado ao servidor com sucesso!"
-            cd /docker/iafiliado
-            git pull --ff-only
-            docker compose up -d --build --remove-orphans
-            docker compose ps
-            echo "Deploy finalizado!"
+
+            echo "🚀 Iniciando deploy em: $DEPLOY_PATH"
+
+            [[ -d "$DEPLOY_PATH" ]] || { echo "❌ Diretório não existe: $DEPLOY_PATH"; exit 1; }
+
+            cd "$DEPLOY_PATH"
+
+            echo "📥 Atualizando código..."
+            git fetch --all
+            git reset --hard origin/main
+
+            echo "🐳 Subindo containers..."
+            if docker compose version >/dev/null 2>&1; then
+              docker compose pull
+              docker compose up -d --build --remove-orphans
+            else
+              docker-compose pull
+              docker-compose up -d --build --remove-orphans
+            fi
+
+            echo "📊 Status dos serviços:"
+            docker compose ps || docker-compose ps
+
+            echo "✅ Deploy finalizado com sucesso."
           EOF
