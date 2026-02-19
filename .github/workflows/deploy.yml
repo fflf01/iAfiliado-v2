@@ -1,4 +1,4 @@
-﻿# Nome do arquivo: .github/workflows/deploy.yml
+# Nome do arquivo: .github/workflows/deploy.yml
 
 name: CD - Deploy to Server
 
@@ -20,6 +20,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend integration tests
+        working-directory: backend
+        env:
+          JWT_SECRET: ci-test-secret
+          CORS_ORIGINS: http://localhost:3000
+        run: npm test
 
       - name: Setup SSH
         env:

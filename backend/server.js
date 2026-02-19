@@ -9,9 +9,12 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { RATE_LIMIT } from "./config/constants.js";
+import { loadEnv } from "./config/env.js";
+import { logger } from "./utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,8 +24,14 @@ if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
 
-if (!process.env.JWT_SECRET) {
-  console.error("JWT_SECRET nao definido. Configure no ambiente.");
+let env;
+try {
+  env = loadEnv();
+} catch (err) {
+  logger.error("Falha na validacao de variaveis de ambiente", {
+    error: err.message,
+    code: err.code || "ENV_INVALID",
+  });
   process.exit(1);
 }
 
@@ -30,7 +39,8 @@ const { default: routes } = await import("./routes.js");
 const { default: db } = await import("./db.js");
 
 const app = express();
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = env.isProduction;
+const isTest = env.nodeEnv === "test";
 
 // --- Headers de seguranca (helmet) ---
 app.use(
@@ -58,6 +68,7 @@ app.use(
   rateLimit({
     windowMs: RATE_LIMIT.GLOBAL.WINDOW_MS,
     max: RATE_LIMIT.GLOBAL.MAX,
+    skip: () => isTest,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Muitas requisicoes. Tente novamente mais tarde." },
@@ -65,16 +76,34 @@ app.use(
 );
 
 // --- CORS ---
-const corsOrigins = (process.env.CORS_ORIGINS || "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
+const corsOrigins = env.corsOrigins;
 
-if (isProduction && corsOrigins.length === 0) {
-  console.warn(
-    "AVISO: CORS_ORIGINS nao definido em producao. Todas as origens serao permitidas.",
-  );
+if (!isProduction && corsOrigins.length === 0) {
+  logger.warn("CORS_ORIGINS nao definido. Ambiente local permitira todas as origens.");
 }
+
+app.use((req, _res, next) => {
+  req.requestId = crypto.randomUUID();
+  req.log = logger.withContext({
+    requestId: req.requestId,
+    method: req.method,
+    path: req.originalUrl,
+  });
+  next();
+});
+
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  req.log.info("Requisicao recebida");
+  res.on("finish", () => {
+    req.log.info("Requisicao finalizada", {
+      statusCode: res.statusCode,
+      durationMs: Date.now() - startedAt,
+      userId: req.user?.id,
+    });
+  });
+  next();
+});
 
 app.use(
   cors({
@@ -86,7 +115,10 @@ app.use(
       // Origem na lista de permitidas
       if (corsOrigins.includes(origin)) return callback(null, true);
       // Log para diagnostico antes de rejeitar
-      console.warn(`CORS bloqueou origem: ${origin} (permitidas: ${corsOrigins.join(", ")})`);
+      logger.warn("CORS bloqueou origem", {
+        origin,
+        allowedOrigins: corsOrigins,
+      });
       return callback(new Error("Origem nao permitida pelo CORS"));
     },
     credentials: true,
@@ -111,37 +143,45 @@ app.use(routes);
 app.use(errorHandler);
 
 // --- Inicializa servidor ---
-const port = Number(process.env.PORT) || 3000;
+const port = env.port;
 
-const server = app.listen(port, () => {
-  console.log(`Servidor rodando na porta ${port}`);
-});
+let server = null;
+if (process.env.NODE_ENV !== "test") {
+  server = app.listen(port, () => {
+    logger.info("Servidor iniciado", { port });
+  });
+}
 
-server.on("error", (err) => {
-  console.error(
-    `Erro critico ao iniciar servidor na porta ${port}:`,
-    err.message,
-  );
-  process.exit(1);
-});
+if (server) {
+  server.on("error", (err) => {
+    logger.error("Erro critico ao iniciar servidor", {
+      port,
+      error: err.message,
+    });
+    process.exit(1);
+  });
+}
 
 // --- Graceful shutdown (fecha DB e conexoes antes de encerrar) ---
 function shutdown(signal) {
-  console.log(`\n${signal} recebido. Encerrando servidor...`);
+  logger.info("Sinal de encerramento recebido", { signal });
+  if (!server) {
+    process.exit(0);
+  }
   server.close(() => {
     try {
       db.close();
-      console.log("Banco SQLite fechado.");
+      logger.info("Banco SQLite fechado.");
     } catch {
       // banco ja fechado
     }
-    console.log("Servidor encerrado.");
+    logger.info("Servidor encerrado.");
     process.exit(0);
   });
 
   // Forca encerramento apos 10s se o server.close nao completar
   setTimeout(() => {
-    console.error("Timeout no shutdown. Forcando encerramento.");
+    logger.error("Timeout no shutdown. Forcando encerramento.");
     process.exit(1);
   }, 10_000);
 }

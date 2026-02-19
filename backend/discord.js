@@ -5,6 +5,7 @@
 
 import fs from "fs";
 import { Blob } from "buffer";
+import { logger } from "./utils/logger.js";
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
@@ -60,7 +61,7 @@ async function sendToDiscord(payload, files) {
       });
     }
   } catch (error) {
-    console.error("Falha no Webhook do Discord:", error.message);
+    logger.warn("Falha no Webhook do Discord", { error: error.message });
   }
 }
 
@@ -70,7 +71,7 @@ async function sendToDiscord(payload, files) {
  */
 export async function enviarTicketDiscord(ticket) {
   if (!DISCORD_WEBHOOK_URL) {
-    console.warn("DISCORD_WEBHOOK_URL nao definida no arquivo .env");
+    logger.warn("DISCORD_WEBHOOK_URL nao definida no ambiente");
     return;
   }
 

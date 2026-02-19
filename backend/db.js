@@ -8,6 +8,7 @@ import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { logger } from "./utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,7 +40,7 @@ if (fs.existsSync(schemaPath)) {
 }
 
 // Log de conexao (visivel em qualquer ambiente)
-console.log("SQLite conectado:", dbPath);
+logger.info("SQLite conectado", { dbPath });
 
 // Verifica saude do banco na inicializacao (apenas em dev)
 const isProduction = process.env.NODE_ENV === "production";
@@ -47,7 +48,7 @@ if (!isProduction) {
   const integrity = db.pragma("integrity_check");
   const status = integrity[0]?.integrity_check || "ok";
   if (status !== "ok") {
-    console.error("AVISO: integrity_check retornou:", status);
+    logger.warn("integrity_check retornou status inesperado", { status });
   }
 }
 

@@ -13,6 +13,12 @@ export const AUTH = {
 export const UPLOAD = {
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
   MAX_FILES: 5,
+  ALLOWED_EXTENSIONS_BY_MIME: {
+    "image/jpeg": [".jpg", ".jpeg"],
+    "image/png": [".png"],
+    "image/webp": [".webp"],
+    "application/pdf": [".pdf"],
+  },
   ALLOWED_MIMES: new Set([
     "image/jpeg",
     "image/png",
@@ -36,4 +42,10 @@ export const RATE_LIMIT = {
   GLOBAL: { WINDOW_MS: 15 * 60 * 1000, MAX: 100 },
   AUTH: { WINDOW_MS: 15 * 60 * 1000, MAX: 10 },
   SUPPORT: { WINDOW_MS: 15 * 60 * 1000, MAX: 20 },
+};
+
+export const VALIDATION = {
+  MESSAGE_MAX_LENGTH: 2000,
+  SUBJECT_MAX_LENGTH: 200,
+  NAME_MAX_LENGTH: 120,
 };

@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { UnauthorizedError } from "../errors/AppError.js";
 
 /**
  * Middleware que exige header Authorization: Bearer <token>. Verifica o JWT com JWT_SECRET
@@ -8,23 +9,29 @@ import jwt from "jsonwebtoken";
  * @param {import("express").NextFunction} next
  */
 export function authMiddleware(req, res, next) {
+  const reqLogger = req.log;
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).json({ error: "Token não fornecido" });
+    reqLogger?.warn("Autenticacao falhou: token ausente");
+    return next(new UnauthorizedError("Token nao fornecido."));
   }
 
   // Espera formato "Bearer <token>"
   const parts = authHeader.split(" ");
 
   if (parts.length !== 2) {
-    return res.status(401).json({ error: "Erro no formato do token" });
+    reqLogger?.warn("Autenticacao falhou: formato de token invalido", {
+      authorizationHeaderLength: authHeader.length,
+    });
+    return next(new UnauthorizedError("Erro no formato do token."));
   }
 
   const [scheme, token] = parts;
 
   if (!/^Bearer$/i.test(scheme)) {
-    return res.status(401).json({ error: "Token malformatado" });
+    reqLogger?.warn("Autenticacao falhou: esquema invalido", { scheme });
+    return next(new UnauthorizedError("Token malformatado."));
   }
 
   try {
@@ -32,8 +39,13 @@ export function authMiddleware(req, res, next) {
 
     req.user = decoded; // { id, email, is_admin }
     req.userId = decoded.id; // Compatibilidade
+    req.log = reqLogger?.withContext({
+      userId: decoded.id,
+      userIsAdmin: Boolean(decoded.is_admin),
+    });
     next();
-  } catch (err) {
-    return res.status(401).json({ error: "Token inválido ou expirado" });
+  } catch {
+    reqLogger?.warn("Autenticacao falhou: token invalido ou expirado");
+    return next(new UnauthorizedError("Token invalido ou expirado."));
   }
 }
