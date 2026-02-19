@@ -1,12 +1,20 @@
-﻿name: Deploy
+﻿# Nome do arquivo: .github/workflows/deploy.yml
+
+name: CD - Deploy to Server
 
 on:
-  push:
-    branches: [main]
+  # Gatilho: Executa APENAS quando o workflow de CI for concluído com sucesso
+  workflow_run:
+    workflows: ["CI - Build and Push Docker Images"] # Nome do seu workflow de CI
+    types:
+      - completed
+  # Permite também o acionamento manual
   workflow_dispatch:
 
 jobs:
   deploy:
+    # Condição: Só executa se o workflow de CI foi bem-sucedido
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -19,23 +27,33 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa # Usar nome padrão pode ser mais robusto
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Testar conexão SSH
-        run: |
-          ssh -o BatchMode=yes \
-              -p ${{ secrets.SERVER_PORT }} \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-              "echo CONEXAO_OK"
-
-      - name: Deploy
+      - name: Deploy to Server
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }} # Passa o usuário do Docker Hub
         run: |
           ssh -p ${{ secrets.SERVER_PORT }} \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            set -Eeuo pipefail
+            
+            # Navega para a pasta do projeto
             cd ${{ secrets.DEPLOY_PATH }}
-            git pull --ff-only
-            docker compose up -d --build --remove-orphans
+            
+            # Faz login no Docker Hub (se suas imagens forem privadas)
+            # A variável DOCKER_PASSWORD precisa ser definida como um secret no servidor ou passada de outra forma segura
+            # echo "$DOCKER_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            
+            # 1. Baixa as versões mais recentes das imagens do Docker Hub
+            # O Docker Compose só vai baixar as imagens que mudaram.
+            docker compose pull
+            
+            # 2. Sobe os contêineres com as novas imagens, sem reconstruir
+            # O Docker Compose detecta que as imagens foram atualizadas e recria os contêineres.
+            docker compose up -d --remove-orphans
+            
+            # 3. (Opcional, mas recomendado) Limpa imagens antigas e não utilizadas
+            docker image prune -af
+
           EOF
