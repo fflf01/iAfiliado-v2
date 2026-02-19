@@ -3,11 +3,8 @@
  * @module discord
  */
 
-import dotenv from "dotenv";
 import fs from "fs";
 import { Blob } from "buffer";
-
-dotenv.config();
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 

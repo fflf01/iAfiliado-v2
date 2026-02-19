@@ -25,15 +25,6 @@ const path = require("path");
 const fs = require("fs");
 
 // ---------------------------------------------------------------------------
-// Carrega .env para uso standalone (quando rodado fora do server)
-// ---------------------------------------------------------------------------
-try {
-  require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
-} catch {
-  // dotenv nao disponivel — segue com defaults
-}
-
-// ---------------------------------------------------------------------------
 // Configuracao
 // ---------------------------------------------------------------------------
 const DB_PATH = process.env.DB_PATH

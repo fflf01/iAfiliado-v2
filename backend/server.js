@@ -10,10 +10,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
-import routes from "./routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { RATE_LIMIT } from "./config/constants.js";
-import db from "./db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +25,9 @@ if (!process.env.JWT_SECRET) {
   console.error("JWT_SECRET nao definido. Configure no ambiente.");
   process.exit(1);
 }
+
+const { default: routes } = await import("./routes.js");
+const { default: db } = await import("./db.js");
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";

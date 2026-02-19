@@ -12,11 +12,6 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-if (process.env.NODE_ENV !== "production") {
-  const dotenv = await import("dotenv");
-  dotenv.config();
-}
-
 // Caminho do banco (configuravel via .env)
 const dbPath = process.env.DB_PATH
   ? path.resolve(__dirname, process.env.DB_PATH)
