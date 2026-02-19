@@ -3,7 +3,7 @@ import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react";
 const benefits = [
   {
     icon: TrendingUp,
-    title: "Comissões Altas",
+    title: "Comissões Agressivas",
     description: "Ganhe até 50% de comissão em cada jogador indicado. Pagamentos semanais garantidos.",
   },
   {

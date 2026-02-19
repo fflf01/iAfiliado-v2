@@ -52,6 +52,13 @@ As respostas de erro seguem o formato:
 - [x] Tratamento de erro padronizado com codigo e requestId.
 - [x] Testes de integracao para fluxos criticos.
 
+## Politica explicita de CORS (producao)
+
+- `NODE_ENV=production` exige `CORS_ORIGINS` com pelo menos uma URL valida.
+- Apenas origens listadas em `CORS_ORIGINS` recebem `Access-Control-Allow-Origin`.
+- Origem fora da whitelist e bloqueada com erro `CORS_FORBIDDEN`.
+- Nao usar `localhost` em `CORS_ORIGINS` de producao.
+
 ## Operacao e manutencao
 
 ### Rotina de deploy
@@ -76,6 +83,12 @@ As respostas de erro seguem o formato:
 - Cada requisicao recebe `requestId` e logs estruturados com contexto de rota/metodo.
 - Em erros, a API sempre responde `error`, `code` e `requestId` para rastreio.
 - Em ambiente de desenvolvimento, stack trace e detalhes de erro sao logados.
+
+### Riscos operacionais e mitigacao
+
+- Evite usar `.env` fixo em producao com segredos versionados ou copiados manualmente.
+- Priorize secrets/variaveis no runtime do servidor e no pipeline de deploy.
+- Mantenha revisao periodica de `CORS_ORIGINS` quando houver troca de dominio/frontend.
 
 ### Troubleshooting rapido
 

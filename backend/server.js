@@ -15,6 +15,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { RATE_LIMIT } from "./config/constants.js";
 import { loadEnv } from "./config/env.js";
 import { logger } from "./utils/logger.js";
+import { AppError } from "./errors/AppError.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,7 +120,11 @@ app.use(
         origin,
         allowedOrigins: corsOrigins,
       });
-      return callback(new Error("Origem nao permitida pelo CORS"));
+      return callback(
+        new AppError("Origem nao permitida pelo CORS.", 403, "CORS_FORBIDDEN", {
+          origin,
+        }),
+      );
     },
     credentials: true,
   }),

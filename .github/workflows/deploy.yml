@@ -56,6 +56,16 @@ jobs:
             
             # Navega para a pasta do projeto
             cd ${{ secrets.DEPLOY_PATH }}
+
+            # Checklist de hardening: CORS explicito para producao
+            if ! grep -Eq '^CORS_ORIGINS=.+$' backend/.env; then
+              echo "Erro: CORS_ORIGINS ausente ou vazio em backend/.env"
+              exit 1
+            fi
+            if grep -Eq '^CORS_ORIGINS=.*localhost' backend/.env; then
+              echo "Erro: CORS_ORIGINS contem localhost em ambiente de producao"
+              exit 1
+            fi
             
             # Faz login no Docker Hub (se suas imagens forem privadas)
             # A variável DOCKER_PASSWORD precisa ser definida como um secret no servidor ou passada de outra forma segura
