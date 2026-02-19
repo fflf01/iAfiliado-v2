@@ -8,7 +8,6 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import routes from "./routes.js";
@@ -19,16 +18,18 @@ import db from "./db.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.join(__dirname, ".env") });
+if (process.env.NODE_ENV !== "production") {
+  const dotenv = await import("dotenv");
+  dotenv.config();
+}
+
+if (!process.env.JWT_SECRET) {
+  console.error("JWT_SECRET nao definido. Configure no ambiente.");
+  process.exit(1);
+}
 
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
-
-// --- Validacao de variaveis obrigatorias ---
-if (!process.env.JWT_SECRET) {
-  console.error("JWT_SECRET nao definido. Configure no .env antes de iniciar.");
-  process.exit(1);
-}
 
 // --- Headers de seguranca (helmet) ---
 app.use(

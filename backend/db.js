@@ -5,7 +5,6 @@
  */
 
 import Database from "better-sqlite3";
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -13,8 +12,10 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Carrega .env antes de acessar process.env (imports ES Module sao hoisted)
-dotenv.config({ path: path.join(__dirname, ".env") });
+if (process.env.NODE_ENV !== "production") {
+  const dotenv = await import("dotenv");
+  dotenv.config();
+}
 
 // Caminho do banco (configuravel via .env)
 const dbPath = process.env.DB_PATH
