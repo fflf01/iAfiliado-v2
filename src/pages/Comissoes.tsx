@@ -1,57 +1,15 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import {
-  DollarSign,
-  TrendingUp,
-  Wallet,
-  Clock,
-  CheckCircle,
-  Zap,
-} from "lucide-react";
+import { TrendingUp, Wallet, Clock, CheckCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import "@/Stilos/stilo.css";
-
-const commissionTiers = [
-  {
-    tier: "Bronze",
-    players: "1-10",
-    percentage: "30%",
-    color: "from-amber-700 to-amber-900",
-  },
-  {
-    tier: "Prata",
-    players: "11-50",
-    percentage: "35%",
-    color: "from-gray-400 to-gray-600",
-  },
-  {
-    tier: "Ouro",
-    players: "51-200",
-    percentage: "40%",
-    featured: true,
-    color: "from-yellow-500 to-amber-600",
-  },
-  {
-    tier: "Diamante",
-    players: "201+",
-    percentage: "50%",
-    color: "from-cyan-400 to-blue-600",
-  },
-];
-
-const paymentMethods = [
-  { name: "PIX", time: "Instantâneo", min: "R$ 50" },
-  { name: "Transferência Bancária", time: "1-2 dias úteis", min: "R$ 100" },
-  { name: "Bitcoin", time: "Até 1 hora", min: "R$ 100" },
-  { name: "USDT", time: "Até 1 hora", min: "R$ 100" },
-];
 
 const benefits = [
   {
     icon: TrendingUp,
     title: "Comissão Recorrente",
-    description: "Ganhe enquanto seus indicados jogarem. Sem limite de tempo.",
+    description: "Ganhe enquanto seus indicados jogarem.",
   },
   {
     icon: Clock,
@@ -93,53 +51,6 @@ const Comissoes = () => {
         </div>
       </section>
 
-      {/* Commission Tiers */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-display font-bold text-center mb-12">
-            Níveis de{" "}
-            <span className="texto-gradiente-secundario">Comissão</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {commissionTiers.map((tier, index) => (
-              <div
-                key={index}
-                className={`relative bg-gradient-card rounded-2xl p-6 border card-hover text-center ${
-                  tier.featured
-                    ? "borda-secundaria-suave glow-border"
-                    : "border-border/50"
-                }`}
-              >
-                {tier.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-gold rounded-full text-xs font-bold text-primary-foreground uppercase">
-                    Popular
-                  </div>
-                )}
-
-                <div
-                  className={`w-16 h-16 mx-auto rounded-full bg-gradient-to-br ${tier.color} flex items-center justify-center mb-4`}
-                >
-                  <DollarSign className="w-8 h-8 text-white" />
-                </div>
-
-                <h3 className="text-xl font-display font-bold text-foreground mb-2">
-                  {tier.tier}
-                </h3>
-
-                <p className="text-muted-foreground text-sm mb-4">
-                  {tier.players} jogadores ativos
-                </p>
-
-                <div className="text-4xl font-display font-bold texto-gradiente-destaque mb-2">
-                  {tier.percentage}
-                </div>
-                <p className="text-muted-foreground text-sm">de comissão</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Benefits */}
       <section className="py-16 px-4 bg-casino-surface/30">
         <div className="container mx-auto">
@@ -176,28 +87,17 @@ const Comissoes = () => {
             <span className="texto-gradiente-destaque">Pagamento</span>
           </h2>
           <div className="max-w-3xl mx-auto">
-            <div className="bg-gradient-card rounded-2xl border border-border/50 overflow-hidden">
-              <div className="grid grid-cols-3 p-4 bg-muted/30 text-sm font-semibold text-foreground">
-                <span>Método</span>
-                <span className="text-center">Tempo</span>
-                <span className="text-right">Mínimo</span>
-              </div>
-              {paymentMethods.map((method, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-3 p-4 border-t border-border/30 items-center"
-                >
-                  <span className="font-semibold text-foreground">
-                    {method.name}
-                  </span>
-                  <span className="text-center text-muted-foreground">
-                    {method.time}
-                  </span>
-                  <span className="text-right texto-secundario font-semibold">
-                    {method.min}
-                  </span>
-                </div>
-              ))}
+            <div className="bg-gradient-card rounded-2xl border border-border/50 p-6 md:p-8 text-center">
+              <h3 className="text-xl md:text-2xl font-display font-bold text-foreground mb-4">
+                Nossos metodos de pagamento
+              </h3>
+              <p className="text-muted-foreground leading-relaxed mb-5">
+                Nossos planos de pagamentos dependem do acordo com a plataforma
+                e da deal escolhida.
+              </p>
+              <p className="texto-secundario font-semibold">
+                Em geral, nossos metodos de pagamentos são PIX e Crypto.
+              </p>
             </div>
           </div>
         </div>

@@ -47,6 +47,8 @@ const App = () => (
           <Route path="/dashboard/links" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/dashboard/carteira" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/dashboard/plataformas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/entradas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/entradas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/suporte-cliente" element={<ProtectedRoute><SuporteCliente /></ProtectedRoute>} />
 
           {/* Rotas de admin (requer autenticação + admin) */}

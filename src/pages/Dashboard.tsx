@@ -9,6 +9,7 @@ import {
   Users,
   DollarSign,
   MousePointer,
+  Banknote,
   LogOut,
   Calendar,
   ArrowUpRight,
@@ -18,6 +19,7 @@ import {
   Wallet,
   HelpCircle,
   Rocket,
+  CalendarDays,
 } from "lucide-react";
 import {
   XAxis,
@@ -34,6 +36,7 @@ import { useAuth } from "@/hooks/useAuth";
 import PlataformasD from "./Plataformas_D";
 import LinkPage from "./LinkPage";
 import CarteiraPage from "./Carteira";
+import EntradasPage from "./Entradas";
 
 // Mock data for charts
 const performanceData = [
@@ -96,11 +99,11 @@ const baseStats = [
     format: "number",
   },
   {
-    title: "Conversões",
+    title: "Depósito",
     value: 241,
     change: 8.2,
     isPositive: true,
-    icon: Users,
+    icon: Banknote,
     color: "secondary",
     format: "number",
   },
@@ -114,13 +117,13 @@ const baseStats = [
     format: "currency",
   },
   {
-    title: "Taxa de Conversão",
-    value: 6.2,
-    change: -0.8,
-    isPositive: false,
-    icon: TrendingUp,
+    title: "FTDs",
+    value: 128,
+    change: 6.4,
+    isPositive: true,
+    icon: Users,
     color: "secondary",
-    format: "percent",
+    format: "number",
   },
 ];
 
@@ -131,6 +134,8 @@ const Dashboard = () => {
 
   const activeView = location.pathname.includes("/plataformas")
     ? "plataformas"
+    : location.pathname.includes("/entradas")
+      ? "entradas"
     : location.pathname.includes("/links")
       ? "links"
       : location.pathname.includes("/carteira")
@@ -144,6 +149,7 @@ const Dashboard = () => {
 
   const sidebarItems = [
     { icon: LinkIcon, label: "DashBoard", id: "dashboard", path: "/dashboard" },
+    { icon: CalendarDays, label: "Entradas", id: "entradas", path: "/entradas" },
     { icon: Wallet, label: "Casas Parceiras", id: "plataformas", path: "/dashboard/plataformas" },
     { icon: Crown, label: "Meus Links", id: "links", path: "/dashboard/links" },
     { icon: Rocket, label: "Carteira", id: "carteira", path: "/dashboard/carteira" },
@@ -197,7 +203,7 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <span className="font-display font-bold texto-gradiente-secundario">
-              <img src="/iAfiliado.png" alt="iAfiliado" className="h-48 md:h-52" />
+              <img src="/iAfiliado.png" alt="iAfiliado" className="h-24 md:h-40" />
             </span>
           </Link>
 
@@ -474,6 +480,8 @@ const Dashboard = () => {
             <LinkPage />
           ) : activeView === "carteira" ? (
             <CarteiraPage />
+          ) : activeView === "entradas" ? (
+            <EntradasPage embedded />
           ) : null}
         </main>
       </div>

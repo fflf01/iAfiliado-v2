@@ -4,6 +4,23 @@ import { Shield, Zap, Globe } from "lucide-react";
 import "@/Stilos/stilo.css";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
+import brasilbetLogo from "@/assets/brasilbet.png";
+import estrelabetLogo from "@/assets/estrelabet.png";
+import geralbetLogo from "@/assets/geralbet.png";
+import goldbetLogo from "@/assets/goldbet.png";
+import luvabetLogo from "@/assets/luvabet.png";
+import mgmbetLogo from "@/assets/MGMbet.png";
+import betsulLogo from "@/assets/betsul.png";
+
+const partnerLogos = [
+  { name: "BrasilBet", src: brasilbetLogo },
+  { name: "EstrelaBet", src: estrelabetLogo },
+  { name: "GeralBet", src: geralbetLogo },
+  { name: "GoldBet", src: goldbetLogo },
+  { name: "LuvaBet", src: luvabetLogo },
+  { name: "BetMGM", src: mgmbetLogo },
+  { name: "Betsul", src: betsulLogo },
+];
 
 const Plataformas = () => {
   return (
@@ -80,16 +97,18 @@ const Plataformas = () => {
               },
             }}
           >
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+            {partnerLogos.map((partner) => (
               <SwiperSlide
-                key={num}
+                key={partner.name}
                 className="flex items-center justify-center"
               >
-                <img
-                  src={`https://mansaogreen.com/wp-content/uploads/2025/10/${num}-300x100.png`}
-                  alt={`Parceiro ${num}`}
-                  className="max-w-full h-auto"
-                />
+                <div className="w-[190px] h-[96px] flex items-center justify-center">
+                  <img
+                    src={partner.src}
+                    alt={`Logo ${partner.name}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
               </SwiperSlide>
             ))}
           </Swiper>

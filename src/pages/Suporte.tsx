@@ -51,7 +51,7 @@ const faqItems = [
   {
     question: "Como recebo minhas comissões?",
     answer:
-      "As comissões são pagas semanalmente via PIX, transferência bancária ou criptomoedas. Você pode escolher seu método preferido no dashboard.",
+      "As comissões são pagas de acordo com o acordo firmado (diário, semanal, quinzenal, mensal).",
   },
   {
     question: "Posso promover em qualquer plataforma?",
@@ -125,7 +125,10 @@ const Suporte = () => {
         }
       }
 
-      const data = await apiPostForm<{ id: string }>("/support", formDataToSend);
+      const data = await apiPostForm<{ id: string }>(
+        "/support",
+        formDataToSend,
+      );
 
       toast({
         title: `Mensagem enviada! Protocolo ${data.id}`,
@@ -137,7 +140,8 @@ const Suporte = () => {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao enviar mensagem.",
+        description:
+          error instanceof Error ? error.message : "Erro ao enviar mensagem.",
       });
     } finally {
       setIsLoading(false);
@@ -201,7 +205,7 @@ const Suporte = () => {
         <div className="container mx-auto flex items-center justify-center gap-3">
           <Clock className="w-5 h-5 texto-destaque" />
           <span className="text-foreground font-semibold">
-            Atendimento 24 horas, 7 dias por semana
+            Atendimento De 08h As 18h
           </span>
           <div className="w-2 h-2 rounded-full bg-principal animate-pulse" />
         </div>
@@ -318,7 +322,10 @@ const Suporte = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) =>
-                    setFormData({ ...formData, phone: formatPhoneNumber(e.target.value) })
+                    setFormData({
+                      ...formData,
+                      phone: formatPhoneNumber(e.target.value),
+                    })
                   }
                   placeholder="(00) 00000-0000"
                   className="bg-muted border-border"

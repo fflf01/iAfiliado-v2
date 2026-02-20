@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Gift } from "lucide-react";
+import { ArrowRight, Gift, CircleHelp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import "@/Stilos/stilo.css";
 
 const CTASection = () => {
@@ -29,9 +35,26 @@ const CTASection = () => {
             afiliados.
             <span className="texto-secundario font-semibold">
               {" "}
-              Bônus de R$500
+              Bonus de ***
             </span>{" "}
             para os primeiros 100 afiliados!
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="ml-2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-secundario/70 text-secundario transition-colors hover:bg-secundario/10"
+                    aria-label="Regulamento da promocao"
+                  >
+                    <CircleHelp className="h-7 w-7" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-left leading-relaxed">
+                  <span className="font-semibold">(Regulamento)</span> trazer pelo menos
+                  100 CPAs / trazer pelo menos 20k em depositos.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <Link to="/cadastro">
