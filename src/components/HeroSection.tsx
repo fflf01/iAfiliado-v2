@@ -35,8 +35,8 @@ const HeroSection = () => {
 
           {/* Main Heading */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-black mb-4 leading-tight">
-            <span className="text-foreground">Ganhe </span>
-            <span className="texto-gradiente-secundario">Dinheiro</span>
+            <span className="text-foreground">Fature </span>
+            <span className="texto-gradiente-secundario">Muito</span>
             <br />
             <span className="text-foreground">com </span>
             <span className="texto-gradiente-destaque">iGaming</span>
