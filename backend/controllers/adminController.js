@@ -20,6 +20,18 @@ export function listEntradasAdmin(req, res) {
   return res.json(adminService.listEntradasAdmin(req.query));
 }
 
+export function createEntrada(req, res) {
+  return res.status(201).json(adminService.createEntrada(req.body));
+}
+
+export function importEntradas(req, res) {
+  return res.status(201).json(adminService.importEntradas(req.body));
+}
+
+export function recomputeWalletTotals(req, res) {
+  return res.json(adminService.recomputeWalletTotals());
+}
+
 export function listWalletsAdmin(req, res) {
   return res.json(adminService.listWalletsAdmin());
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,21 +33,47 @@ import {
 } from "recharts";
 import "@/Stilos/stilo.css";
 import { useAuth } from "@/hooks/useAuth";
+import { apiGet } from "@/lib/api-client";
 import PlataformasD from "./Plataformas_D";
 import LinkPage from "./LinkPage";
 import CarteiraPage from "./Carteira";
 import EntradasPage from "./Entradas";
 
-// Mock data for charts
-const performanceData = [
-  { name: "Jan", cliques: 400, conversoes: 24, comissao: 240 },
-  { name: "Fev", cliques: 300, conversoes: 18, comissao: 180 },
-  { name: "Mar", cliques: 520, conversoes: 32, comissao: 320 },
-  { name: "Abr", cliques: 480, conversoes: 29, comissao: 290 },
-  { name: "Mai", cliques: 600, conversoes: 38, comissao: 380 },
-  { name: "Jun", cliques: 750, conversoes: 48, comissao: 480 },
-  { name: "Jul", cliques: 820, conversoes: 52, comissao: 520 },
-];
+const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+interface MeEntrada {
+  id: string;
+  casinoId: string;
+  dataHora: number;
+  depositos: number;
+  cliques: number;
+  registros: number;
+  ftd: number;
+  valorRecebido: number;
+  casinoName: string;
+}
+
+function aggregateEntradasByMonth(entradas: MeEntrada[]): { name: string; cliques: number; conversoes: number }[] {
+  const byMonth: Record<string, { depositos: number; ftd: number }> = {};
+  for (const e of entradas) {
+    const d = new Date(e.dataHora);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    if (!byMonth[key]) byMonth[key] = { depositos: 0, ftd: 0 };
+    byMonth[key].depositos += e.depositos;
+    byMonth[key].ftd += e.ftd;
+  }
+  const sorted = Object.entries(byMonth)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-12);
+  return sorted.map(([key]) => {
+    const [y, m] = key.split("-").map(Number);
+    return {
+      name: MESES[m],
+      cliques: byMonth[key].depositos,
+      conversoes: byMonth[key].ftd,
+    };
+  });
+}
 
 // Mock payment history
 const paymentHistory = [
@@ -88,49 +114,78 @@ const affiliateLinks = [
   },
 ];
 
-const baseStats = [
-  {
-    title: "Total de Cliques",
-    value: 3870,
-    change: 12.5,
-    isPositive: true,
-    icon: MousePointer,
-    color: "primary",
-    format: "number",
-  },
-  {
-    title: "Depósito",
-    value: 241,
-    change: 8.2,
-    isPositive: true,
-    icon: Banknote,
-    color: "secondary",
-    format: "number",
-  },
-  {
-    title: "Comissão Total",
-    value: 4850,
-    change: 15.3,
-    isPositive: true,
-    icon: DollarSign,
-    color: "primary",
-    format: "currency",
-  },
-  {
-    title: "FTDs",
-    value: 128,
-    change: 6.4,
-    isPositive: true,
-    icon: Users,
-    color: "secondary",
-    format: "number",
-  },
+interface MeStats {
+  totalCliques: number;
+  totalDepositos: number;
+  comissaoTotal: number;
+  totalFtds: number;
+}
+
+const statTemplates = [
+  { title: "Total de Cliques", key: "totalCliques" as const, change: 0, isPositive: true, icon: MousePointer, color: "primary" as const, format: "number" as const },
+  { title: "Depósito", key: "totalDepositos" as const, change: 0, isPositive: true, icon: Banknote, color: "secondary" as const, format: "number" as const },
+  { title: "Comissão Total", key: "comissaoTotal" as const, change: 0, isPositive: true, icon: DollarSign, color: "primary" as const, format: "currency" as const },
+  { title: "FTDs", key: "totalFtds" as const, change: 0, isPositive: true, icon: Users, color: "secondary" as const, format: "number" as const },
 ];
 
+
+const defaultStats: MeStats = {
+  totalCliques: 0,
+  totalDepositos: 0,
+  comissaoTotal: 0,
+  totalFtds: 0,
+};
 
 const Dashboard = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [meStats, setMeStats] = useState<MeStats>(defaultStats);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [meEntradas, setMeEntradas] = useState<MeEntrada[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatsError(null);
+    setStatsLoading(true);
+    apiGet<MeStats>("/me/stats")
+      .then((data) => {
+        if (!cancelled) {
+          setMeStats(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStatsError("Não foi possível carregar as estatísticas.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setStatsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<MeEntrada[]>("/me/entradas")
+      .then((data) => {
+        if (!cancelled) {
+          setMeEntradas(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMeEntradas([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const activeView = location.pathname.includes("/plataformas")
     ? "plataformas"
@@ -167,6 +222,13 @@ const Dashboard = () => {
 
   const currentMultiplier = houseMultipliers[selectedHouse] ?? 1;
 
+  const baseStats = useMemo(() => {
+    return statTemplates.map((t) => ({
+      ...t,
+      value: meStats[t.key],
+    }));
+  }, [meStats]);
+
   const filteredStats = useMemo(() => {
     return baseStats.map((stat) => {
       const scaledValue = stat.value * currentMultiplier;
@@ -176,8 +238,6 @@ const Dashboard = () => {
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
             })}`
-          : stat.format === "percent"
-          ? `${scaledValue.toFixed(1)}%`
           : Math.round(scaledValue).toLocaleString("pt-BR");
 
       return {
@@ -185,16 +245,20 @@ const Dashboard = () => {
         value: formattedValue,
       };
     });
-  }, [currentMultiplier]);
+  }, [baseStats, currentMultiplier]);
+
+  const performanceData = useMemo(
+    () => aggregateEntradasByMonth(meEntradas),
+    [meEntradas]
+  );
 
   const filteredPerformanceData = useMemo(() => {
     return performanceData.map((item) => ({
       ...item,
       cliques: Math.round(item.cliques * currentMultiplier),
       conversoes: Math.round(item.conversoes * currentMultiplier),
-      comissao: Math.round(item.comissao * currentMultiplier),
     }));
-  }, [currentMultiplier]);
+  }, [performanceData, currentMultiplier]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -287,6 +351,9 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              {statsError && (
+                <p className="text-destructive text-sm mb-4">{statsError}</p>
+              )}
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {filteredStats.map((stat, index) => (
@@ -304,26 +371,28 @@ const Dashboard = () => {
                       >
                         <stat.icon className="w-6 h-6" />
                       </div>
-                      <div
-                        className={`flex items-center gap-1 text-sm font-medium ${
-                          stat.isPositive
-                            ? "texto-destaque"
-                            : "text-destructive"
-                        }`}
-                      >
-                        {stat.isPositive ? (
-                          <ArrowUpRight className="w-4 h-4" />
-                        ) : (
-                          <ArrowDownRight className="w-4 h-4" />
-                        )}
-                        {stat.change}
-                      </div>
+                      {stat.change !== 0 && (
+                        <div
+                          className={`flex items-center gap-1 text-sm font-medium ${
+                            stat.isPositive
+                              ? "texto-destaque"
+                              : "text-destructive"
+                          }`}
+                        >
+                          {stat.isPositive ? (
+                            <ArrowUpRight className="w-4 h-4" />
+                          ) : (
+                            <ArrowDownRight className="w-4 h-4" />
+                          )}
+                          {stat.change}
+                        </div>
+                      )}
                     </div>
                     <p className="text-muted-foreground text-sm mb-1">
                       {stat.title}
                     </p>
                     <p className="text-xl font-display font-bold text-foreground">
-                      {stat.value}
+                      {statsLoading ? "..." : stat.value}
                     </p>
                   </Card>
                 ))}

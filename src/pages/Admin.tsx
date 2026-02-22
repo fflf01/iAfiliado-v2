@@ -340,9 +340,11 @@ const Admin = () => {
       >
         {/* Sidebar header */}
         <div className="p-5 border-b border-border/50 flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <Crown className="w-7 h-7 text-primary" />
-            <span className="text-lg font-display font-bold text-gradient-neon">iAfiliado</span>
+          <Link to="/admin" className="flex items-center gap-3">
+            <img src="/iAfiliado.png" alt="iAfiliado" className="h-8 w-auto" />
+            <span className="text-sm font-display font-bold text-gradient-neon">
+              Admin
+            </span>
           </Link>
           {isMobile && (
             <button onClick={() => setSidebarOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -351,11 +353,17 @@ const Admin = () => {
           )}
         </div>
 
-        {/* Admin badge */}
-        <div className="px-5 py-3">
-          <span className="text-xs font-semibold uppercase px-3 py-1 rounded-full bg-destructive/20 text-destructive border border-destructive/30">
+        {/* Ações rápidas */}
+        <div className="px-5 py-3 border-b border-border/50 space-y-2">
+          <span className="inline-flex text-xs font-semibold uppercase px-3 py-1 rounded-full bg-destructive/20 text-destructive border border-destructive/30">
             Painel Admin
           </span>
+          <Link to="/dashboard">
+            <Button variant="outline" size="sm" className="w-full gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Voltar ao Dashboard
+            </Button>
+          </Link>
         </div>
 
         {/* Nav items */}
@@ -380,16 +388,6 @@ const Admin = () => {
             </button>
           ))}
         </nav>
-
-        {/* Sidebar footer */}
-        <div className="p-4 border-t border-border/50">
-          <Link to="/dashboard">
-            <Button variant="outline" size="sm" className="w-full gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar ao Dashboard
-            </Button>
-          </Link>
-        </div>
       </aside>
 
       {/* ── Main Content ─────────────────────────────── */}
@@ -399,8 +397,13 @@ const Admin = () => {
           <button onClick={() => setSidebarOpen(true)} className="text-foreground">
             <Menu className="w-6 h-6" />
           </button>
-          <span className="font-display font-bold text-gradient-neon">Admin</span>
-          <div className="w-6" />
+          <img src="/iAfiliado.png" alt="iAfiliado" className="h-7 w-auto" />
+          <Link to="/dashboard" className="text-foreground">
+            <Button variant="outline" size="sm" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </Button>
+          </Link>
         </header>
 
         <main className="p-4 md:p-8">

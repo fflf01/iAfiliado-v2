@@ -28,6 +28,22 @@ function parseMs(value) {
   return Number.isFinite(n) ? n : NaN;
 }
 
+function parseOptionalMs(value, fallback) {
+  if (value == null || value === "") return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function toInt(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.trunc(n) : fallback;
+}
+
+function toNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export const adminService = {
   listCasinos() {
     return adminRepository.listCasinos().map(toCasinoUi);
@@ -115,6 +131,109 @@ export const adminService = {
     }
 
     return out;
+  },
+
+  createEntrada(payload) {
+    const userId = toInt(payload?.userId, 0);
+    if (!userId) throw new ValidationError("userId e obrigatorio.");
+    const casinoId = String(payload?.casinoId || "").trim();
+    if (!casinoId) throw new ValidationError("casinoId e obrigatorio.");
+
+    const id = crypto.randomUUID();
+    const dataHora = parseOptionalMs(payload?.dataHora, Date.now());
+
+    const depositos = toInt(payload?.depositos, 0);
+    const cliques = toInt(payload?.cliques, 0);
+    const registros = toInt(payload?.registros, 0);
+    const ftd = toInt(payload?.ftd, 0);
+    const valorRecebido = toNumber(payload?.valorRecebido, 0);
+
+    if (
+      depositos < 0 ||
+      cliques < 0 ||
+      registros < 0 ||
+      ftd < 0 ||
+      valorRecebido < 0
+    ) {
+      throw new ValidationError("Valores de entrada nao podem ser negativos.");
+    }
+
+    adminRepository.insertEntrada({
+      id,
+      userId,
+      casinoId,
+      dataHora,
+      depositos,
+      cliques,
+      registros,
+      ftd,
+      valorRecebido,
+    });
+
+    // Alimenta wallet automaticamente quando houver valor_recebido.
+    if (valorRecebido > 0) {
+      adminRepository.bumpWalletTotals(userId, valorRecebido);
+    }
+
+    return { ok: true, id };
+  },
+
+  importEntradas(payload) {
+    if (!Array.isArray(payload?.items) || payload.items.length === 0) {
+      throw new ValidationError("items deve ser um array nao vazio.");
+    }
+
+    const now = Date.now();
+    const rows = payload.items.map((item) => {
+      const userId = toInt(item?.userId, 0);
+      if (!userId) throw new ValidationError("items[].userId e obrigatorio.");
+      const casinoId = String(item?.casinoId || "").trim();
+      if (!casinoId) throw new ValidationError("items[].casinoId e obrigatorio.");
+
+      const valorRecebido = toNumber(item?.valorRecebido, 0);
+      const row = {
+        id: String(item?.id || crypto.randomUUID()),
+        userId,
+        casinoId,
+        dataHora: parseOptionalMs(item?.dataHora, now),
+        depositos: toInt(item?.depositos, 0),
+        cliques: toInt(item?.cliques, 0),
+        registros: toInt(item?.registros, 0),
+        ftd: toInt(item?.ftd, 0),
+        valorRecebido,
+      };
+
+      if (
+        row.depositos < 0 ||
+        row.cliques < 0 ||
+        row.registros < 0 ||
+        row.ftd < 0 ||
+        row.valorRecebido < 0
+      ) {
+        throw new ValidationError("items[] contem valores negativos.");
+      }
+
+      return row;
+    });
+
+    adminRepository.insertEntradasBulk(rows);
+
+    // Atualiza carteiras (soma por user) — simples e seguro.
+    const totalsByUser = new Map();
+    for (const row of rows) {
+      if (row.valorRecebido <= 0) continue;
+      totalsByUser.set(row.userId, (totalsByUser.get(row.userId) || 0) + row.valorRecebido);
+    }
+    for (const [userId, total] of totalsByUser.entries()) {
+      adminRepository.bumpWalletTotals(userId, total);
+    }
+
+    return { ok: true, inserted: rows.length };
+  },
+
+  recomputeWalletTotals() {
+    const updatedUsers = adminRepository.recomputeWalletTotalsFromEntradas();
+    return { ok: true, updatedUsers };
   },
 
   listWalletsAdmin() {

@@ -26,7 +26,10 @@ import {
   updateCasino,
   deleteCasino,
   listEntradasAdmin,
+  createEntrada,
+  importEntradas,
   listWalletsAdmin,
+  recomputeWalletTotals,
 } from "./controllers/adminController.js";
 import {
   saveSupportMessage,
@@ -37,6 +40,7 @@ import {
   getTicketReplies,
   getClientMessages,
 } from "./controllers/supportController.js";
+import { getMyStats, getMyWallet, getMyEntradas } from "./controllers/dashboardController.js";
 import { UPLOAD, RATE_LIMIT, AUTH, TICKET, VALIDATION } from "./config/constants.js";
 
 const router = express.Router();
@@ -221,8 +225,11 @@ router.post("/support/ticket/:id/reply", authMiddleware, supportLimiter, upload.
 router.get("/support/ticket/:id/replies", authMiddleware, ticketIdRule, handleValidationErrors, asyncHandler(getTicketReplies));
 router.get("/support/my-messages", authMiddleware, asyncHandler(getClientMessages));
 
-// --- Rotas protegidas ---
+// --- Rotas protegidas (usuário autenticado) ---
 router.get("/profile", authMiddleware, asyncHandler(getProfile));
+router.get("/me/stats", authMiddleware, asyncHandler(getMyStats));
+router.get("/me/wallet", authMiddleware, asyncHandler(getMyWallet));
+router.get("/me/entradas", authMiddleware, asyncHandler(getMyEntradas));
 
 // --- Rotas de admin ---
 router.get("/admin", authMiddleware, adminAuthMiddleware, (_req, res) => {
@@ -233,7 +240,10 @@ router.post("/admin/casinos", authMiddleware, adminAuthMiddleware, asyncHandler(
 router.put("/admin/casinos/:id", authMiddleware, adminAuthMiddleware, asyncHandler(updateCasino));
 router.delete("/admin/casinos/:id", authMiddleware, adminAuthMiddleware, asyncHandler(deleteCasino));
 router.get("/admin/entradas", authMiddleware, adminAuthMiddleware, asyncHandler(listEntradasAdmin));
+router.post("/admin/entradas", authMiddleware, adminAuthMiddleware, asyncHandler(createEntrada));
+router.post("/admin/entradas/import", authMiddleware, adminAuthMiddleware, asyncHandler(importEntradas));
 router.get("/admin/wallets", authMiddleware, adminAuthMiddleware, asyncHandler(listWalletsAdmin));
+router.post("/admin/wallets/recompute", authMiddleware, adminAuthMiddleware, asyncHandler(recomputeWalletTotals));
 router.get("/support/messages", authMiddleware, adminAuthMiddleware, asyncHandler(getSupportMessages));
 router.put(
   "/support/messages/:id",

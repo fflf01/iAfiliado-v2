@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,8 +13,7 @@ import {
   Calendar,
   Filter,
 } from "lucide-react";
-
-const casas = ["Todas", "BrasilBet", "BetMGM", "LuvaBet", "BigBet", "BetMGM Pro", "SeuBet"];
+import { apiGet } from "@/lib/api-client";
 
 interface DayEntry {
   date: string;
@@ -26,32 +25,37 @@ interface DayEntry {
   total: number;
 }
 
-const mockEntradas: DayEntry[] = [
-  { date: "20/02/2026", casa: "BrasilBet",  depositos: 3200, ftds: 5,  cpa: 750,   revshare: 320, total: 1070 },
-  { date: "20/02/2026", casa: "BetMGM",     depositos: 1500, ftds: 2,  cpa: 300,   revshare: 150, total: 450  },
-  { date: "20/02/2026", casa: "LuvaBet",    depositos: 900,  ftds: 1,  cpa: 150,   revshare: 90,  total: 240  },
-  { date: "20/02/2026", casa: "BigBet",     depositos: 600,  ftds: 1,  cpa: 150,   revshare: 60,  total: 210  },
-  { date: "20/02/2026", casa: "BetMGM Pro", depositos: 2100, ftds: 3,  cpa: 450,   revshare: 210, total: 660  },
-  { date: "20/02/2026", casa: "SeuBet",     depositos: 400,  ftds: 0,  cpa: 0,     revshare: 40,  total: 40   },
-  { date: "19/02/2026", casa: "BrasilBet",  depositos: 2800, ftds: 4,  cpa: 600,   revshare: 280, total: 880  },
-  { date: "19/02/2026", casa: "BetMGM",     depositos: 1200, ftds: 2,  cpa: 300,   revshare: 120, total: 420  },
-  { date: "19/02/2026", casa: "LuvaBet",    depositos: 750,  ftds: 1,  cpa: 150,   revshare: 75,  total: 225  },
-  { date: "19/02/2026", casa: "BigBet",     depositos: 1100, ftds: 2,  cpa: 300,   revshare: 110, total: 410  },
-  { date: "19/02/2026", casa: "BetMGM Pro", depositos: 1800, ftds: 2,  cpa: 300,   revshare: 180, total: 480  },
-  { date: "19/02/2026", casa: "SeuBet",     depositos: 500,  ftds: 1,  cpa: 150,   revshare: 50,  total: 200  },
-  { date: "18/02/2026", casa: "BrasilBet",  depositos: 4100, ftds: 6,  cpa: 900,   revshare: 410, total: 1310 },
-  { date: "18/02/2026", casa: "BetMGM",     depositos: 900,  ftds: 1,  cpa: 150,   revshare: 90,  total: 240  },
-  { date: "18/02/2026", casa: "LuvaBet",    depositos: 600,  ftds: 0,  cpa: 0,     revshare: 60,  total: 60   },
-  { date: "18/02/2026", casa: "BigBet",     depositos: 850,  ftds: 1,  cpa: 150,   revshare: 85,  total: 235  },
-  { date: "18/02/2026", casa: "BetMGM Pro", depositos: 2500, ftds: 4,  cpa: 600,   revshare: 250, total: 850  },
-  { date: "18/02/2026", casa: "SeuBet",     depositos: 300,  ftds: 0,  cpa: 0,     revshare: 30,  total: 30   },
-  { date: "17/02/2026", casa: "BrasilBet",  depositos: 2200, ftds: 3,  cpa: 450,   revshare: 220, total: 670  },
-  { date: "17/02/2026", casa: "BetMGM",     depositos: 1700, ftds: 3,  cpa: 450,   revshare: 170, total: 620  },
-  { date: "17/02/2026", casa: "LuvaBet",    depositos: 400,  ftds: 0,  cpa: 0,     revshare: 40,  total: 40   },
-  { date: "17/02/2026", casa: "BigBet",     depositos: 950,  ftds: 1,  cpa: 150,   revshare: 95,  total: 245  },
-  { date: "17/02/2026", casa: "BetMGM Pro", depositos: 1300, ftds: 2,  cpa: 300,   revshare: 130, total: 430  },
-  { date: "17/02/2026", casa: "SeuBet",     depositos: 700,  ftds: 1,  cpa: 150,   revshare: 70,  total: 220  },
-];
+interface MeEntrada {
+  id: string;
+  casinoId: string;
+  dataHora: number;
+  depositos: number;
+  cliques: number;
+  registros: number;
+  ftd: number;
+  valorRecebido: number;
+  casinoName: string;
+}
+
+function formatDateBr(ms: number): string {
+  const d = new Date(ms);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function mapEntradasToDayEntries(entradas: MeEntrada[]): DayEntry[] {
+  return entradas.map((e) => ({
+    date: formatDateBr(e.dataHora),
+    casa: e.casinoName,
+    depositos: e.depositos,
+    ftds: e.ftd,
+    cpa: 0,
+    revshare: e.valorRecebido,
+    total: e.valorRecebido,
+  }));
+}
 
 interface EntradasProps {
   embedded?: boolean;
@@ -61,7 +65,43 @@ const Entradas = ({ embedded = false }: EntradasProps) => {
   const [casaSelecionada, setCasaSelecionada] = useState("Todas");
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
-  const [expandedDays, setExpandedDays] = useState<string[]>(["20/02/2026"]);
+  const [entradas, setEntradas] = useState<MeEntrada[]>([]);
+  const [entradasLoading, setEntradasLoading] = useState(true);
+  const [entradasError, setEntradasError] = useState<string | null>(null);
+
+  const dayEntries = useMemo(() => mapEntradasToDayEntries(entradas), [entradas]);
+  const casas = useMemo(() => {
+    const names = [...new Set(dayEntries.map((e) => e.casa))].sort();
+    return ["Todas", ...names];
+  }, [dayEntries]);
+
+  const [expandedDays, setExpandedDays] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setEntradasError(null);
+    setEntradasLoading(true);
+    apiGet<MeEntrada[]>("/me/entradas")
+      .then((data) => {
+        if (!cancelled) {
+          setEntradas(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEntradasError("Não foi possível carregar as entradas.");
+          setEntradas([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setEntradasLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleDataInicioChange = (newDate: string) => {
     if (dataFim && newDate && newDate > dataFim) {
@@ -79,39 +119,50 @@ const Entradas = ({ embedded = false }: EntradasProps) => {
 
   const intervaloInvalido = Boolean(dataInicio && dataFim && dataInicio > dataFim);
 
-  const parseBrDate = (date: string) => {
+  const parseBrDate = useCallback((date: string) => {
     const [day, month, year] = date.split("/").map(Number);
     return new Date(year, month - 1, day);
-  };
+  }, []);
 
-  const isWithinDateRange = (entryDate: string) => {
-    const entryTime = parseBrDate(entryDate).getTime();
+  const isWithinDateRange = useCallback(
+    (entryDate: string) => {
+      const entryTime = parseBrDate(entryDate).getTime();
+      if (dataInicio) {
+        const startTime = new Date(`${dataInicio}T00:00:00`).getTime();
+        if (entryTime < startTime) return false;
+      }
+      if (dataFim) {
+        const endTime = new Date(`${dataFim}T23:59:59`).getTime();
+        if (entryTime > endTime) return false;
+      }
+      return true;
+    },
+    [dataInicio, dataFim, parseBrDate]
+  );
 
-    if (dataInicio) {
-      const startTime = new Date(`${dataInicio}T00:00:00`).getTime();
-      if (entryTime < startTime) return false;
+  const filtradas = useMemo(() => {
+    return dayEntries.filter((entry) => {
+      const casaOk =
+        casaSelecionada === "Todas" || entry.casa === casaSelecionada;
+      return casaOk && isWithinDateRange(entry.date);
+    });
+  }, [dayEntries, casaSelecionada, isWithinDateRange]);
+
+  const datesFiltered = useMemo(() => {
+    const set = new Set(filtradas.map((e) => e.date));
+    return [...set].sort((a, b) => {
+      const [da, ma, ya] = a.split("/").map(Number);
+      const [db, mb, yb] = b.split("/").map(Number);
+      return new Date(yb, mb - 1, db).getTime() - new Date(ya, ma - 1, da).getTime();
+    });
+  }, [filtradas]);
+
+  // Expandir o primeiro dia quando houver datas e expandedDays estiver vazio
+  useEffect(() => {
+    if (datesFiltered.length > 0 && expandedDays.length === 0) {
+      setExpandedDays([datesFiltered[0]]);
     }
-
-    if (dataFim) {
-      const endTime = new Date(`${dataFim}T23:59:59`).getTime();
-      if (entryTime > endTime) return false;
-    }
-
-    return true;
-  };
-
-  const filtradas = mockEntradas.filter((entry) => {
-    const casaOk =
-      casaSelecionada === "Todas" || entry.casa === casaSelecionada;
-    return casaOk && isWithinDateRange(entry.date);
-  });
-
-  // Group by date
-  const dates = [...new Set(filtradas.map(e => e.date))].sort((a, b) => {
-    const [da, ma, ya] = a.split("/").map(Number);
-    const [db, mb, yb] = b.split("/").map(Number);
-    return new Date(yb, mb - 1, db).getTime() - new Date(ya, ma - 1, da).getTime();
-  });
+  }, [datesFiltered, expandedDays.length]);
 
   const toggleDay = (date: string) => {
     setExpandedDays(prev =>
@@ -249,9 +300,17 @@ const Entradas = ({ embedded = false }: EntradasProps) => {
           )}
         </div>
 
+        {entradasError && (
+          <p className="text-destructive text-sm mb-4">{entradasError}</p>
+        )}
         {/* Entries grouped by day */}
         <div className="space-y-4">
-          {dates.map(date => {
+          {entradasLoading ? (
+            <p className="text-muted-foreground text-sm">Carregando entradas...</p>
+          ) : datesFiltered.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhuma entrada encontrada.</p>
+          ) : (
+          datesFiltered.map(date => {
             const dayTotals = getDayTotals(date);
             const dayEntries = filtradas.filter(e => e.date === date);
             const isExpanded = expandedDays.includes(date);
@@ -269,7 +328,7 @@ const Entradas = ({ embedded = false }: EntradasProps) => {
                     </div>
                     <div className="text-left">
                       <p className="font-bold text-foreground font-display">{date}</p>
-                      <p className="text-xs text-muted-foreground">{dayEntries.length} casa{dayEntries.length > 1 ? "s" : ""}</p>
+                      <p className="text-xs text-muted-foreground">{dayEntries.length} casa{dayEntries.length !== 1 ? "s" : ""}</p>
                     </div>
                   </div>
 
@@ -340,7 +399,8 @@ const Entradas = ({ embedded = false }: EntradasProps) => {
                 )}
               </Card>
             );
-          })}
+          })
+          )}
         </div>
       </main>
   );

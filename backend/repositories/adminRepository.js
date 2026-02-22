@@ -122,6 +122,100 @@ export const adminRepository = {
       .all(...params);
   },
 
+  insertEntrada({
+    id,
+    userId,
+    casinoId,
+    dataHora,
+    depositos,
+    cliques,
+    registros,
+    ftd,
+    valorRecebido,
+  }) {
+    db.prepare(
+      `INSERT INTO entradas (id, user_id, casino_id, data_hora, depositos, cliques, registros, ftd, valor_recebido)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      id,
+      userId,
+      casinoId,
+      dataHora,
+      depositos,
+      cliques,
+      registros,
+      ftd,
+      valorRecebido,
+    );
+  },
+
+  insertEntradasBulk(rows) {
+    const insert = db.prepare(
+      `INSERT INTO entradas (id, user_id, casino_id, data_hora, depositos, cliques, registros, ftd, valor_recebido)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+
+    const tx = db.transaction((items) => {
+      for (const row of items) {
+        insert.run(
+          row.id,
+          row.userId,
+          row.casinoId,
+          row.dataHora,
+          row.depositos,
+          row.cliques,
+          row.registros,
+          row.ftd,
+          row.valorRecebido,
+        );
+      }
+    });
+
+    tx(rows);
+  },
+
+  bumpWalletTotals(userId, deltaValorRecebido) {
+    // Mantem carteira simples: soma em "recebido_total" e "saldo_disponivel".
+    // Se você tiver regra de "pendente", dá pra adaptar aqui depois.
+    db.prepare(
+      `INSERT INTO wallet_totals (user_id, valor_recebido_total, saldo_disponivel, valor_total_sacado)
+       VALUES (?, ?, ?, 0)
+       ON CONFLICT(user_id) DO UPDATE SET
+         valor_recebido_total = wallet_totals.valor_recebido_total + excluded.valor_recebido_total,
+         saldo_disponivel = wallet_totals.saldo_disponivel + excluded.saldo_disponivel,
+         updated_at = datetime('now')`,
+    ).run(userId, deltaValorRecebido, deltaValorRecebido);
+  },
+
+  recomputeWalletTotalsFromEntradas() {
+    // Recalcula apenas valor_recebido_total com base nas entradas.
+    // Nao mexe automaticamente em saques/pagamentos reais.
+    const rows = db
+      .prepare(
+        `SELECT user_id, SUM(valor_recebido) AS total
+         FROM entradas
+         GROUP BY user_id`,
+      )
+      .all();
+
+    const upsert = db.prepare(
+      `INSERT INTO wallet_totals (user_id, valor_recebido_total, saldo_disponivel, valor_total_sacado)
+       VALUES (?, ?, 0, 0)
+       ON CONFLICT(user_id) DO UPDATE SET
+         valor_recebido_total = excluded.valor_recebido_total,
+         updated_at = datetime('now')`,
+    );
+
+    const tx = db.transaction((items) => {
+      for (const row of items) {
+        upsert.run(row.user_id, Number(row.total || 0));
+      }
+    });
+
+    tx(rows);
+    return rows.length;
+  },
+
   // --- Carteiras (wallet_totals) ---
   listWalletsAdmin() {
     return db
