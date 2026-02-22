@@ -10,7 +10,7 @@ import { body, param, validationResult } from "express-validator";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { ValidationError } from "./errors/AppError.js";
+import { AppError, ValidationError } from "./errors/AppError.js";
 import { adminAuthMiddleware } from "./auth/adminAuthMiddleware.js";
 import { authMiddleware } from "./auth/authMiddleware.js";
 import { asyncHandler } from "./middleware/errorHandler.js";
@@ -92,15 +92,27 @@ const upload = multer({
     },
   }),
   limits: { fileSize: UPLOAD.MAX_FILE_SIZE, files: UPLOAD.MAX_FILES },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (req, file, cb) => {
+    // IMPORTANTE:
+    // Para evitar ECONNRESET em uploads multipart (cliente ainda enviando o body),
+    // não lançamos erro direto no fileFilter. Marcamos o erro no req e retornamos
+    // cb(null, false) para o Multer continuar consumindo o stream.
     if (!UPLOAD.ALLOWED_MIMES.has(file.mimetype)) {
-      return cb(new Error("Tipo de arquivo não permitido"));
+      req.uploadValidationError = {
+        code: "UPLOAD_FILETYPE",
+        message: "Tipo de arquivo nao permitido.",
+      };
+      return cb(null, false);
     }
 
     const ext = path.extname(file.originalname || "").toLowerCase();
     const allowedExtensions = UPLOAD.ALLOWED_EXTENSIONS_BY_MIME[file.mimetype] || [];
     if (!allowedExtensions.includes(ext)) {
-      return cb(new Error("Extensao de arquivo invalida para o MIME informado"));
+      req.uploadValidationError = {
+        code: "UPLOAD_EXTENSION_MISMATCH",
+        message: "Extensao de arquivo invalida para o MIME informado.",
+      };
+      return cb(null, false);
     }
 
     return cb(null, true);
@@ -115,6 +127,14 @@ function handleValidationErrors(req, res, next) {
     return next(new ValidationError(errors.array()[0].msg, errors.array()));
   }
   next();
+}
+
+function handleUploadValidationErrors(req, _res, next) {
+  if (req.uploadValidationError) {
+    const { code, message } = req.uploadValidationError;
+    return next(new AppError(message, 400, code));
+  }
+  return next();
 }
 
 // --- Regras de validacao ---
@@ -219,9 +239,35 @@ router.post("/register", authLimiter, registerRules, handleValidationErrors, asy
 router.post("/login", authLimiter, loginRules, handleValidationErrors, asyncHandler(login));
 
 // --- Rotas de suporte ---
-router.post("/support", supportLimiter, upload.array("attachments", UPLOAD.MAX_FILES), supportRules, handleValidationErrors, asyncHandler(saveSupportMessage));
-router.post("/support/ticket", authMiddleware, supportLimiter, upload.array("attachments", UPLOAD.MAX_FILES), supportRules, handleValidationErrors, asyncHandler(createSupportTicket));
-router.post("/support/ticket/:id/reply", authMiddleware, supportLimiter, upload.array("attachments", UPLOAD.MAX_FILES), replyRules, handleValidationErrors, asyncHandler(addReply));
+router.post(
+  "/support",
+  supportLimiter,
+  upload.array("attachments", UPLOAD.MAX_FILES),
+  handleUploadValidationErrors,
+  supportRules,
+  handleValidationErrors,
+  asyncHandler(saveSupportMessage),
+);
+router.post(
+  "/support/ticket",
+  authMiddleware,
+  supportLimiter,
+  upload.array("attachments", UPLOAD.MAX_FILES),
+  handleUploadValidationErrors,
+  supportRules,
+  handleValidationErrors,
+  asyncHandler(createSupportTicket),
+);
+router.post(
+  "/support/ticket/:id/reply",
+  authMiddleware,
+  supportLimiter,
+  upload.array("attachments", UPLOAD.MAX_FILES),
+  handleUploadValidationErrors,
+  replyRules,
+  handleValidationErrors,
+  asyncHandler(addReply),
+);
 router.get("/support/ticket/:id/replies", authMiddleware, ticketIdRule, handleValidationErrors, asyncHandler(getTicketReplies));
 router.get("/support/my-messages", authMiddleware, asyncHandler(getClientMessages));
 
