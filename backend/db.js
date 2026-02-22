@@ -39,6 +39,23 @@ if (fs.existsSync(schemaPath)) {
   db.exec(schemaSql);
 }
 
+function ensureColumn(table, column, definition) {
+  const cols = db.pragma(`table_info(${table})`);
+  const has = cols.some((c) => c.name === column);
+  if (has) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+// Backfill/migrations leves para manter compatibilidade com bancos antigos.
+// (CREATE TABLE IF NOT EXISTS não adiciona colunas em tabelas já existentes)
+try {
+  ensureColumn("casinos", "url_afiliado", "TEXT");
+  ensureColumn("casinos", "comissao_cpa", "REAL NOT NULL DEFAULT 0");
+  ensureColumn("casinos", "comissao_revshare", "REAL NOT NULL DEFAULT 0");
+} catch (err) {
+  logger.warn("Falha ao aplicar migrations leves no SQLite", { error: err.message });
+}
+
 // Log de conexao (visivel em qualquer ambiente)
 logger.info("SQLite conectado", { dbPath });
 

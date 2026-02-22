@@ -98,4 +98,13 @@ export async function apiPut<T>(
   return handleResponse<T>(response);
 }
 
+/** DELETE com autenticacao automatica. */
+export async function apiDelete<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  return handleResponse<T>(response);
+}
+
 export { ApiError };

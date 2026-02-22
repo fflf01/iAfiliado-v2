@@ -21,6 +21,7 @@ import Suporte from "./pages/Suporte";
 import Comissoes from "./pages/Comissoes";
 import SuporteCliente from "./pages/SuporteCliente";
 import SuporteAdmin from "./pages/SuporteAdmin";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/suporte-cliente" element={<ProtectedRoute><SuporteCliente /></ProtectedRoute>} />
 
           {/* Rotas de admin (requer autenticação + admin) */}
+          <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
           <Route path="/suporteadmin" element={<ProtectedRoute requireAdmin><SuporteAdmin /></ProtectedRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

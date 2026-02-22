@@ -21,6 +21,14 @@ import {
   getProfile,
 } from "./controllers/authController.js";
 import {
+  listCasinos,
+  createCasino,
+  updateCasino,
+  deleteCasino,
+  listEntradasAdmin,
+  listWalletsAdmin,
+} from "./controllers/adminController.js";
+import {
   saveSupportMessage,
   createSupportTicket,
   getSupportMessages,
@@ -220,6 +228,12 @@ router.get("/profile", authMiddleware, asyncHandler(getProfile));
 router.get("/admin", authMiddleware, adminAuthMiddleware, (_req, res) => {
   res.json({ message: "Bem-vindo, admin." });
 });
+router.get("/admin/casinos", authMiddleware, adminAuthMiddleware, asyncHandler(listCasinos));
+router.post("/admin/casinos", authMiddleware, adminAuthMiddleware, asyncHandler(createCasino));
+router.put("/admin/casinos/:id", authMiddleware, adminAuthMiddleware, asyncHandler(updateCasino));
+router.delete("/admin/casinos/:id", authMiddleware, adminAuthMiddleware, asyncHandler(deleteCasino));
+router.get("/admin/entradas", authMiddleware, adminAuthMiddleware, asyncHandler(listEntradasAdmin));
+router.get("/admin/wallets", authMiddleware, adminAuthMiddleware, asyncHandler(listWalletsAdmin));
 router.get("/support/messages", authMiddleware, adminAuthMiddleware, asyncHandler(getSupportMessages));
 router.put(
   "/support/messages/:id",
