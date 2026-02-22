@@ -215,7 +215,7 @@ const Dashboard = () => {
               </span>
             </span>
             {user?.is_admin && (
-              <Link to="/suporteadmin">
+              <Link to="/admin">
                 <Button className="gap-2 btn-principal" size="sm">
                   <Shield className="w-4 h-4" />
                   Admin
