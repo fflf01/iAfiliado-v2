@@ -30,6 +30,7 @@ import {
   importEntradas,
   listWalletsAdmin,
   recomputeWalletTotals,
+  updateCadastroStatus,
 } from "./controllers/adminController.js";
 import {
   saveSupportMessage,
@@ -40,7 +41,7 @@ import {
   getTicketReplies,
   getClientMessages,
 } from "./controllers/supportController.js";
-import { getMyStats, getMyWallet, getMyEntradas } from "./controllers/dashboardController.js";
+import { getMyStats, getMyWallet, getMyEntradas, getMyCasas } from "./controllers/dashboardController.js";
 import { UPLOAD, RATE_LIMIT, AUTH, TICKET, VALIDATION } from "./config/constants.js";
 
 const router = express.Router();
@@ -149,6 +150,17 @@ const registerRules = [
     .escape(),
   body("login").trim().notEmpty().withMessage("Login e obrigatorio.").escape(),
   body("email").trim().notEmpty().withMessage("Email e obrigatorio.").isEmail().withMessage("Email invalido.").normalizeEmail(),
+  body("cpfCnpj")
+    .notEmpty()
+    .withMessage("CPF/CNPJ e obrigatorio.")
+    .customSanitizer((value) => String(value).replace(/\D/g, ""))
+    .custom((value) => {
+      const digits = String(value || "");
+      if (digits.length !== 11 && digits.length !== 14) {
+        throw new Error("CPF/CNPJ invalido.");
+      }
+      return true;
+    }),
   body("password").notEmpty().withMessage("Senha e obrigatoria.").isLength({ min: AUTH.MIN_PASSWORD_LENGTH }).withMessage(`Senha deve ter no minimo ${AUTH.MIN_PASSWORD_LENGTH} caracteres.`),
   body("phone").optional().trim().escape(),
   body("Tipo_Cliente").optional().trim().escape(),
@@ -234,6 +246,16 @@ const updateTicketRules = [
   }),
 ];
 
+const updateCadastroStatusRules = [
+  param("id").isInt().withMessage("ID do usuario invalido."),
+  body("status")
+    .trim()
+    .notEmpty()
+    .withMessage("Status e obrigatorio.")
+    .isIn(["em_analise", "aprovado", "rejeitado"])
+    .withMessage("Status invalido. Use em_analise, aprovado ou rejeitado."),
+];
+
 // --- Rotas publicas (com rate limiting e validacao) ---
 router.post("/register", authLimiter, registerRules, handleValidationErrors, asyncHandler(register));
 router.post("/login", authLimiter, loginRules, handleValidationErrors, asyncHandler(login));
@@ -274,6 +296,7 @@ router.get("/support/my-messages", authMiddleware, asyncHandler(getClientMessage
 // --- Rotas protegidas (usuário autenticado) ---
 router.get("/profile", authMiddleware, asyncHandler(getProfile));
 router.get("/me/stats", authMiddleware, asyncHandler(getMyStats));
+router.get("/me/casas", authMiddleware, asyncHandler(getMyCasas));
 router.get("/me/wallet", authMiddleware, asyncHandler(getMyWallet));
 router.get("/me/entradas", authMiddleware, asyncHandler(getMyEntradas));
 
@@ -290,6 +313,14 @@ router.post("/admin/entradas", authMiddleware, adminAuthMiddleware, asyncHandler
 router.post("/admin/entradas/import", authMiddleware, adminAuthMiddleware, asyncHandler(importEntradas));
 router.get("/admin/wallets", authMiddleware, adminAuthMiddleware, asyncHandler(listWalletsAdmin));
 router.post("/admin/wallets/recompute", authMiddleware, adminAuthMiddleware, asyncHandler(recomputeWalletTotals));
+router.put(
+  "/admin/solicitacoes/:id/status",
+  authMiddleware,
+  adminAuthMiddleware,
+  updateCadastroStatusRules,
+  handleValidationErrors,
+  asyncHandler(updateCadastroStatus),
+);
 router.get("/support/messages", authMiddleware, adminAuthMiddleware, asyncHandler(getSupportMessages));
 router.put(
   "/support/messages/:id",

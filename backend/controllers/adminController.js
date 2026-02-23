@@ -36,3 +36,7 @@ export function listWalletsAdmin(req, res) {
   return res.json(adminService.listWalletsAdmin());
 }
 
+export function updateCadastroStatus(req, res) {
+  return res.json(adminService.updateCadastroStatus(req.params.id, req.body));
+}
+

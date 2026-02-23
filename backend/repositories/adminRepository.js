@@ -235,5 +235,18 @@ export const adminRepository = {
       )
       .all();
   },
+
+  // --- Solicitações de cadastro (aprovação iAfiliado) ---
+  updateCadastroStatus(userId, status) {
+    const result = db
+      .prepare(
+        `UPDATE users
+         SET cadastro_status = ?,
+             updated_at = datetime('now')
+         WHERE id = ?`,
+      )
+      .run(status, userId);
+    return { changes: result.changes };
+  },
 };
 

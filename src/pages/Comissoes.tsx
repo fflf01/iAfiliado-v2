@@ -2,6 +2,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { TrendingUp, Wallet, Clock, CheckCircle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import "@/Stilos/stilo.css";
 
@@ -18,20 +24,21 @@ const benefits = [
   },
   {
     icon: Wallet,
-    title: "Sem Valor Mínimo Alto",
+    title: "Saque rápido e sem burocracia",
     description: "Saque a partir de R$ 50 via PIX instantâneo.",
   },
   {
     icon: Zap,
     title: "Dashboard em Tempo Real",
-    description: "Acompanhe seus ganhos e conversões ao vivo.",
+    description: "Dashboard atualizado diariamente.",
   },
 ];
 
 const Comissoes = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <Navbar />
 
       {/* Hero Section */}
       <section className="pt-32 pb-16 px-4 relative overflow-hidden">
@@ -122,7 +129,28 @@ const Comissoes = () => {
               },
               {
                 q: "Como funciona a comissão recorrente?",
-                a: "Você recebe uma porcentagem sobre todas as apostas dos seus indicados, pelo tempo que eles permanecerem ativos na plataforma.",
+                a: (
+                  <span>
+                    Você recebe uma porcentagem sobre todas os depósitos dos seus
+                    indicados
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Informação sobre CPA"
+                          className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-yellow-500/40 bg-yellow-500/10 text-[12px] font-bold text-yellow-600 align-middle cursor-help"
+                        >
+                          ?
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        Caso seu acordo seja de CPA, você receberá apenas pela
+                        indicação.
+                      </TooltipContent>
+                    </Tooltip>
+                    , pelo tempo que eles permanecerem ativos na plataforma.
+                  </span>
+                ),
               },
             ].map((faq, index) => (
               <div
@@ -160,7 +188,8 @@ const Comissoes = () => {
       </section>
 
       <Footer />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 

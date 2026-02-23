@@ -73,25 +73,46 @@ interface UserWallet {
 }
 
 interface Solicitacao {
-  id: string;
+  id: number;
   nome: string;
   login: string;
   email: string;
   telefone: string;
+  cpfCnpj?: string | null;
+  tipoCliente?: string | null;
+  contatoAnalise?: string | null;
   dataCadastro: string;
   status: "pendente" | "aprovado" | "rejeitado";
 }
 
-// ── Mock Data ────────────────────────────────────────────────────────────
-// Observacao: solicitacoes de cadastro ainda estao como mock (nao existe uma tabela/status no schema atual).
-const mockSolicitacoes: Solicitacao[] = [
-  { id: "1", nome: "Lucas Ferreira", login: "lucasf", email: "lucas@email.com", telefone: "(11) 99999-1111", dataCadastro: "20/02/2026", status: "pendente" },
-  { id: "2", nome: "Bruna Almeida", login: "brunaa", email: "bruna@email.com", telefone: "(21) 98888-2222", dataCadastro: "19/02/2026", status: "pendente" },
-  { id: "3", nome: "Rafael Mendes", login: "rafaelm", email: "rafael@email.com", telefone: "(31) 97777-3333", dataCadastro: "19/02/2026", status: "pendente" },
-  { id: "4", nome: "Camila Rocha", login: "camilar", email: "camila@email.com", telefone: "(41) 96666-4444", dataCadastro: "18/02/2026", status: "aprovado" },
-  { id: "5", nome: "Thiago Nunes", login: "thiagon", email: "thiago@email.com", telefone: "(51) 95555-5555", dataCadastro: "17/02/2026", status: "rejeitado" },
-  { id: "6", nome: "Juliana Costa", login: "julianac", email: "juliana@email.com", telefone: "(61) 94444-6666", dataCadastro: "17/02/2026", status: "pendente" },
-];
+interface ClientRow {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  cpf_cnpj: string | null;
+  tipo_cliente: string | null;
+  tele_an: string | null;
+  rede_an: string | null;
+  cadastro_status: string | null;
+  created_at: string;
+}
+
+function tipoClienteLabel(tipo?: string | null): string {
+  switch (tipo) {
+    case "gestor_vip":
+      return "VIP Manager";
+    case "gestor_afiliados":
+      return "Affiliate Manager";
+    case "influencer":
+      return "Influencer";
+    case "vip":
+      return "VIP";
+    default:
+      return tipo ? tipo : "N/A";
+  }
+}
 
 function formatDatePtBr(value: string) {
   const d = new Date(value);
@@ -144,7 +165,7 @@ const Admin = () => {
   const [filtroTipo, setFiltroTipo] = useState("todos");
 
   // Solicitações state
-  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>(mockSolicitacoes);
+  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [searchSolicitacoes, setSearchSolicitacoes] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [detailDialog, setDetailDialog] = useState(false);
@@ -158,16 +179,39 @@ const Admin = () => {
     async function load() {
       try {
         setLoading(true);
-        const [casinosData, entradasData, walletsData] = await Promise.all([
+        const [casinosData, entradasData, walletsData, clientsData] = await Promise.all([
           apiGet<Casino[]>("/admin/casinos"),
           apiGet<EntradaAdmin[]>("/admin/entradas"),
           apiGet<UserWallet[]>("/admin/wallets"),
+          apiGet<ClientRow[]>("/clients"),
         ]);
 
         if (cancelled) return;
         setCasinos(casinosData);
         setEntradas(entradasData);
         setWallets(walletsData);
+
+        // Solicitações: usuários que marcaram "Quero ser um iAfiliado" (tipo_cliente preenchido)
+        const solicitacoesData: Solicitacao[] = (clientsData || [])
+          .filter((u) => !!u.tipo_cliente)
+          .map((u) => ({
+            id: u.id,
+            nome: u.full_name,
+            login: u.username,
+            email: u.email,
+            telefone: u.phone || "N/A",
+            cpfCnpj: u.cpf_cnpj,
+            tipoCliente: u.tipo_cliente,
+            contatoAnalise: u.tipo_cliente === "influencer" ? u.rede_an : u.tele_an,
+            dataCadastro: formatDatePtBr(u.created_at),
+            status:
+              u.cadastro_status === "aprovado"
+                ? "aprovado"
+                : u.cadastro_status === "rejeitado"
+                  ? "rejeitado"
+                  : "pendente",
+          }));
+        setSolicitacoes(solicitacoesData);
       } catch (err) {
         toast({
           title: "Erro ao carregar dados",
@@ -272,16 +316,42 @@ const Admin = () => {
   };
 
   // ── Solicitações actions ─────────────────────────────────
-  const aprovarSolicitacao = (id: string) => {
-    setSolicitacoes(prev => prev.map(s => s.id === id ? { ...s, status: "aprovado" } : s));
-    toast({ title: "Solicitação aprovada!", description: "O afiliado foi aprovado e pode acessar a plataforma." });
-    setDetailDialog(false);
+  const aprovarSolicitacao = async (id: number) => {
+    try {
+      await apiPut<{ ok: true }>(`/admin/solicitacoes/${id}/status`, {
+        status: "aprovado",
+      });
+      setSolicitacoes((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: "aprovado" } : s)),
+      );
+      toast({ title: "Solicitação aprovada!", description: "O usuário foi aprovado." });
+      setDetailDialog(false);
+    } catch (err) {
+      toast({
+        title: "Erro ao aprovar",
+        description: getErrorMessage(err),
+        variant: "destructive",
+      });
+    }
   };
 
-  const rejeitarSolicitacao = (id: string) => {
-    setSolicitacoes(prev => prev.map(s => s.id === id ? { ...s, status: "rejeitado" } : s));
-    toast({ title: "Solicitação rejeitada", description: "O cadastro foi rejeitado." });
-    setDetailDialog(false);
+  const rejeitarSolicitacao = async (id: number) => {
+    try {
+      await apiPut<{ ok: true }>(`/admin/solicitacoes/${id}/status`, {
+        status: "rejeitado",
+      });
+      setSolicitacoes((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, status: "rejeitado" } : s)),
+      );
+      toast({ title: "Solicitação rejeitada", description: "O cadastro foi rejeitado." });
+      setDetailDialog(false);
+    } catch (err) {
+      toast({
+        title: "Erro ao rejeitar",
+        description: getErrorMessage(err),
+        variant: "destructive",
+      });
+    }
   };
 
   const openDetail = (s: Solicitacao) => {
@@ -512,7 +582,16 @@ const Admin = () => {
                       </div>
                       <div>
                         <p className="font-bold text-foreground">{sol.nome}</p>
-                        <p className="text-xs text-muted-foreground">{sol.email} • {sol.telefone}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {sol.email} • {sol.telefone}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Opção:{" "}
+                          <span className="text-foreground font-medium">
+                            {tipoClienteLabel(sol.tipoCliente)}
+                          </span>
+                          {sol.contatoAnalise ? ` • Contato: ${sol.contatoAnalise}` : ""}
+                        </p>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
@@ -535,10 +614,22 @@ const Admin = () => {
                         </Button>
                         {sol.status === "pendente" && (
                           <>
-                            <Button variant="ghost" size="icon" onClick={() => aprovarSolicitacao(sol.id)} className="text-primary hover:text-primary" title="Aprovar">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => aprovarSolicitacao(sol.id)}
+                              className="text-primary hover:text-primary"
+                              title="Aprovar"
+                            >
                               <CheckCircle className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => rejeitarSolicitacao(sol.id)} className="text-destructive hover:text-destructive" title="Rejeitar">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => rejeitarSolicitacao(sol.id)}
+                              className="text-destructive hover:text-destructive"
+                              title="Rejeitar"
+                            >
                               <XCircle className="w-4 h-4" />
                             </Button>
                           </>
@@ -697,6 +788,22 @@ const Admin = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">CPF/CNPJ</p>
+                  <p className="text-sm font-medium text-foreground">{selectedSolicitacao.cpfCnpj || "N/A"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Opção do registro</p>
+                  <p className="text-sm font-medium text-foreground">{tipoClienteLabel(selectedSolicitacao.tipoCliente)}</p>
+                </div>
+              </div>
+              {selectedSolicitacao.contatoAnalise && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Contato para análise</p>
+                  <p className="text-sm font-medium text-foreground">{selectedSolicitacao.contatoAnalise}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
                   <p className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" /> Data do Cadastro</p>
                   <p className="text-sm font-medium text-foreground">{selectedSolicitacao.dataCadastro}</p>
                 </div>
@@ -713,10 +820,18 @@ const Admin = () => {
           )}
           {selectedSolicitacao?.status === "pendente" && (
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => selectedSolicitacao && rejeitarSolicitacao(selectedSolicitacao.id)} className="text-destructive border-destructive/30 hover:bg-destructive/10 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => selectedSolicitacao && rejeitarSolicitacao(selectedSolicitacao.id)}
+                className="text-destructive border-destructive/30 hover:bg-destructive/10 gap-2"
+              >
                 <XCircle className="w-4 h-4" /> Rejeitar
               </Button>
-              <Button variant="neon" onClick={() => selectedSolicitacao && aprovarSolicitacao(selectedSolicitacao.id)} className="gap-2">
+              <Button
+                variant="neon"
+                onClick={() => selectedSolicitacao && aprovarSolicitacao(selectedSolicitacao.id)}
+                className="gap-2"
+              >
                 <CheckCircle className="w-4 h-4" /> Aprovar
               </Button>
             </DialogFooter>

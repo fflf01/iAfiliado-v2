@@ -93,11 +93,31 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          SERVER_HOST="${{ secrets.SERVER_HOST }}"
+          SERVER_PORT="${{ secrets.SERVER_PORT }}"
+          if [ -z "$SERVER_HOST" ] || [ -z "$SERVER_PORT" ]; then
+            echo "Erro: secrets SERVER_HOST/SERVER_PORT nao configurados."
+            exit 1
+          fi
+
+          # Pode falhar se firewall bloquear SSH a partir do GitHub Runner.
+          for i in 1 2 3; do
+            echo "ssh-keyscan tentativa $i/3 em ${SERVER_HOST}:${SERVER_PORT}..."
+            ssh-keyscan -T 10 -H -p "$SERVER_PORT" "$SERVER_HOST" >> ~/.ssh/known_hosts 2>/tmp/ssh-keyscan.err && break
+            cat /tmp/ssh-keyscan.err || true
+            sleep 2
+          done
+
+          if ! ssh-keygen -F "$SERVER_HOST" >/dev/null 2>&1; then
+            echo "Erro: nao foi possivel obter host key via ssh-keyscan."
+            echo "Causas comuns: porta SSH bloqueada para IPs do GitHub Actions, SERVER_HOST/PORT incorretos, ou servidor offline."
+            exit 1
+          fi
 
       - name: Deploy to server
         env:

@@ -34,6 +34,7 @@ import {
 import "@/Stilos/stilo.css";
 import { useAuth } from "@/hooks/useAuth";
 import { apiGet } from "@/lib/api-client";
+import type { User as AppUser } from "@/types";
 import PlataformasD from "./Plataformas_D";
 import LinkPage from "./LinkPage";
 import CarteiraPage from "./Carteira";
@@ -51,6 +52,13 @@ interface MeEntrada {
   ftd: number;
   valorRecebido: number;
   casinoName: string;
+}
+
+interface MeCasaVinculada {
+  casinoId: string;
+  casinoName: string;
+  status: string;
+  link: string | null;
 }
 
 function aggregateEntradasByMonth(entradas: MeEntrada[]): { name: string; cliques: number; conversoes: number }[] {
@@ -136,19 +144,63 @@ const defaultStats: MeStats = {
   totalFtds: 0,
 };
 
+function buildQuery(params: Record<string, string | number | undefined | null>): string {
+  const usp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || v === "") continue;
+    usp.set(k, String(v));
+  }
+  const qs = usp.toString();
+  return qs ? `?${qs}` : "";
+}
+
+function startOfDayMs(d: Date): number {
+  const copy = new Date(d);
+  copy.setHours(0, 0, 0, 0);
+  return copy.getTime();
+}
+
+function endOfDayMs(d: Date): number {
+  const copy = new Date(d);
+  copy.setHours(23, 59, 59, 999);
+  return copy.getTime();
+}
+
 const Dashboard = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [profileUser, setProfileUser] = useState<AppUser | null>(null);
   const [meStats, setMeStats] = useState<MeStats>(defaultStats);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [meEntradas, setMeEntradas] = useState<MeEntrada[]>([]);
+  const [casasVinculadas, setCasasVinculadas] = useState<MeCasaVinculada[]>([]);
+  const [casasLoading, setCasasLoading] = useState(true);
+  const [dateRange, setDateRange] = useState("7");
+  const [selectedHouse, setSelectedHouse] = useState("todas");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<{ message: string; user: AppUser }>("/profile")
+      .then((data) => {
+        if (!cancelled) setProfileUser(data?.user || null);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileUser(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     setStatsError(null);
     setStatsLoading(true);
-    apiGet<MeStats>("/me/stats")
+    const casinoId = selectedHouse !== "todas" ? selectedHouse : undefined;
+    apiGet<MeStats>(`/me/stats${buildQuery({ casinoId })}`)
       .then((data) => {
         if (!cancelled) {
           setMeStats(data);
@@ -167,11 +219,39 @@ const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [selectedHouse]);
 
   useEffect(() => {
     let cancelled = false;
-    apiGet<MeEntrada[]>("/me/entradas")
+    const casinoId = selectedHouse !== "todas" ? selectedHouse : undefined;
+
+    const today = new Date();
+    let fromMs: number | undefined;
+    let toMs: number | undefined;
+
+    if (dateRange === "1") {
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
+      fromMs = startOfDayMs(y);
+      toMs = endOfDayMs(y);
+    } else if (dateRange === "7" || dateRange === "30") {
+      const days = Number(dateRange);
+      const start = new Date(today);
+      start.setDate(start.getDate() - (days - 1));
+      fromMs = startOfDayMs(start);
+      toMs = endOfDayMs(today);
+    } else if (dateRange === "custom") {
+      if (customStartDate) {
+        fromMs = startOfDayMs(new Date(`${customStartDate}T00:00:00`));
+      }
+      if (customEndDate) {
+        toMs = endOfDayMs(new Date(`${customEndDate}T00:00:00`));
+      }
+    }
+
+    apiGet<MeEntrada[]>(
+      `/me/entradas${buildQuery({ casinoId, fromMs, toMs })}`,
+    )
       .then((data) => {
         if (!cancelled) {
           setMeEntradas(Array.isArray(data) ? data : []);
@@ -185,7 +265,38 @@ const Dashboard = () => {
     return () => {
       cancelled = true;
     };
+  }, [selectedHouse, dateRange, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCasasLoading(true);
+    apiGet<MeCasaVinculada[]>("/me/casas")
+      .then((data) => {
+        if (!cancelled) {
+          setCasasVinculadas(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCasasVinculadas([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCasasLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (selectedHouse === "todas") return;
+    if (!casasVinculadas.some((c) => c.casinoId === selectedHouse)) {
+      setSelectedHouse("todas");
+    }
+  }, [casasVinculadas, selectedHouse]);
 
   const activeView = location.pathname.includes("/plataformas")
     ? "plataformas"
@@ -197,11 +308,6 @@ const Dashboard = () => {
         ? "carteira"
         : "dashboard";
 
-  const [dateRange, setDateRange] = useState("7");
-  const [selectedHouse, setSelectedHouse] = useState("todas");
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
-
   const sidebarItems = [
     { icon: LinkIcon, label: "DashBoard", id: "dashboard", path: "/dashboard" },
     { icon: CalendarDays, label: "Entradas", id: "entradas", path: "/entradas" },
@@ -210,17 +316,6 @@ const Dashboard = () => {
     { icon: Rocket, label: "Carteira", id: "carteira", path: "/dashboard/carteira" },
     { icon: HelpCircle, label: "Fale com Suporte", id: "suporte", path: user?.is_admin ? "/suporteadmin" : "/suporte-cliente" },
   ];
-
-  const houseMultipliers: Record<string, number> = {
-    todas: 1,
-    bet365: 0.85,
-    betano: 0.7,
-    stake: 1.1,
-    "1xbet": 0.6,
-    sportingbet: 0.75,
-  };
-
-  const currentMultiplier = houseMultipliers[selectedHouse] ?? 1;
 
   const baseStats = useMemo(() => {
     return statTemplates.map((t) => ({
@@ -231,34 +326,27 @@ const Dashboard = () => {
 
   const filteredStats = useMemo(() => {
     return baseStats.map((stat) => {
-      const scaledValue = stat.value * currentMultiplier;
       const formattedValue =
         stat.format === "currency"
-          ? `R$ ${scaledValue.toLocaleString("pt-BR", {
+          ? `R$ ${stat.value.toLocaleString("pt-BR", {
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
             })}`
-          : Math.round(scaledValue).toLocaleString("pt-BR");
+          : Math.round(stat.value).toLocaleString("pt-BR");
 
       return {
         ...stat,
         value: formattedValue,
       };
     });
-  }, [baseStats, currentMultiplier]);
+  }, [baseStats]);
 
   const performanceData = useMemo(
     () => aggregateEntradasByMonth(meEntradas),
     [meEntradas]
   );
 
-  const filteredPerformanceData = useMemo(() => {
-    return performanceData.map((item) => ({
-      ...item,
-      cliques: Math.round(item.cliques * currentMultiplier),
-      conversoes: Math.round(item.conversoes * currentMultiplier),
-    }));
-  }, [performanceData, currentMultiplier]);
+  const filteredPerformanceData = useMemo(() => performanceData, [performanceData]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -331,6 +419,11 @@ const Dashboard = () => {
                   <p className="text-sm text-muted-foreground">
                     Acompanhe suas estatísticas e gerencie seus links de afiliado
                   </p>
+                  {profileUser?.cadastro_status === "em_analise" && (
+                    <div className="mt-3 inline-flex items-center rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-600">
+                      Em Analise.
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 w-full sm:w-auto">
                   <label className="text-sm text-muted-foreground">
@@ -342,11 +435,20 @@ const Dashboard = () => {
                     onChange={(e) => setSelectedHouse(e.target.value)}
                   >
                     <option value="todas">Todas as casas</option>
-                    <option value="bet365">Bet365</option>
-                    <option value="betano">Betano</option>
-                    <option value="stake">Stake</option>
-                    <option value="1xbet">1xBet</option>
-                    <option value="sportingbet">Sportingbet</option>
+                    {casasLoading ? (
+                      <option value="" disabled>
+                        Carregando...
+                      </option>
+                    ) : (
+                      (casasVinculadas.some((c) => c.status === "active")
+                        ? casasVinculadas.filter((c) => c.status === "active")
+                        : casasVinculadas
+                      ).map((casa) => (
+                        <option key={casa.casinoId} value={casa.casinoId}>
+                          {casa.casinoName}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

@@ -5,7 +5,7 @@ import { dashboardService } from "../services/dashboardService.js";
  * Requer authMiddleware (req.user.id).
  */
 export function getMyStats(req, res) {
-  const stats = dashboardService.getMyStats(req.user.id);
+  const stats = dashboardService.getMyStats(req.user.id, req.query);
   return res.json(stats);
 }
 
@@ -16,6 +16,15 @@ export function getMyStats(req, res) {
 export function getMyWallet(req, res) {
   const wallet = dashboardService.getMyWallet(req.user.id);
   return res.json(wallet);
+}
+
+/**
+ * GET /me/casas - Casas/casinos vinculados ao usuário autenticado.
+ * Requer authMiddleware (req.user.id).
+ */
+export function getMyCasas(req, res) {
+  const casas = dashboardService.getMyCasas(req.user.id);
+  return res.json(casas);
 }
 
 /**

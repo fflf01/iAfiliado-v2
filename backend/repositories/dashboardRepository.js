@@ -8,9 +8,20 @@ export const dashboardRepository = {
   /**
    * Retorna totais agregados das entradas do usuário.
    * @param {number} userId
+   * @param {{ casinoId?: string }} [opts]
    * @returns {{ totalCliques: number, totalDepositos: number, comissaoTotal: number, totalFtds: number }}
    */
-  getStatsByUserId(userId) {
+  getStatsByUserId(userId, opts = {}) {
+    const conditions = ["user_id = ?"];
+    const params = [userId];
+
+    if (typeof opts.casinoId === "string" && opts.casinoId.trim()) {
+      conditions.push("casino_id = ?");
+      params.push(opts.casinoId.trim());
+    }
+
+    const where = `WHERE ${conditions.join(" AND ")}`;
+
     const row =
       db
         .prepare(
@@ -20,9 +31,9 @@ export const dashboardRepository = {
              COALESCE(SUM(valor_recebido), 0) AS comissao_total,
              COALESCE(SUM(ftd), 0) AS total_ftds
            FROM entradas
-           WHERE user_id = ?`,
+           ${where}`,
         )
-        .get(userId) || null;
+        .get(...params) || null;
 
     if (!row) {
       return {
@@ -72,9 +83,29 @@ export const dashboardRepository = {
   },
 
   /**
+   * Lista casas (casinos) vinculadas ao usuário via affiliate_casinos.
+   * @param {number} userId
+   */
+  listLinkedCasinosByUserId(userId) {
+    return db
+      .prepare(
+        `SELECT
+           c.id   AS casino_id,
+           c.name AS casino_name,
+           ac.status AS affiliate_status,
+           ac.link AS affiliate_link
+         FROM affiliate_casinos ac
+         JOIN casinos c ON c.id = ac.casino_id
+         WHERE ac.user_id = ?
+         ORDER BY c.name ASC`,
+      )
+      .all(userId);
+  },
+
+  /**
    * Lista entradas do usuário (para dashboard e página Entradas).
    * @param {number} userId
-   * @param {{ fromMs?: number, toMs?: number }} opts
+   * @param {{ fromMs?: number, toMs?: number, casinoId?: string }} opts
    */
   listEntradasByUserId(userId, opts = {}) {
     const conditions = ["e.user_id = ?"];
@@ -87,6 +118,10 @@ export const dashboardRepository = {
     if (Number.isFinite(opts.toMs)) {
       conditions.push("e.data_hora <= ?");
       params.push(opts.toMs);
+    }
+    if (typeof opts.casinoId === "string" && opts.casinoId.trim()) {
+      conditions.push("e.casino_id = ?");
+      params.push(opts.casinoId.trim());
     }
 
     const where = `WHERE ${conditions.join(" AND ")}`;

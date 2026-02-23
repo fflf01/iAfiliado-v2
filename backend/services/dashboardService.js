@@ -4,18 +4,30 @@ import { dashboardRepository } from "../repositories/dashboardRepository.js";
  * Serviço para dados do dashboard do usuário autenticado.
  */
 export const dashboardService = {
-  getMyStats(userId) {
-    return dashboardRepository.getStatsByUserId(userId);
+  getMyStats(userId, query = {}) {
+    const casinoId = typeof query.casinoId === "string" ? query.casinoId : undefined;
+    return dashboardRepository.getStatsByUserId(userId, { casinoId });
   },
 
   getMyWallet(userId) {
     return dashboardRepository.getWalletByUserId(userId);
   },
 
+  getMyCasas(userId) {
+    const rows = dashboardRepository.listLinkedCasinosByUserId(userId);
+    return rows.map((row) => ({
+      casinoId: row.casino_id,
+      casinoName: row.casino_name,
+      status: row.affiliate_status,
+      link: row.affiliate_link,
+    }));
+  },
+
   getMyEntradas(userId, query = {}) {
     const fromMs = query.fromMs != null ? Number(query.fromMs) : undefined;
     const toMs = query.toMs != null ? Number(query.toMs) : undefined;
-    const rows = dashboardRepository.listEntradasByUserId(userId, { fromMs, toMs });
+    const casinoId = typeof query.casinoId === "string" ? query.casinoId : undefined;
+    const rows = dashboardRepository.listEntradasByUserId(userId, { fromMs, toMs, casinoId });
     return rows.map((row) => ({
       id: row.id,
       casinoId: row.casino_id,

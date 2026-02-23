@@ -8,6 +8,7 @@ import {
   User,
   Mail,
   Phone,
+  IdCard,
   Lock,
   UserCircle,
   Eye,
@@ -32,6 +33,7 @@ const Register = () => {
     login: "",
     email: "",
     telefone: "",
+    cpfCnpj: "",
     password: "",
     iAfiliadoType: "",
     analysisContact: "",
@@ -51,7 +53,10 @@ const Register = () => {
       return;
     }
 
-    if (
+    if (name === "cpfCnpj") {
+      const digitsOnly = value.replace(/\D/g, "").slice(0, 14);
+      setFormData((prev) => ({ ...prev, [name]: digitsOnly }));
+    } else if (
       name === "telefone" ||
       (name === "analysisContact" && formData.iAfiliadoType !== "influencer")
     ) {
@@ -62,6 +67,23 @@ const Register = () => {
   };
 
   const validateForm = () => {
+    if (!formData.cpfCnpj) {
+      toast({
+        variant: "destructive",
+        title: "Campo obrigatório",
+        description: "Por favor, informe seu CPF/CNPJ.",
+      });
+      return false;
+    }
+    if (formData.cpfCnpj.length !== 11 && formData.cpfCnpj.length !== 14) {
+      toast({
+        variant: "destructive",
+        title: "CPF/CNPJ inválido",
+        description: "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos).",
+      });
+      return false;
+    }
+
     if (showIAfiliadoOptions) {
       if (!formData.iAfiliadoType) {
         toast({
@@ -111,6 +133,7 @@ const Register = () => {
         email: formData.email,
         password: formData.password,
         phone: formData.telefone,
+        cpfCnpj: formData.cpfCnpj,
         Tipo_Cliente: formData.iAfiliadoType,
         Tele_An:
           formData.iAfiliadoType !== "influencer" ? formData.analysisContact : "",
@@ -197,6 +220,27 @@ const Register = () => {
                 type="email"
                 placeholder="seu@email.com"
                 value={formData.email}
+                onChange={handleChange}
+                required
+                className="pl-11 h-12 bg-card border-border focus-borda-principal"
+              />
+            </div>
+          </div>
+
+          {/* CPF/CNPJ */}
+          <div className="space-y-2">
+            <Label htmlFor="cpfCnpj" className="text-foreground">
+              CPF/CNPJ
+            </Label>
+            <div className="relative">
+              <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                id="cpfCnpj"
+                name="cpfCnpj"
+                type="text"
+                inputMode="numeric"
+                placeholder="Somente numeros"
+                value={formData.cpfCnpj}
                 onChange={handleChange}
                 required
                 className="pl-11 h-12 bg-card border-border focus-borda-principal"

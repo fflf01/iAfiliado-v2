@@ -254,5 +254,22 @@ export const adminService = {
       };
     });
   },
+
+  updateCadastroStatus(id, payload) {
+    const userId = Number.parseInt(String(id), 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new ValidationError("ID do usuario invalido.");
+    }
+
+    const status = String(payload?.status || "").trim().toLowerCase();
+    const allowed = new Set(["em_analise", "aprovado", "rejeitado"]);
+    if (!allowed.has(status)) {
+      throw new ValidationError("Status invalido. Use em_analise, aprovado ou rejeitado.");
+    }
+
+    const result = adminRepository.updateCadastroStatus(userId, status);
+    if (result.changes === 0) throw new NotFoundError("Usuario nao encontrado.");
+    return { ok: true };
+  },
 };
 

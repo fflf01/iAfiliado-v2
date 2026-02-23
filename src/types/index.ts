@@ -6,6 +6,11 @@ export interface User {
   username: string;
   email: string;
   phone?: string;
+  cpf_cnpj?: string | null;
+  tipo_cliente?: string | null;
+  tele_an?: string | null;
+  rede_an?: string | null;
+  cadastro_status?: string | null;
   is_admin: boolean;
 }
 

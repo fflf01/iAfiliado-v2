@@ -52,8 +52,12 @@ try {
   ensureColumn("casinos", "url_afiliado", "TEXT");
   ensureColumn("casinos", "comissao_cpa", "REAL NOT NULL DEFAULT 0");
   ensureColumn("casinos", "comissao_revshare", "REAL NOT NULL DEFAULT 0");
+  ensureColumn("users", "cpf_cnpj", "TEXT");
+  ensureColumn("users", "cadastro_status", "TEXT");
 } catch (err) {
-  logger.warn("Falha ao aplicar migrations leves no SQLite", { error: err.message });
+  logger.warn("Falha ao aplicar migrations leves no SQLite", {
+    error: err.message,
+  });
 }
 
 // Log de conexao (visivel em qualquer ambiente)

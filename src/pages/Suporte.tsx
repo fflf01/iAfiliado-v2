@@ -66,7 +66,7 @@ const faqItems = [
   {
     question: "Como acompanho minhas conversões?",
     answer:
-      "Você tem acesso a um dashboard completo com estatísticas em tempo real de cliques, cadastros, depósitos e comissões.",
+      "Você tem acesso a um dashboard completo com estatísticas atualizadas diariamente de cliques, cadastros, depósitos e comissões.",
   },
 ];
 

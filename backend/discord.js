@@ -8,6 +8,7 @@ import { Blob } from "buffer";
 import { logger } from "./utils/logger.js";
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+const IS_TEST_ENV = process.env.NODE_ENV === "test";
 
 /**
  * Retorna label e cor para exibição da prioridade no Discord.
@@ -36,6 +37,8 @@ function getPriorityConfig(priority) {
  * @param {Array} [files] - Arquivos Multer (path, mimetype, originalname)
  */
 async function sendToDiscord(payload, files) {
+  // Nunca notificar Discord durante testes (evita spam no canal).
+  if (IS_TEST_ENV) return;
   if (!DISCORD_WEBHOOK_URL) return;
 
   try {
@@ -70,10 +73,8 @@ async function sendToDiscord(payload, files) {
  * @param {object} ticket - { id, name, email, message, priority, phone, files? }
  */
 export async function enviarTicketDiscord(ticket) {
-  if (!DISCORD_WEBHOOK_URL) {
-    logger.warn("DISCORD_WEBHOOK_URL nao definida no ambiente");
-    return;
-  }
+  if (IS_TEST_ENV) return;
+  if (!DISCORD_WEBHOOK_URL) return;
 
   const priorityConfig = getPriorityConfig(ticket.priority);
 
@@ -126,6 +127,7 @@ export async function enviarTicketDiscord(ticket) {
  * @param {object} ticket - { id, subject, title }
  */
 export async function enviarRespostaDiscord(reply, ticket) {
+  if (IS_TEST_ENV) return;
   if (!DISCORD_WEBHOOK_URL) return;
 
   const payload = {

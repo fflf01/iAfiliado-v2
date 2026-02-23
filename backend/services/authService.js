@@ -34,10 +34,20 @@ export const authService = {
       );
     }
 
+    const rawCpfCnpj = payload.cpfCnpj ?? payload.cpf_cnpj;
+    const cpfCnpj = String(rawCpfCnpj || "").replace(/\D/g, "");
+    if (!cpfCnpj) {
+      throw new ValidationError("CPF/CNPJ e obrigatorio.");
+    }
+    if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
+      throw new ValidationError("CPF/CNPJ invalido.");
+    }
+
     const passwordHash = await bcrypt.hash(payload.password, AUTH.SALT_ROUNDS);
     const user = authRepository.insertUser({
       ...payload,
       passwordHash,
+      cpfCnpj,
       tipoCliente: payload.Tipo_Cliente,
       teleAn: payload.Tele_An,
       redeAn: payload.Rede_An,

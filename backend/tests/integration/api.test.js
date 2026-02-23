@@ -21,6 +21,7 @@ async function registerAndLoginUser({
   name,
   login,
   email,
+  cpfCnpj = "12345678909",
   password = "Senha1234",
   isAdmin = false,
 }) {
@@ -28,6 +29,7 @@ async function registerAndLoginUser({
     name,
     login,
     email,
+    cpfCnpj,
     password,
   });
   assert.equal(registerRes.status, 201);
@@ -57,6 +59,12 @@ beforeEach(() => {
   db.exec("DELETE FROM support_attachments");
   db.exec("DELETE FROM support_replies");
   db.exec("DELETE FROM support_messages");
+  db.exec("DELETE FROM wallet_totals");
+  db.exec("DELETE FROM entradas");
+  db.exec("DELETE FROM affiliate_agreements");
+  db.exec("DELETE FROM affiliate_casinos");
+  db.exec("DELETE FROM contracts");
+  db.exec("DELETE FROM casinos");
   db.exec("DELETE FROM users");
 });
 
@@ -81,6 +89,7 @@ test("POST /register cria usuario e retorna token", async () => {
     name: "Teste Usuario",
     login: "teste_user",
     email: "teste@example.com",
+    cpfCnpj: "123.456.789-09",
     password: "Senha1234",
   });
 
@@ -88,6 +97,7 @@ test("POST /register cria usuario e retorna token", async () => {
   assert.equal(res.body.message, "Usuario registrado com sucesso.");
   assert.equal(typeof res.body.token, "string");
   assert.equal(res.body.user.email, "teste@example.com");
+  assert.equal(res.body.user.cpf_cnpj, "12345678909");
 });
 
 test("POST /login falha com senha invalida", async () => {
@@ -95,6 +105,7 @@ test("POST /login falha com senha invalida", async () => {
     name: "Teste Usuario",
     login: "teste_user",
     email: "teste@example.com",
+    cpfCnpj: "12345678909",
     password: "Senha1234",
   });
 
@@ -288,4 +299,92 @@ test("todas respostas de erro retornam requestId", async () => {
   assert.equal(res.status, 401);
   assert.equal(typeof res.body.requestId, "string");
   assert.ok(res.body.requestId.length > 0);
+});
+
+test("GET /me/casas lista casas vinculadas do usuario", async () => {
+  const token = await registerAndLoginUser({
+    name: "Cliente",
+    login: "cliente_casas",
+    email: "cliente.casas@example.com",
+  });
+
+  const userRow = db
+    .prepare("SELECT id FROM users WHERE username = ?")
+    .get("cliente_casas");
+  assert.ok(userRow?.id);
+
+  db.prepare(
+    "INSERT INTO casinos (id, name, status) VALUES (?, ?, 'active')",
+  ).run("bet365", "Bet365");
+  db.prepare(
+    "INSERT INTO casinos (id, name, status) VALUES (?, ?, 'active')",
+  ).run("betano", "Betano");
+
+  db.prepare(
+    "INSERT INTO affiliate_casinos (id, user_id, casino_id, status, link) VALUES (?, ?, ?, 'active', ?)",
+  ).run("ac-1", userRow.id, "bet365", "https://example.com/ref/bet365");
+  db.prepare(
+    "INSERT INTO affiliate_casinos (id, user_id, casino_id, status, link) VALUES (?, ?, ?, 'inactive', ?)",
+  ).run("ac-2", userRow.id, "betano", "https://example.com/ref/betano");
+
+  const res = await request(app)
+    .get("/me/casas")
+    .set("Authorization", `Bearer ${token}`);
+
+  assert.equal(res.status, 200);
+  assert.equal(Array.isArray(res.body), true);
+  assert.equal(res.body.length, 2);
+
+  const bet365 = res.body.find((c) => c.casinoId === "bet365");
+  assert.equal(bet365.casinoName, "Bet365");
+  assert.equal(bet365.status, "active");
+});
+
+test("GET /me/stats e /me/entradas aceitam filtro casinoId", async () => {
+  const token = await registerAndLoginUser({
+    name: "Cliente",
+    login: "cliente_filtro",
+    email: "cliente.filtro@example.com",
+  });
+
+  const userRow = db
+    .prepare("SELECT id FROM users WHERE username = ?")
+    .get("cliente_filtro");
+  assert.ok(userRow?.id);
+
+  db.prepare(
+    "INSERT INTO casinos (id, name, status) VALUES (?, ?, 'active')",
+  ).run("bet365", "Bet365");
+  db.prepare(
+    "INSERT INTO casinos (id, name, status) VALUES (?, ?, 'active')",
+  ).run("stake", "Stake");
+
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO entradas (id, user_id, casino_id, data_hora, depositos, cliques, registros, ftd, valor_recebido)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run("e-1", userRow.id, "bet365", now, 10, 100, 5, 2, 30.5);
+
+  db.prepare(
+    `INSERT INTO entradas (id, user_id, casino_id, data_hora, depositos, cliques, registros, ftd, valor_recebido)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run("e-2", userRow.id, "stake", now, 7, 50, 2, 1, 10);
+
+  const statsRes = await request(app)
+    .get("/me/stats?casinoId=bet365")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(statsRes.status, 200);
+  assert.equal(statsRes.body.totalDepositos, 10);
+  assert.equal(statsRes.body.totalCliques, 100);
+  assert.equal(statsRes.body.totalFtds, 2);
+  assert.equal(statsRes.body.comissaoTotal, 30.5);
+
+  const entradasRes = await request(app)
+    .get("/me/entradas?casinoId=bet365")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(entradasRes.status, 200);
+  assert.equal(Array.isArray(entradasRes.body), true);
+  assert.equal(entradasRes.body.length, 1);
+  assert.equal(entradasRes.body[0].casinoId, "bet365");
+  assert.equal(entradasRes.body[0].casinoName, "Bet365");
 });

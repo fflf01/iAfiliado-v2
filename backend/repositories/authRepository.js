@@ -5,7 +5,7 @@ export const authRepository = {
     return (
       db
         .prepare(
-          "SELECT id, username, full_name, email, phone, password_hash, is_admin FROM users WHERE email = ? OR username = ?",
+          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, password_hash, is_admin FROM users WHERE email = ? OR username = ?",
         )
         .get(identifier, identifier) || null
     );
@@ -15,17 +15,18 @@ export const authRepository = {
     return (
       db
         .prepare(
-          "SELECT id, username, full_name, email, phone, is_admin FROM users WHERE id = ?",
+          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, is_admin FROM users WHERE id = ?",
         )
         .get(id) || null
     );
   },
 
   insertUser(payload) {
+    const cadastroStatus = payload.tipoCliente ? "em_analise" : null;
     const result = db
       .prepare(
-        `INSERT INTO users (username, full_name, email, password_hash, phone, tipo_cliente, tele_an, rede_an)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO users (username, full_name, email, password_hash, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         payload.login,
@@ -33,9 +34,11 @@ export const authRepository = {
         payload.email,
         payload.passwordHash,
         payload.phone || null,
+        payload.cpfCnpj || null,
         payload.tipoCliente || null,
         payload.teleAn || null,
         payload.redeAn || null,
+        cadastroStatus,
       );
 
     return this.findPublicById(result.lastInsertRowid);
@@ -44,7 +47,7 @@ export const authRepository = {
   listClients() {
     return db
       .prepare(
-        "SELECT id, username, full_name, email, phone, is_admin FROM users ORDER BY id DESC",
+        "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, created_at, is_admin FROM users ORDER BY id DESC",
       )
       .all();
   },
