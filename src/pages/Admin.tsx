@@ -342,9 +342,6 @@ const Admin = () => {
         <div className="p-5 border-b border-border/50 flex items-center justify-between">
           <Link to="/admin" className="flex items-center gap-3">
             <img src="/iAfiliado.png" alt="iAfiliado" className="h-8 w-auto" />
-            <span className="text-sm font-display font-bold text-gradient-neon">
-              Admin
-            </span>
           </Link>
           {isMobile && (
             <button onClick={() => setSidebarOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -386,29 +383,26 @@ const Admin = () => {
 
       {/* ── Main Content ─────────────────────────────── */}
       <div className="flex-1 min-w-0">
-        {/* Top bar (mobile + desktop) */}
-        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            {isMobile ? (
-              <button onClick={() => setSidebarOpen(true)} className="text-foreground">
-                <Menu className="w-6 h-6" />
-              </button>
-            ) : (
-              <div className="hidden lg:flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Crown className="w-4 h-4 text-primary" />
-                <span className="truncate">Painel Administrativo</span>
-              </div>
-            )}
-
-            {/* Mantem um "anchor" visual no mobile */}
-            <img src="/iAfiliado.png" alt="iAfiliado" className="h-7 w-auto lg:hidden" />
-          </div>
-
+        {/* Botao fixo no desktop (canto superior direito) */}
+        <div className="fixed top-4 right-4 z-40 hidden lg:block">
           <Link to="/dashboard" className="text-foreground">
             <Button variant="outline" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
-              <span className="sm:hidden">Voltar</span>
-              <span className="hidden sm:inline">Voltar ao Dashboard</span>
+              Voltar ao Dashboard
+            </Button>
+          </Link>
+        </div>
+
+        {/* Top bar (mobile) */}
+        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 flex items-center justify-between lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="text-foreground">
+            <Menu className="w-6 h-6" />
+          </button>
+          <img src="/iAfiliado.png" alt="iAfiliado" className="h-7 w-auto" />
+          <Link to="/dashboard" className="text-foreground">
+            <Button variant="outline" size="sm" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
             </Button>
           </Link>
         </header>
