@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -358,12 +358,6 @@ const Admin = () => {
           <span className="inline-flex text-xs font-semibold uppercase px-3 py-1 rounded-full bg-destructive/20 text-destructive border border-destructive/30">
             Painel Admin
           </span>
-          <Link to="/dashboard">
-            <Button variant="outline" size="sm" className="w-full gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar ao Dashboard
-            </Button>
-          </Link>
         </div>
 
         {/* Nav items */}
@@ -392,16 +386,29 @@ const Admin = () => {
 
       {/* ── Main Content ─────────────────────────────── */}
       <div className="flex-1 min-w-0">
-        {/* Top bar (mobile) */}
-        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 flex items-center justify-between lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="text-foreground">
-            <Menu className="w-6 h-6" />
-          </button>
-          <img src="/iAfiliado.png" alt="iAfiliado" className="h-7 w-auto" />
+        {/* Top bar (mobile + desktop) */}
+        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            {isMobile ? (
+              <button onClick={() => setSidebarOpen(true)} className="text-foreground">
+                <Menu className="w-6 h-6" />
+              </button>
+            ) : (
+              <div className="hidden lg:flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Crown className="w-4 h-4 text-primary" />
+                <span className="truncate">Painel Administrativo</span>
+              </div>
+            )}
+
+            {/* Mantem um "anchor" visual no mobile */}
+            <img src="/iAfiliado.png" alt="iAfiliado" className="h-7 w-auto lg:hidden" />
+          </div>
+
           <Link to="/dashboard" className="text-foreground">
             <Button variant="outline" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Voltar
+              <span className="sm:hidden">Voltar</span>
+              <span className="hidden sm:inline">Voltar ao Dashboard</span>
             </Button>
           </Link>
         </header>
