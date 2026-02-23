@@ -1,22 +1,26 @@
-# Nome do arquivo: .github/workflows/deploy.yml
-
-name: CD - Deploy to Server
+name: CI/CD - Test, Build, Push, Deploy
 
 on:
-  # Gatilho: Executa APENAS quando o workflow de CI for concluído com sucesso
-  workflow_run:
-    workflows: ["CI - Build and Push Docker Images"] # Nome do seu workflow de CI
-    types:
-      - completed
-  # Permite também o acionamento manual
+  push:
+    branches: [main]
   workflow_dispatch:
 
-jobs:
-  deploy:
-    # Condição: Só executa se o workflow de CI foi bem-sucedido
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    runs-on: ubuntu-latest
+# Evita dois deploys concorrentes em producao.
+concurrency: production
 
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+  IMAGE_TAG: sha-${{ github.sha }}
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iafiliado-v2-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iafiliado-v2-frontend
+
+jobs:
+  test-backend:
+    name: Test - Backend
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,62 +28,110 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         working-directory: backend
         run: npm ci
 
-      - name: Run backend integration tests
+      - name: Run backend tests
         working-directory: backend
         env:
           JWT_SECRET: ci-test-secret
           CORS_ORIGINS: http://localhost:3000
         run: npm test
 
+  build-push:
+    name: Build & Push - Docker images
+    runs-on: ubuntu-latest
+    needs: [test-backend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.BACKEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy - Server (SSH + docker compose)
+    runs-on: ubuntu-latest
+    needs: [build-push]
+    steps:
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa # Usar nome padrão pode ser mais robusto
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to Server
+      - name: Deploy to server
         env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }} # Passa o usuário do Docker Hub
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
-          ssh -p ${{ secrets.SERVER_PORT }} \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
-            
-            # Navega para a pasta do projeto
-            cd ${{ secrets.DEPLOY_PATH }}
+          ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "bash -se" <<EOF
+          set -euo pipefail
 
-            # Checklist de hardening: CORS explicito para producao
-            if ! grep -Eq '^CORS_ORIGINS=.+$' backend/.env; then
-              echo "Erro: CORS_ORIGINS ausente ou vazio em backend/.env"
-              exit 1
-            fi
-            if grep -Eq '^CORS_ORIGINS=.*localhost' backend/.env; then
-              echo "Erro: CORS_ORIGINS contem localhost em ambiente de producao"
-              exit 1
-            fi
-            
-            # Faz login no Docker Hub (se suas imagens forem privadas)
-            # A variável DOCKER_PASSWORD precisa ser definida como um secret no servidor ou passada de outra forma segura
-            # echo "$DOCKER_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            
-            # 1. Baixa as versões mais recentes das imagens do Docker Hub
-            # O Docker Compose só vai baixar as imagens que mudaram.
-            docker compose pull
-            
-            # 2. Sobe os contêineres com as novas imagens, sem reconstruir
-            # O Docker Compose detecta que as imagens foram atualizadas e recria os contêineres.
-            docker compose up -d --remove-orphans
-            
-            # 3. (Opcional, mas recomendado) Limpa imagens antigas e não utilizadas
-            docker image prune -af
+          cd ${{ secrets.DEPLOY_PATH }}
 
+          # Hardening: CORS explicito para producao
+          if ! grep -Eq '^CORS_ORIGINS=.+$' backend/.env; then
+            echo "Erro: CORS_ORIGINS ausente ou vazio em backend/.env"
+            exit 1
+          fi
+          if grep -Eq '^CORS_ORIGINS=.*localhost' backend/.env; then
+            echo "Erro: CORS_ORIGINS contem localhost em ambiente de producao"
+            exit 1
+          fi
+
+          # Seguranca: este pipeline assume docker-compose.yml com image: ...:\${IMAGE_TAG} (nao build:)
+          if grep -Eq '^[[:space:]]*build:' docker-compose.yml; then
+            echo "Erro: docker-compose.yml ainda usa build:. Troque para image: e use IMAGE_TAG (ex: sha-...)."
+            exit 1
+          fi
+
+          export IMAGE_TAG="${IMAGE_TAG}"
+          export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
+
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+          DOCKERHUB_USERNAME="${DOCKERHUB_USERNAME}" IMAGE_TAG="${IMAGE_TAG}" docker compose pull
+          DOCKERHUB_USERNAME="${DOCKERHUB_USERNAME}" IMAGE_TAG="${IMAGE_TAG}" docker compose up -d --remove-orphans
+
+          docker compose ps
+          wget -q --spider "http://localhost:3000/health"
           EOF

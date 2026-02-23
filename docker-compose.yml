@@ -1,6 +1,6 @@
 services:
   backend:
-    build: ./backend
+    image: ${DOCKERHUB_USERNAME}/iafiliado-v2-backend:${IMAGE_TAG:-latest}
     container_name: iafiliado-backend
     env_file:
       - ./backend/.env
@@ -19,9 +19,7 @@ services:
       retries: 3
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME}/iafiliado-v2-frontend:${IMAGE_TAG:-latest}
     container_name: iafiliado-frontend
     ports:
       - "8080:80"
