@@ -14,8 +14,8 @@ permissions:
 env:
   NODE_VERSION: "20"
   IMAGE_TAG: sha-${{ github.sha }}
-  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iafiliado-v2-backend
-  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iafiliado-v2-frontend
+  BACKEND_IMAGE: fflf01/iafiliado-v2-backend
+  FRONTEND_IMAGE: fflf01/iafiliado-v2-frontend
 
 jobs:
   test-backend:
@@ -125,12 +125,11 @@ jobs:
           fi
 
           export IMAGE_TAG="${IMAGE_TAG}"
-          export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
 
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-          DOCKERHUB_USERNAME="${DOCKERHUB_USERNAME}" IMAGE_TAG="${IMAGE_TAG}" docker compose pull
-          DOCKERHUB_USERNAME="${DOCKERHUB_USERNAME}" IMAGE_TAG="${IMAGE_TAG}" docker compose up -d --remove-orphans
+          IMAGE_TAG="${IMAGE_TAG}" docker compose pull
+          IMAGE_TAG="${IMAGE_TAG}" docker compose up -d --remove-orphans
 
           docker compose ps
           wget -q --spider "http://localhost:3000/health"
