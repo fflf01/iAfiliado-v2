@@ -17,6 +17,8 @@ import {
   Phone,
   User,
   Banknote,
+  UserX,
+  ScrollText,
 } from "lucide-react";
 import {
   Dialog,
@@ -60,6 +62,8 @@ import { CasinosSection } from "./sections/CasinosSection";
 import { EntradasSection } from "./sections/EntradasSection";
 import { CarteirasSection } from "./sections/CarteirasSection";
 import { SaquesSection } from "./sections/SaquesSection";
+import { UsersSection } from "./sections/UsersSection";
+import { AdminLogsSection } from "./sections/AdminLogsSection";
 import { AdminSidebar } from "./ui/AdminSidebar";
 import { AdminTopBar } from "./ui/AdminTopBar";
 
@@ -72,6 +76,8 @@ const sidebarItems = [
   { id: "entradas", label: "Entradas", icon: Calendar },
   { id: "carteiras", label: "Carteiras", icon: Wallet },
   { id: "saques", label: "Verificação de saque", icon: Banknote },
+  { id: "usuarios", label: "Usuários", icon: UserX },
+  { id: "log_admin", label: "Log Admin", icon: ScrollText },
 ];
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -621,6 +627,12 @@ const Admin = () => {
               }}
             />
           )}
+
+          {/* ── Usuários (punição) ────────────────────────────── */}
+          {activeTab === "usuarios" && <UsersSection active />}
+
+          {/* ── Log Admin (auditoria) ─────────────────────────── */}
+          {activeTab === "log_admin" && <AdminLogsSection active />}
         </main>
       </div>
 

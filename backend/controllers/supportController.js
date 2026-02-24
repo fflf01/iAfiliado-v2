@@ -1,4 +1,5 @@
 import { supportService } from "../services/supportService.js";
+import { adminLogService } from "../services/adminLogService.js";
 
 export function createSupportTicket(req, res) {
   const result = supportService.createTicket({
@@ -24,6 +25,12 @@ export function getSupportMessages(req, res) {
 
 export function updateSupportMessage(req, res) {
   const updated = supportService.updateSupportMessage(req.params.id, req.body);
+  adminLogService.tryLog(req, {
+    action: "support_message_update",
+    targetType: "support_message",
+    targetId: req.params.id,
+    payload: req.body,
+  });
   return res.json(updated);
 }
 

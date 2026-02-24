@@ -90,6 +90,37 @@ export interface WithdrawalRowApi {
   updated_at: string;
 }
 
+export interface AdminUserRow {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  role: "user" | "admin";
+  is_admin: number | boolean;
+  cadastro_status: string | null;
+  is_blocked: number | boolean;
+  blocked_reason: string | null;
+  blocked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminLogRow {
+  id: number;
+  admin_user_id: number | null;
+  admin_email: string | null;
+  admin_username: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  message: string | null;
+  payload_json: string | null;
+  ip: string | null;
+  request_id: string | null;
+  created_at: string;
+}
+
 export interface AdminUserStats {
   totalCliques: number;
   totalDepositos: number;

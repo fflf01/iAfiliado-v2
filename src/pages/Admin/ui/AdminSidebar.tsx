@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 
@@ -33,7 +32,7 @@ export function AdminSidebar(props: {
       >
         <div className="p-5 border-b border-border/50 flex items-center justify-between">
           <Link to="/admin" className="flex items-center gap-3">
-            <img src="/iAfiliado.png" alt="iAfiliado" className="h-8 w-auto" />
+            <img src="/iAfiliado.png" alt="iAfiliado" className="h-10 w-auto" />
           </Link>
           {props.isMobile && (
             <button
@@ -72,14 +71,6 @@ export function AdminSidebar(props: {
             </button>
           ))}
         </nav>
-
-        <div className="p-3 border-t border-border/50">
-          <Link to="/dashboard" className="text-foreground">
-            <Button variant="outline" size="sm" className="w-full">
-              Voltar ao Dashboard
-            </Button>
-          </Link>
-        </div>
       </aside>
     </>
   );

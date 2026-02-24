@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
-import { UnauthorizedError } from "../errors/AppError.js";
+import { ForbiddenError, UnauthorizedError } from "../errors/AppError.js";
+import { authRepository } from "../repositories/authRepository.js";
 
 /**
  * Middleware que exige header Authorization: Bearer <token>. Verifica o JWT com JWT_SECRET
@@ -36,6 +37,13 @@ export function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Bloqueio administrativo: aplica imediatamente, mesmo com token antigo.
+    const status = authRepository.findAuthStatusById(decoded.id);
+    if (status?.is_blocked) {
+      reqLogger?.warn("Autenticacao falhou: usuario bloqueado", { userId: decoded.id });
+      return next(new ForbiddenError("Conta bloqueada."));
+    }
 
     req.user = decoded; // { id, email, is_admin }
     req.userId = decoded.id; // Compatibilidade

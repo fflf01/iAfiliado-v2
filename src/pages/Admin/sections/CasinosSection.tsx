@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Building2, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Building2, Edit, Pause, Plus, Search, Trash2 } from "lucide-react";
 import type { Casino } from "../types";
 
 export function CasinosSection(props: {
@@ -91,7 +91,7 @@ export function CasinosSection(props: {
                   size="icon"
                   onClick={() => props.onToggleStatus(casino.id)}
                 >
-                  <Eye className="w-4 h-4" />
+                  <Pause className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"

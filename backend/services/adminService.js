@@ -271,5 +271,65 @@ export const adminService = {
     if (result.changes === 0) throw new NotFoundError("Usuario nao encontrado.");
     return { ok: true };
   },
+
+  // --- Usuários (punição/admin) ---
+  listUsers(query) {
+    return adminRepository.listUsers({
+      q: query?.q ?? query?.query ?? "",
+      limit: query?.limit,
+    });
+  },
+
+  setUserBlocked({ adminUserId, targetUserId, blocked, reason }) {
+    const userId = Number.parseInt(String(targetUserId), 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new ValidationError("ID do usuario invalido.");
+    }
+    if (adminUserId != null && Number(adminUserId) === userId) {
+      throw new ValidationError("Voce nao pode bloquear seu proprio usuario.");
+    }
+
+    const isBlocked = Boolean(blocked);
+    const safeReason = reason == null ? null : String(reason).trim();
+    if (safeReason && safeReason.length > 300) {
+      throw new ValidationError("Motivo do bloqueio muito longo (max 300).");
+    }
+
+    const existing = adminRepository.findUserById(userId);
+    if (!existing) throw new NotFoundError("Usuario nao encontrado.");
+
+    const result = adminRepository.setUserBlocked(userId, {
+      blocked: isBlocked,
+      reason: safeReason,
+    });
+    if (result.changes === 0) throw new NotFoundError("Usuario nao encontrado.");
+    return adminRepository.findUserById(userId);
+  },
+
+  deleteUser({ adminUserId, targetUserId }) {
+    const userId = Number.parseInt(String(targetUserId), 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new ValidationError("ID do usuario invalido.");
+    }
+    if (adminUserId != null && Number(adminUserId) === userId) {
+      throw new ValidationError("Voce nao pode apagar seu proprio usuario.");
+    }
+
+    const existing = adminRepository.findUserById(userId);
+    if (!existing) throw new NotFoundError("Usuario nao encontrado.");
+
+    const result = adminRepository.deleteUser(userId);
+    if (result.changes === 0) throw new NotFoundError("Usuario nao encontrado.");
+    return { ok: true };
+  },
+
+  // --- Log admin (auditoria) ---
+  listAdminLogs(query) {
+    return adminRepository.listAdminLogs({
+      q: query?.q ?? query?.query ?? "",
+      limit: query?.limit,
+      offset: query?.offset,
+    });
+  },
 };
 

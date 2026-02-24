@@ -1,4 +1,5 @@
 import { withdrawalsService } from "../services/withdrawalsService.js";
+import { adminLogService } from "../services/adminLogService.js";
 
 // POST /me/withdrawals - usuário solicita saque
 export function createWithdrawal(req, res) {
@@ -18,5 +19,12 @@ export function listWithdrawalsAdmin(req, res) {
 
 // PUT /admin/withdrawals/:id/status - admin aprova ou rejeita
 export function updateWithdrawalStatus(req, res) {
-  return res.json(withdrawalsService.updateStatus(req.params.id, req.body));
+  const out = withdrawalsService.updateStatus(req.params.id, req.body);
+  adminLogService.tryLog(req, {
+    action: "withdrawal_status_update",
+    targetType: "withdrawal_request",
+    targetId: req.params.id,
+    payload: req.body,
+  });
+  return res.json(out);
 }

@@ -5,7 +5,7 @@ export const authRepository = {
     return (
       db
         .prepare(
-          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, password_hash, is_admin FROM users WHERE email = ? OR username = ?",
+          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, password_hash, is_admin, is_blocked FROM users WHERE email = ? OR username = ?",
         )
         .get(identifier, identifier) || null
     );
@@ -15,10 +15,14 @@ export const authRepository = {
     return (
       db
         .prepare(
-          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, is_admin FROM users WHERE id = ?",
+          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, is_admin, is_blocked FROM users WHERE id = ?",
         )
         .get(id) || null
     );
+  },
+
+  findAuthStatusById(id) {
+    return db.prepare("SELECT id, is_blocked FROM users WHERE id = ?").get(id) || null;
   },
 
   insertUser(payload) {

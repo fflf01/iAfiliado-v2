@@ -63,6 +63,10 @@ try {
   ensureColumn("casinos", "comissao_revshare", "REAL NOT NULL DEFAULT 0");
   ensureColumn("users", "cpf_cnpj", "TEXT");
   ensureColumn("users", "cadastro_status", "TEXT");
+  // Punição / bloqueio de usuário (admin)
+  ensureColumn("users", "is_blocked", "INTEGER NOT NULL DEFAULT 0 CHECK(is_blocked IN (0, 1))");
+  ensureColumn("users", "blocked_reason", "TEXT");
+  ensureColumn("users", "blocked_at", "TEXT");
   // contracts.status default no schema e 'pendente' (bases antigas podem manter 'ativo')
   ensureDefaultValue("contracts", "status", "'pendente'");
 } catch (err) {

@@ -2,7 +2,12 @@ import bcrypt from "bcrypt";
 import { AUTH } from "../config/constants.js";
 import { generateToken } from "../utils/jwt.js";
 import { authRepository } from "../repositories/authRepository.js";
-import { UnauthorizedError, ValidationError, NotFoundError } from "../errors/AppError.js";
+import {
+  UnauthorizedError,
+  ValidationError,
+  NotFoundError,
+  ForbiddenError,
+} from "../errors/AppError.js";
 
 export const authService = {
   async login({ email, login, password }) {
@@ -15,6 +20,11 @@ export const authService = {
     const user = authRepository.findByIdentifier(identifier);
     if (!user) {
       throw new UnauthorizedError("Credenciais invalidas.");
+    }
+
+    if (user.is_blocked) {
+      // Não revela detalhes; apenas bloqueia o acesso.
+      throw new ForbiddenError("Conta bloqueada. Contate o suporte.");
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash);

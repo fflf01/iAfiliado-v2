@@ -248,5 +248,193 @@ export const adminRepository = {
       .run(status, userId);
     return { changes: result.changes };
   },
+
+  // --- Usuários (admin) ---
+  listUsers({ q, limit = 200 }) {
+    const query = String(q || "").trim().toLowerCase();
+    const safeLimit = Math.max(1, Math.min(1000, Number(limit) || 200));
+
+    if (!query) {
+      return db
+        .prepare(
+          `SELECT
+             id,
+             username,
+             full_name,
+             email,
+             phone,
+             role,
+             is_admin,
+             cadastro_status,
+             is_blocked,
+             blocked_reason,
+             blocked_at,
+             created_at,
+             updated_at
+           FROM users
+           ORDER BY id DESC
+           LIMIT ?`,
+        )
+        .all(safeLimit);
+    }
+
+    const like = `%${query}%`;
+    return db
+      .prepare(
+        `SELECT
+           id,
+           username,
+           full_name,
+           email,
+           phone,
+           role,
+           is_admin,
+           cadastro_status,
+           is_blocked,
+           blocked_reason,
+           blocked_at,
+           created_at,
+           updated_at
+         FROM users
+         WHERE lower(username) LIKE ?
+            OR lower(full_name) LIKE ?
+            OR lower(email) LIKE ?
+         ORDER BY id DESC
+         LIMIT ?`,
+      )
+      .all(like, like, like, safeLimit);
+  },
+
+  findUserById(userId) {
+    return (
+      db
+        .prepare(
+          `SELECT
+             id,
+             username,
+             full_name,
+             email,
+             phone,
+             role,
+             is_admin,
+             cadastro_status,
+             is_blocked,
+             blocked_reason,
+             blocked_at,
+             created_at,
+             updated_at
+           FROM users
+           WHERE id = ?`,
+        )
+        .get(userId) || null
+    );
+  },
+
+  setUserBlocked(userId, { blocked, reason }) {
+    const isBlocked = blocked ? 1 : 0;
+    const result = db
+      .prepare(
+        `UPDATE users
+         SET is_blocked = ?,
+             blocked_reason = ?,
+             blocked_at = CASE WHEN ? = 1 THEN datetime('now') ELSE NULL END,
+             updated_at = datetime('now')
+         WHERE id = ?`,
+      )
+      .run(isBlocked, reason || null, isBlocked, userId);
+    return { changes: result.changes };
+  },
+
+  deleteUser(userId) {
+    const result = db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    return { changes: result.changes };
+  },
+
+  // --- Auditoria admin (log_admin) ---
+  insertAdminLog({
+    adminUserId,
+    action,
+    targetType,
+    targetId,
+    message,
+    payloadJson,
+    ip,
+    requestId,
+  }) {
+    const result = db
+      .prepare(
+        `INSERT INTO admin_logs (admin_user_id, action, target_type, target_id, message, payload_json, ip, request_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        adminUserId ?? null,
+        String(action || "").trim(),
+        String(targetType || "").trim(),
+        targetId != null ? String(targetId) : null,
+        message != null ? String(message) : null,
+        payloadJson != null ? String(payloadJson) : null,
+        ip != null ? String(ip) : null,
+        requestId != null ? String(requestId) : null,
+      );
+    return result.lastInsertRowid;
+  },
+
+  listAdminLogs({ q, limit = 200, offset = 0 }) {
+    const query = String(q || "").trim().toLowerCase();
+    const safeLimit = Math.max(1, Math.min(1000, Number(limit) || 200));
+    const safeOffset = Math.max(0, Number(offset) || 0);
+
+    if (!query) {
+      return db
+        .prepare(
+          `SELECT
+             l.id,
+             l.admin_user_id,
+             u.email AS admin_email,
+             u.username AS admin_username,
+             l.action,
+             l.target_type,
+             l.target_id,
+             l.message,
+             l.payload_json,
+             l.ip,
+             l.request_id,
+             l.created_at
+           FROM admin_logs l
+           LEFT JOIN users u ON u.id = l.admin_user_id
+           ORDER BY l.id DESC
+           LIMIT ? OFFSET ?`,
+        )
+        .all(safeLimit, safeOffset);
+    }
+
+    const like = `%${query}%`;
+    return db
+      .prepare(
+        `SELECT
+           l.id,
+           l.admin_user_id,
+           u.email AS admin_email,
+           u.username AS admin_username,
+           l.action,
+           l.target_type,
+           l.target_id,
+           l.message,
+           l.payload_json,
+           l.ip,
+           l.request_id,
+           l.created_at
+         FROM admin_logs l
+         LEFT JOIN users u ON u.id = l.admin_user_id
+         WHERE lower(l.action) LIKE ?
+            OR lower(l.target_type) LIKE ?
+            OR lower(COALESCE(l.target_id, '')) LIKE ?
+            OR lower(COALESCE(l.message, '')) LIKE ?
+            OR lower(COALESCE(u.email, '')) LIKE ?
+         ORDER BY l.id DESC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(like, like, like, like, like, safeLimit, safeOffset);
+  },
 };
 

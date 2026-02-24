@@ -1,4 +1,5 @@
 import { contractsService } from "../services/contractsService.js";
+import { adminLogService } from "../services/adminLogService.js";
 
 // POST /me/contracts
 export function requestMyContract(req, res) {
@@ -13,6 +14,13 @@ export function listPendingContracts(_req, res) {
 
 // PUT /admin/contracts/:id/status
 export function updateContractStatus(req, res) {
-  return res.json(contractsService.updateContractStatus(req.params.id, req.body));
+  const out = contractsService.updateContractStatus(req.params.id, req.body);
+  adminLogService.tryLog(req, {
+    action: "contract_status_update",
+    targetType: "contract",
+    targetId: req.params.id,
+    payload: req.body,
+  });
+  return res.json(out);
 }
 

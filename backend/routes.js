@@ -32,6 +32,10 @@ import {
   listWalletsAdmin,
   recomputeWalletTotals,
   updateCadastroStatus,
+  listUsersAdmin,
+  blockUserAdmin,
+  deleteUserAdmin,
+  listAdminLogs,
 } from "./controllers/adminController.js";
 import {
   saveSupportMessage,
@@ -306,6 +310,14 @@ const updateWithdrawalStatusRules = [
     .withMessage("Status invalido. Use aprovado ou rejeitado."),
 ];
 
+const blockUserRules = [
+  param("id").isInt().withMessage("ID do usuario invalido."),
+  body("blocked")
+    .custom((v) => typeof v === "boolean" || v === "true" || v === "false")
+    .withMessage("blocked deve ser boolean (true/false)."),
+  body("reason").optional().trim().isLength({ max: 300 }).withMessage("reason muito longo (max 300)."),
+];
+
 // --- Rotas publicas (com rate limiting e validacao) ---
 router.get("/casinos", asyncHandler(listPublicCasinos));
 router.post("/register", authLimiter, registerRules, handleValidationErrors, asyncHandler(register));
@@ -405,6 +417,26 @@ router.put(
   handleValidationErrors,
   asyncHandler(updateWithdrawalStatus),
 );
+
+// Usuários (admin): punicao (bloquear/apagar) + auditoria (log_admin)
+router.get("/admin/users", authMiddleware, adminAuthMiddleware, asyncHandler(listUsersAdmin));
+router.put(
+  "/admin/users/:id/block",
+  authMiddleware,
+  adminAuthMiddleware,
+  blockUserRules,
+  handleValidationErrors,
+  asyncHandler(blockUserAdmin),
+);
+router.delete(
+  "/admin/users/:id",
+  authMiddleware,
+  adminAuthMiddleware,
+  adminUserIdRule,
+  handleValidationErrors,
+  asyncHandler(deleteUserAdmin),
+);
+router.get("/admin/log_admin", authMiddleware, adminAuthMiddleware, asyncHandler(listAdminLogs));
 
 // Dashboard por usuario (admin)
 router.get(

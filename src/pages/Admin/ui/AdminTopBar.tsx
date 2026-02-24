@@ -9,7 +9,7 @@ export function AdminTopBar(props: {
   return (
     <>
       {/* Desktop fixed button */}
-      <div className="fixed top-4 right-4 z-40 hidden lg:block">
+      <div className="fixed top-4 left-72 z-40 hidden lg:block">
         <Link to="/dashboard" className="text-foreground">
           <Button variant="outline" size="sm" className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -24,7 +24,7 @@ export function AdminTopBar(props: {
           <button onClick={props.onOpenSidebar} className="text-foreground">
             <Menu className="w-6 h-6" />
           </button>
-          <img src="/iAfiliado.png" alt="iAfiliado" className="h-7 w-auto" />
+          <img src="/iAfiliado.png" alt="iAfiliado" className="h-9 w-auto" />
           <Link to="/dashboard" className="text-foreground">
             <Button variant="outline" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />

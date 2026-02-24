@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS users (
   rede_an       TEXT,
   cadastro_status TEXT,
   is_admin      INTEGER NOT NULL DEFAULT 0 CHECK(is_admin IN (0, 1)),
+  -- Punicao administrativa (bloqueio imediato)
+  is_blocked    INTEGER NOT NULL DEFAULT 0 CHECK(is_blocked IN (0, 1)),
+  blocked_reason TEXT,
+  blocked_at    TEXT,
   created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
   updated_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
@@ -138,6 +142,26 @@ CREATE TABLE IF NOT EXISTS support_attachments (
   path      TEXT    NOT NULL,
   mimetype  TEXT    NOT NULL
 );
+
+-- ============================================================
+-- AUDITORIA ADMIN (log_admin)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS admin_logs (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  action        TEXT    NOT NULL,
+  target_type   TEXT    NOT NULL,
+  target_id     TEXT,
+  message       TEXT,
+  payload_json  TEXT,
+  ip            TEXT,
+  request_id    TEXT,
+  created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(action);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_user_id ON admin_logs(admin_user_id);
 
 -- ============================================================
 -- TRIGGERS — auto-atualizar updated_at
