@@ -32,7 +32,7 @@ export function AdminSidebar(props: {
       >
         <div className="p-5 border-b border-border/50 flex items-center justify-between">
           <Link to="/admin" className="flex items-center gap-3">
-            <img src="/iAfiliado.png" alt="iAfiliado" className="h-10 w-auto" />
+            <img src="/iAfiliado.png" alt="iAfiliado" className="h-12 w-auto" />
           </Link>
           {props.isMobile && (
             <button
