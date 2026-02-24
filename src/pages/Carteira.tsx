@@ -298,7 +298,7 @@ const Carteira = () => {
                   Informações de Saque
                 </h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• PIX: Processamento em até 1 hora</li>
+                  <li>• PIX: Processamento em até 2 dias</li>
                 </ul>
               </div>
             </div>
@@ -325,7 +325,8 @@ const Carteira = () => {
               {transactions.length === 0 ? (
                 <div className="p-8 text-center rounded-xl bg-muted/30 border border-border/50">
                   <p className="text-muted-foreground">
-                    Nenhuma movimentação registrada. O histórico de transações será exibido aqui quando houver lançamentos.
+                    Nenhuma movimentação registrada. O histórico de transações
+                    será exibido aqui quando houver lançamentos.
                   </p>
                 </div>
               ) : (
@@ -377,8 +378,8 @@ const Carteira = () => {
                             transaction.status === "concluido"
                               ? "text-primary"
                               : transaction.status === "pendente"
-                              ? "text-secondary"
-                              : "text-destructive"
+                                ? "text-secondary"
+                                : "text-destructive"
                           }`}
                         >
                           {getStatusText(transaction.status)}

@@ -21,7 +21,7 @@ import Suporte from "./pages/Suporte";
 import Comissoes from "./pages/Comissoes";
 import SuporteCliente from "./pages/SuporteCliente";
 import SuporteAdmin from "./pages/SuporteAdmin";
-import Admin from "./pages/Admin";
+import Admin from "./pages/Admin/Admin";
 
 const queryClient = new QueryClient();
 

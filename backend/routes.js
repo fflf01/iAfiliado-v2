@@ -43,6 +43,13 @@ import {
   getClientMessages,
 } from "./controllers/supportController.js";
 import { getMyStats, getMyWallet, getMyEntradas, getMyCasas } from "./controllers/dashboardController.js";
+import {
+  getUserProfile,
+  getUserStats,
+  getUserWallet,
+  getUserEntradas,
+  getUserCasas,
+} from "./controllers/adminUserDashboardController.js";
 import { listPendingContracts, requestMyContract, updateContractStatus } from "./controllers/contractsController.js";
 import {
   createWithdrawal,
@@ -234,6 +241,7 @@ const replyRules = [
 ];
 
 const ticketIdRule = param("id").isInt().withMessage("ID do ticket invalido.");
+const adminUserIdRule = param("id").isInt().withMessage("ID do usuario invalido.");
 const updateTicketRules = [
   ticketIdRule,
   body("status")
@@ -396,6 +404,48 @@ router.put(
   updateWithdrawalStatusRules,
   handleValidationErrors,
   asyncHandler(updateWithdrawalStatus),
+);
+
+// Dashboard por usuario (admin)
+router.get(
+  "/admin/users/:id/profile",
+  authMiddleware,
+  adminAuthMiddleware,
+  adminUserIdRule,
+  handleValidationErrors,
+  asyncHandler(getUserProfile),
+);
+router.get(
+  "/admin/users/:id/stats",
+  authMiddleware,
+  adminAuthMiddleware,
+  adminUserIdRule,
+  handleValidationErrors,
+  asyncHandler(getUserStats),
+);
+router.get(
+  "/admin/users/:id/wallet",
+  authMiddleware,
+  adminAuthMiddleware,
+  adminUserIdRule,
+  handleValidationErrors,
+  asyncHandler(getUserWallet),
+);
+router.get(
+  "/admin/users/:id/casas",
+  authMiddleware,
+  adminAuthMiddleware,
+  adminUserIdRule,
+  handleValidationErrors,
+  asyncHandler(getUserCasas),
+);
+router.get(
+  "/admin/users/:id/entradas",
+  authMiddleware,
+  adminAuthMiddleware,
+  adminUserIdRule,
+  handleValidationErrors,
+  asyncHandler(getUserEntradas),
 );
 router.get("/support/messages", authMiddleware, adminAuthMiddleware, asyncHandler(getSupportMessages));
 router.put(
