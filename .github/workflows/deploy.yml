@@ -14,8 +14,9 @@ permissions:
 env:
   NODE_VERSION: "20"
   IMAGE_TAG: sha-${{ github.sha }}
-  BACKEND_IMAGE: fflf01/iafiliado-v2-backend
-  FRONTEND_IMAGE: fflf01/iafiliado-v2-frontend
+  # O user vem do secret DOCKERHUB_USERNAME (não hardcode).
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iafiliado-v2-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/iafiliado-v2-frontend
 
 jobs:
   test-backend:
@@ -128,6 +129,12 @@ jobs:
 
           cd ${{ secrets.DEPLOY_PATH }}
 
+          # Garante que o servidor esteja com o compose/workflow mais recente
+          # (evita falhar o deploy por ainda estar com docker-compose.yml antigo).
+          if [ -d .git ]; then
+            git pull --ff-only
+          fi
+
           # Hardening: CORS explicito para producao
           if ! grep -Eq '^CORS_ORIGINS=.+$' backend/.env; then
             echo "Erro: CORS_ORIGINS ausente ou vazio em backend/.env"
@@ -145,11 +152,12 @@ jobs:
           fi
 
           export IMAGE_TAG="${IMAGE_TAG}"
+          export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"
 
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-          IMAGE_TAG="${IMAGE_TAG}" docker compose pull
-          IMAGE_TAG="${IMAGE_TAG}" docker compose up -d --remove-orphans
+          docker compose pull
+          docker compose up -d --remove-orphans
 
           docker compose ps
           wget -q --spider "http://localhost:3000/health"
