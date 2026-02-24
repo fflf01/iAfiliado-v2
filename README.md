@@ -63,11 +63,11 @@ Variaveis obrigatorias:
 | `CORS_ORIGINS` | Origens permitidas em producao (separadas por virgula) |
 | `DISCORD_WEBHOOK_URL` | URL do webhook Discord para notificacoes |
 
-Frontend (opcional, para build de producao):
+Frontend (opcional):
 
 | Variavel | Descricao |
 | --- | --- |
-| `VITE_API_BASE_URL` | URL base da API (padrao: `http://localhost:3000`) |
+| `VITE_API_BASE_URL` | URL base da API. Em **dev** deixe sem definir para usar o proxy do Vite (`/api` -> backend na porta 3000). Em **producao** defina (ex: `/api` ou `https://sua-api.com`). |
 
 ### 3. Banco de dados
 
@@ -88,17 +88,24 @@ Consulte [docs/DATABASE.md](docs/DATABASE.md) para o schema completo e ordem de 
 npm run dev
 ```
 
-Acesse: `http://localhost:5173`
+Acesse: `http://localhost:8080` (porta configurada em `vite.config.ts`).
 
 **Backend (Express):**
 
 ```sh
-node backend/server.js
+cd backend && npm run dev
 ```
 
 API em: `http://localhost:3000`
 
-Para desenvolvimento, ambos precisam estar rodando.
+Para desenvolvimento, **ambos precisam estar rodando**. O frontend usa o proxy do Vite: chamadas a `/api/*` sao encaminhadas para o backend na porta 3000.
+
+**Se ao clicar em "Acessar" (Casas Parceiras) aparecer erro 404 ou "resposta inesperada (HTML)":**
+
+1. Confirme que o **backend esta rodando** na porta 3000 (`cd backend && npm run dev`).
+2. Use o **frontend pelo dev server** (`npm run dev`), nao pelo `npm run preview` nem abrindo o build em outro servidor (o proxy so existe no dev).
+3. Nao defina `VITE_API_BASE_URL` no `.env` do frontend (ou use `VITE_API_BASE_URL=/api`) para que as requisicoes passem pelo proxy.
+4. Teste a API direto: `curl -s http://localhost:3000/health` deve retornar `{"status":"ok",...}`.
 
 ## Scripts disponiveis
 
@@ -111,6 +118,27 @@ Para desenvolvimento, ambos precisam estar rodando.
 | `npm run test` | Executa os testes (Vitest) |
 | `npm run test:e2e` | Testes E2E (Playwright) |
 | `npm run test:e2e:security` | Apenas testes E2E de seguranca |
+| `npm run deploy` | Deploy em producao via SSH (build no servidor) |
+
+## Deploy em producao (SSH)
+
+1. **Configure o servidor:** no servidor, clone o repo na pasta desejada (ex: `/docker/iafiliadov2/iAfiliado-v2`). Crie `backend/.env` com as variaveis de producao (JWT_SECRET, CORS_ORIGINS, etc.).
+
+2. **Configure o deploy local:** copie `.env.deploy.example` para `.env.deploy` e preencha:
+   - `SERVER_USER` (ex: root)
+   - `SERVER_HOST` (ex: 62.72.21.49)
+   - `SERVER_PORT` (ex: 22)
+   - `DEPLOY_PATH` (ex: /docker/iafiliadov2/iAfiliado-v2)
+
+3. **Faça commit e push** das alteracoes (o script faz `git pull` no servidor).
+
+4. **Rode o deploy:** na raiz do projeto:
+   - **Windows (PowerShell):** `npm run deploy` ou `pwsh -File scripts/deploy-ssh.ps1`
+   - **Linux/Mac:** `./scripts/deploy-ssh.sh` (chmod +x na primeira vez)
+
+   O script conecta via SSH, executa `git pull` e `docker compose -f docker-compose.build.yml up -d --build` (build das imagens no proprio servidor).
+
+5. **URLs:** Frontend em `http://SEU_SERVIDOR:8080`, Backend em `http://SEU_SERVIDOR:3000`. Confira `backend/.env` (CORS_ORIGINS deve incluir a URL do frontend).
 
 ## Estrutura do projeto
 

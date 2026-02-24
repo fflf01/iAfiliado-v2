@@ -64,6 +64,7 @@ beforeEach(() => {
   db.exec("DELETE FROM affiliate_agreements");
   db.exec("DELETE FROM affiliate_casinos");
   db.exec("DELETE FROM contracts");
+  db.exec("DELETE FROM withdrawal_requests");
   db.exec("DELETE FROM casinos");
   db.exec("DELETE FROM users");
 });
@@ -338,6 +339,45 @@ test("GET /me/casas lista casas vinculadas do usuario", async () => {
   const bet365 = res.body.find((c) => c.casinoId === "bet365");
   assert.equal(bet365.casinoName, "Bet365");
   assert.equal(bet365.status, "active");
+});
+
+test("POST /me/contracts cria solicitacao quando usuario logado e casa existe (fluxo botao Acessar)", async () => {
+  db.prepare(
+    "INSERT INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, status) VALUES (?, ?, NULL, NULL, 0, 11, 'active')",
+  ).run("brasilbet", "BrasilBet");
+
+  const token = await registerAndLoginUser({
+    name: "Afiliado",
+    login: "afiliado_contrato",
+    email: "afiliado.contrato@example.com",
+  });
+
+  const res = await request(app)
+    .post("/me/contracts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ platformName: "BrasilBet" });
+
+  assert.equal(res.status, 201, "esperado 201 ao solicitar contrato");
+  assert.equal(res.body.ok, true);
+  assert.equal(typeof res.body.id, "string");
+  assert.equal(res.body.status, "pendente");
+
+  const row = db.prepare("SELECT * FROM contracts WHERE casa_id = 'brasilbet'").get();
+  assert.ok(row);
+  assert.equal(row.status, "pendente");
+});
+
+test("POST /me/contracts sem auth retorna 401", async () => {
+  db.prepare(
+    "INSERT INTO casinos (id, name, status) VALUES ('betsul', 'BetSul', 'active')",
+  ).run();
+
+  const res = await request(app)
+    .post("/me/contracts")
+    .send({ platformName: "BetSul" });
+
+  assert.equal(res.status, 401);
+  assert.equal(res.body.code, "UNAUTHORIZED");
 });
 
 test("GET /me/stats e /me/entradas aceitam filtro casinoId", async () => {

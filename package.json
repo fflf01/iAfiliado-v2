@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy-ssh.ps1",
+    "ci-cd": "powershell -ExecutionPolicy Bypass -File scripts/ci-cd-manual.ps1"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -6,8 +6,10 @@
 
 import { getToken } from "@/lib/auth";
 
+// Em dev sem .env: usa /api e o proxy do Vite encaminha para o backend (porta 3000).
+// Em prod: defina VITE_API_BASE_URL (ex: /api ou https://sua-api.com).
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+  import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 class ApiError extends Error {
   status: number;
@@ -19,22 +21,46 @@ class ApiError extends Error {
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
-  const contentType = response.headers.get("content-type");
+  const contentType = response.headers.get("content-type") ?? "";
+  const isJson =
+    contentType.includes("application/json") ||
+    contentType.includes("application/json;");
 
-  if (!contentType || !contentType.includes("application/json")) {
+  const text = await response.text();
+
+  if (!isJson) {
+    const status = response.status;
+    if (status === 0) {
+      throw new ApiError(
+        "Nao foi possivel conectar ao servidor. Verifique se a API esta rodando e a URL (VITE_API_BASE_URL).",
+        status
+      );
+    }
+    const hint =
+      text.trim().startsWith("<") || text.includes("<!DOCTYPE")
+        ? " O servidor retornou HTML (pagina de erro ou proxy)."
+        : "";
+    throw new ApiError(
+      `Erro de conexao: resposta inesperada (status ${status}).${hint} Verifique se a API esta acessivel.`,
+      status
+    );
+  }
+
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
     throw new ApiError(
       "Erro de conexao: o servidor retornou uma resposta inesperada.",
       response.status
     );
   }
 
-  const data = await response.json();
-
   if (!response.ok) {
-    throw new ApiError(
-      data.error || "Erro inesperado do servidor.",
-      response.status
-    );
+    const err = data && typeof data === "object" && "error" in data && typeof (data as { error: unknown }).error === "string"
+      ? (data as { error: string }).error
+      : "Erro inesperado do servidor.";
+    throw new ApiError(err, response.status);
   }
 
   return data as T;

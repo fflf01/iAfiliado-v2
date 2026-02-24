@@ -1,13 +1,28 @@
 import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Shield, Zap, Globe, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiGet, apiPost } from "@/lib/api-client";
+import { useToast } from "@/hooks/use-toast";
 
-const platforms = [
+const platformsFallback = [
   {
     name: "BrasilBet",
     logo: "https://placehold.co/200x80/1e293b/ffffff?text=BrasilBet",
     commission: "11% dos depósitos",
     features: ["Pagamento Semanal", "Saque rápido", "Suporte 24h"],
+  },
+  {
+    name: "BetSul",
+    logo: "https://placehold.co/200x80/1e293b/ffffff?text=BetSul",
+    commission: "10% dos depósitos",
+    features: ["Pagamento Semanal"],
+  },
+  {
+    name: "Multibet",
+    logo: "https://placehold.co/200x80/1e293b/ffffff?text=Multibet",
+    commission: "10% dos depósitos",
+    features: ["Pagamento Semanal"],
   },
   {
     name: "BetMGM",
@@ -41,7 +56,73 @@ const platforms = [
   },
 ];
 
+interface PublicCasino {
+  id: string;
+  name: string;
+  url: string | null;
+  urlAfiliado: string | null;
+  comissaoCpa: number;
+  comissaoRevshare: number;
+  description: string | null;
+}
+
+function commissionLabel(c: PublicCasino): string {
+  if (c.comissaoCpa > 0) return `R$${Math.round(c.comissaoCpa)} de CPA`;
+  if (c.comissaoRevshare > 0) return `${c.comissaoRevshare}% dos depósitos`;
+  return "Comissão a combinar";
+}
+
 const Plataformas = () => {
+  const { toast } = useToast();
+  const [casinos, setCasinos] = useState<PublicCasino[] | null>(null);
+
+  async function solicitarContrato(platformName: string) {
+    try {
+      await apiPost<{ ok: true; id: string; status: string }>("/me/contracts", {
+        platformName,
+      });
+      toast({
+        title: "Solicitação enviada",
+        description: "Sua solicitação foi enviada para análise.",
+      });
+    } catch (err) {
+      toast({
+        title: "Erro ao solicitar",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGet<PublicCasino[]>("/casinos")
+      .then((data) => {
+        if (cancelled) return;
+        setCasinos(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCasinos(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const platforms = useMemo(() => {
+    if (!casinos) return platformsFallback;
+    return casinos.map((c) => ({
+      name: c.name,
+      logo: `https://placehold.co/200x80/1e293b/ffffff?text=${encodeURIComponent(c.name)}`,
+      commission: commissionLabel(c),
+      features: [
+        "Pagamento Semanal",
+        ...(c.description ? [c.description] : []),
+      ],
+    }));
+  }, [casinos]);
+
   return (
     <div className="animate-in fade-in duration-500">
       {/* Page Title */}
@@ -124,8 +205,10 @@ const Plataformas = () => {
             </ul>
 
             <Button
+              type="button"
               variant="neonOutline"
               className="w-full h-10 text-xs font-semibold uppercase tracking-wide"
+              onClick={() => solicitarContrato(platform.name)}
             >
               Acessar
               <ExternalLink className="w-3.5 h-3.5 ml-1" />

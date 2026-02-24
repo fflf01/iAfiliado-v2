@@ -1,0 +1,41 @@
+# Build no servidor (sem precisar de Docker Hub).
+# Uso: docker compose -f docker-compose.build.yml up -d --build
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iafiliado-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend-data:/app/data
+      - backend-uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=/api
+    container_name: iafiliado-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  backend-data:
+  backend-uploads:

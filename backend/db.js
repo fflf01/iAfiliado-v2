@@ -46,6 +46,15 @@ function ensureColumn(table, column, definition) {
   db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 }
 
+function ensureDefaultValue(table, column, wantedDefaultSqlLiteral) {
+  // SQLite nao permite alterar DEFAULT via ALTER COLUMN. Entao isto e best-effort
+  // para bases antigas: nao tenta recriar tabela automaticamente.
+  // Serve apenas como "documentacao viva" e ponto unico para future migrations.
+  void table;
+  void column;
+  void wantedDefaultSqlLiteral;
+}
+
 // Backfill/migrations leves para manter compatibilidade com bancos antigos.
 // (CREATE TABLE IF NOT EXISTS não adiciona colunas em tabelas já existentes)
 try {
@@ -54,10 +63,35 @@ try {
   ensureColumn("casinos", "comissao_revshare", "REAL NOT NULL DEFAULT 0");
   ensureColumn("users", "cpf_cnpj", "TEXT");
   ensureColumn("users", "cadastro_status", "TEXT");
+  // contracts.status default no schema e 'pendente' (bases antigas podem manter 'ativo')
+  ensureDefaultValue("contracts", "status", "'pendente'");
 } catch (err) {
   logger.warn("Falha ao aplicar migrations leves no SQLite", {
     error: err.message,
   });
+}
+
+// Seed: casas listadas em Plataformas_D.tsx (INSERT OR IGNORE para nao duplicar)
+const defaultCasinos = [
+  { id: "brasilbet", name: "BrasilBet", comissao_cpa: 0, comissao_revshare: 11 },
+  { id: "betsul", name: "BetSul", comissao_cpa: 0, comissao_revshare: 10 },
+  { id: "multibet", name: "Multibet", comissao_cpa: 0, comissao_revshare: 10 },
+  { id: "betmgm", name: "BetMGM", comissao_cpa: 100, comissao_revshare: 0 },
+  { id: "luvabet", name: "LuvaBet", comissao_cpa: 0, comissao_revshare: 11 },
+  { id: "bigbet", name: "BigBet", comissao_cpa: 0, comissao_revshare: 10 },
+  { id: "betmgmpro", name: "BetMGM Pro", comissao_cpa: 80, comissao_revshare: 0 },
+  { id: "seubet", name: "SeuBet", comissao_cpa: 0, comissao_revshare: 60 },
+];
+try {
+  const insertCasino = db.prepare(
+    `INSERT OR IGNORE INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, status)
+     VALUES (?, ?, NULL, NULL, ?, ?, 'active')`,
+  );
+  for (const c of defaultCasinos) {
+    insertCasino.run(c.id, c.name, c.comissao_cpa, c.comissao_revshare);
+  }
+} catch (err) {
+  logger.warn("Falha ao seed de casinos padrao", { error: err.message });
 }
 
 // Log de conexao (visivel em qualquer ambiente)

@@ -28,6 +28,7 @@ import {
   Mail,
   Phone,
   User,
+  Banknote,
 } from "lucide-react";
 import {
   Dialog,
@@ -72,6 +73,17 @@ interface UserWallet {
   ultimaAtividade: string;
 }
 
+interface ContractRequest {
+  id: string;
+  casaNome: string;
+  afiliadoId: number;
+  afiliadoNome: string;
+  afiliadoEmail: string;
+  afiliadoPhone: string | null;
+  dataCriacao: string;
+  status: "pendente" | "aprovado" | "rejeitado";
+}
+
 interface Solicitacao {
   id: number;
   nome: string;
@@ -97,6 +109,29 @@ interface ClientRow {
   rede_an: string | null;
   cadastro_status: string | null;
   created_at: string;
+}
+
+interface ContractRowApi {
+  id: string;
+  status: "pendente" | "aprovado" | "rejeitado";
+  data_criacao: string;
+  afiliado_id: number;
+  afiliado_nome: string;
+  afiliado_email: string;
+  afiliado_phone: string | null;
+  casa_nome: string;
+}
+
+interface WithdrawalRowApi {
+  id: string;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  valor: number;
+  metodo: string;
+  status: "pendente" | "aprovado" | "rejeitado";
+  created_at: string;
+  updated_at: string;
 }
 
 function tipoClienteLabel(tipo?: string | null): string {
@@ -137,6 +172,7 @@ const sidebarItems = [
   { id: "casinos", label: "Casinos", icon: Building2 },
   { id: "entradas", label: "Entradas", icon: Calendar },
   { id: "carteiras", label: "Carteiras", icon: Wallet },
+  { id: "saques", label: "Verificação de saque", icon: Banknote },
 ];
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -166,10 +202,14 @@ const Admin = () => {
 
   // Solicitações state
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
+  const [contractRequests, setContractRequests] = useState<ContractRequest[]>([]);
   const [searchSolicitacoes, setSearchSolicitacoes] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [detailDialog, setDetailDialog] = useState(false);
   const [selectedSolicitacao, setSelectedSolicitacao] = useState<Solicitacao | null>(null);
+
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRowApi[]>([]);
+  const [withdrawalUpdating, setWithdrawalUpdating] = useState<string | null>(null);
 
   const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
@@ -179,17 +219,20 @@ const Admin = () => {
     async function load() {
       try {
         setLoading(true);
-        const [casinosData, entradasData, walletsData, clientsData] = await Promise.all([
+        const [casinosData, entradasData, walletsData, clientsData, contractsData, withdrawalsData] = await Promise.all([
           apiGet<Casino[]>("/admin/casinos"),
           apiGet<EntradaAdmin[]>("/admin/entradas"),
           apiGet<UserWallet[]>("/admin/wallets"),
           apiGet<ClientRow[]>("/clients"),
+          apiGet<ContractRowApi[]>("/admin/contracts"),
+          apiGet<WithdrawalRowApi[]>("/admin/withdrawals"),
         ]);
 
         if (cancelled) return;
         setCasinos(casinosData);
         setEntradas(entradasData);
         setWallets(walletsData);
+        setWithdrawals(Array.isArray(withdrawalsData) ? withdrawalsData : []);
 
         // Solicitações: usuários que marcaram "Quero ser um iAfiliado" (tipo_cliente preenchido)
         const solicitacoesData: Solicitacao[] = (clientsData || [])
@@ -212,6 +255,23 @@ const Admin = () => {
                   : "pendente",
           }));
         setSolicitacoes(solicitacoesData);
+
+        const contractReqs: ContractRequest[] = (contractsData || []).map((row) => ({
+          id: String(row.id),
+          casaNome: String(row.casa_nome || ""),
+          afiliadoId: Number(row.afiliado_id),
+          afiliadoNome: String(row.afiliado_nome || ""),
+          afiliadoEmail: String(row.afiliado_email || ""),
+          afiliadoPhone: row.afiliado_phone ?? null,
+          dataCriacao: formatDatePtBr(String(row.data_criacao || "")),
+          status:
+            row.status === "aprovado"
+              ? "aprovado"
+              : row.status === "rejeitado"
+                ? "rejeitado"
+                : "pendente",
+        }));
+        setContractRequests(contractReqs);
       } catch (err) {
         toast({
           title: "Erro ao carregar dados",
@@ -354,6 +414,26 @@ const Admin = () => {
     }
   };
 
+  const aprovarContrato = async (id: string) => {
+    try {
+      await apiPut<{ ok: true }>(`/admin/contracts/${id}/status`, { status: "aprovado" });
+      setContractRequests((prev) => prev.map((c) => (c.id === id ? { ...c, status: "aprovado" } : c)));
+      toast({ title: "Contrato aprovado!", description: "O usuário foi vinculado à casa." });
+    } catch (err) {
+      toast({ title: "Erro ao aprovar contrato", description: getErrorMessage(err), variant: "destructive" });
+    }
+  };
+
+  const rejeitarContrato = async (id: string) => {
+    try {
+      await apiPut<{ ok: true }>(`/admin/contracts/${id}/status`, { status: "rejeitado" });
+      setContractRequests((prev) => prev.map((c) => (c.id === id ? { ...c, status: "rejeitado" } : c)));
+      toast({ title: "Contrato rejeitado", description: "Solicitação rejeitada." });
+    } catch (err) {
+      toast({ title: "Erro ao rejeitar contrato", description: getErrorMessage(err), variant: "destructive" });
+    }
+  };
+
   const openDetail = (s: Solicitacao) => {
     setSelectedSolicitacao(s);
     setDetailDialog(true);
@@ -372,7 +452,19 @@ const Admin = () => {
     const matchStatus = filtroStatus === "todos" || s.status === filtroStatus;
     return matchSearch && matchStatus;
   });
+  const filteredContractRequests = contractRequests.filter((c) => {
+    const q = searchSolicitacoes.toLowerCase();
+    const matchSearch =
+      !q ||
+      c.afiliadoNome.toLowerCase().includes(q) ||
+      c.afiliadoEmail.toLowerCase().includes(q) ||
+      c.casaNome.toLowerCase().includes(q);
+    const matchStatus = filtroStatus === "todos" || c.status === filtroStatus;
+    return matchSearch && matchStatus;
+  });
   const pendentesCount = solicitacoes.filter(s => s.status === "pendente").length;
+  const contractPendentesCount = contractRequests.filter((c) => c.status === "pendente").length;
+  const totalPendencias = pendentesCount + contractPendentesCount;
 
   // ── Global stats ─────────────────────────────────
   const totalDepositos = entradas.filter(e => e.tipo === "deposito").reduce((s, e) => s + e.valor, 0);
@@ -441,9 +533,9 @@ const Admin = () => {
             >
               <item.icon className="w-5 h-5" />
               <span className="flex-1 text-left">{item.label}</span>
-              {item.id === "solicitacoes" && pendentesCount > 0 && (
+              {item.id === "solicitacoes" && totalPendencias > 0 && (
                 <span className="ml-auto text-xs font-bold bg-destructive text-destructive-foreground px-2 py-0.5 rounded-full">
-                  {pendentesCount}
+                  {totalPendencias}
                 </span>
               )}
             </button>
@@ -527,6 +619,7 @@ const Admin = () => {
                   { id: "casinos", icon: Building2, title: "Casinos", desc: `${casinos.length} casinos cadastrados`, color: "text-primary" },
                   { id: "entradas", icon: Calendar, title: "Entradas", desc: `${entradas.length} registros`, color: "text-secondary" },
                   { id: "carteiras", icon: Wallet, title: "Carteiras", desc: `${wallets.length} usuários`, color: "text-primary" },
+                  { id: "saques", icon: Banknote, title: "Verificação de saque", desc: `${withdrawals.filter(w => w.status === "pendente").length} pendentes`, color: "text-secondary" },
                 ].map(card => (
                   <Card
                     key={card.id}
@@ -554,7 +647,9 @@ const Admin = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-2xl font-display font-bold text-foreground">Solicitações de Cadastro</h2>
-                  <p className="text-sm text-muted-foreground">{pendentesCount} pendente{pendentesCount !== 1 ? "s" : ""} de análise</p>
+                  <p className="text-sm text-muted-foreground">
+                    {totalPendencias} pendente{totalPendencias !== 1 ? "s" : ""} de análise
+                  </p>
                 </div>
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -639,6 +734,111 @@ const Admin = () => {
                   </div>
                 ))}
                 {filteredSolicitacoes.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhuma solicitação encontrada.</p>}
+              </div>
+
+              {/* Solicitações de Contrato (Acessar casa) */}
+              <div className="mt-10 pt-6 border-t border-border/40">
+                <div className="flex items-end justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-xl font-display font-bold text-foreground">
+                      Solicitações de Contrato
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {contractPendentesCount} pendente{contractPendentesCount !== 1 ? "s" : ""} de vínculo com casa
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {filteredContractRequests.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all gap-4"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            req.status === "pendente"
+                              ? "bg-secondary/10"
+                              : req.status === "aprovado"
+                                ? "bg-primary/10"
+                                : "bg-destructive/10"
+                          }`}
+                        >
+                          {req.status === "pendente" ? (
+                            <Clock className="w-5 h-5 text-secondary" />
+                          ) : req.status === "aprovado" ? (
+                            <CheckCircle className="w-5 h-5 text-primary" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-destructive" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">
+                            {req.afiliadoNome}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {req.afiliadoEmail}
+                            {req.afiliadoPhone ? ` • ${req.afiliadoPhone}` : ""}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Casa:{" "}
+                            <span className="text-foreground font-medium">
+                              {req.casaNome}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground">Data</p>
+                          <p className="text-sm text-muted-foreground">
+                            {req.dataCriacao}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                            req.status === "pendente"
+                              ? "bg-secondary/15 text-secondary"
+                              : req.status === "aprovado"
+                                ? "bg-primary/15 text-primary"
+                                : "bg-destructive/15 text-destructive"
+                          }`}
+                        >
+                          {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                        </span>
+                        {req.status === "pendente" && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => aprovarContrato(req.id)}
+                              className="text-primary hover:text-primary"
+                              title="Aprovar"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => rejeitarContrato(req.id)}
+                              className="text-destructive hover:text-destructive"
+                              title="Rejeitar"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {filteredContractRequests.length === 0 && (
+                    <p className="text-center py-8 text-muted-foreground">
+                      Nenhuma solicitação de contrato encontrada.
+                    </p>
+                  )}
+                </div>
               </div>
             </Card>
           )}
@@ -751,6 +951,95 @@ const Admin = () => {
                   </div>
                 ))}
                 {filteredWallets.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhum usuário encontrado.</p>}
+              </div>
+            </Card>
+          )}
+
+          {/* ── Verificação de saque ────────────────────────────── */}
+          {activeTab === "saques" && (
+            <Card className="bg-card/80 border-border/50 p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-display font-bold text-foreground">Verificação de saque</h2>
+                <p className="text-sm text-muted-foreground">
+                  Solicitações de saque enviadas pelos usuários. Aprove ou rejeite cada uma.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {withdrawals.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">Nenhuma solicitação de saque.</p>
+                ) : (
+                  withdrawals.map((w) => (
+                    <div
+                      key={w.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all gap-4"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Banknote className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">{w.user_name}</p>
+                          <p className="text-xs text-muted-foreground">{w.user_email}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {formatDatePtBr(w.created_at)} • {w.metodo}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <p className="text-lg font-display font-bold text-foreground">{fmt(w.valor)}</p>
+                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                          w.status === "pendente" ? "bg-secondary/15 text-secondary" : w.status === "aprovado" ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"
+                        }`}>
+                          {w.status.charAt(0).toUpperCase() + w.status.slice(1)}
+                        </span>
+                        {w.status === "pendente" && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-destructive border-destructive/30 hover:bg-destructive/10 gap-1"
+                              disabled={withdrawalUpdating === w.id}
+                              onClick={async () => {
+                                setWithdrawalUpdating(w.id);
+                                try {
+                                  await apiPut(`/admin/withdrawals/${w.id}/status`, { status: "rejeitado" });
+                                  setWithdrawals((prev) => prev.map((x) => (x.id === w.id ? { ...x, status: "rejeitado" as const } : x)));
+                                  toast({ title: "Saque rejeitado.", description: "A solicitação foi rejeitada." });
+                                } catch (e) {
+                                  toast({ title: "Erro", description: getErrorMessage(e), variant: "destructive" });
+                                } finally {
+                                  setWithdrawalUpdating(null);
+                                }
+                              }}
+                            >
+                              <XCircle className="w-4 h-4" /> Rejeitar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="neon"
+                              className="gap-1"
+                              disabled={withdrawalUpdating === w.id}
+                              onClick={async () => {
+                                setWithdrawalUpdating(w.id);
+                                try {
+                                  await apiPut(`/admin/withdrawals/${w.id}/status`, { status: "aprovado" });
+                                  setWithdrawals((prev) => prev.map((x) => (x.id === w.id ? { ...x, status: "aprovado" as const } : x)));
+                                  toast({ title: "Saque aprovado.", description: "O saldo do usuário foi atualizado." });
+                                } catch (e) {
+                                  toast({ title: "Erro", description: getErrorMessage(e), variant: "destructive" });
+                                } finally {
+                                  setWithdrawalUpdating(null);
+                                }
+                              }}
+                            >
+                              <CheckCircle className="w-4 h-4" /> Aprovar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
           )}

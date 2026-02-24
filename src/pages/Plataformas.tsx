@@ -19,7 +19,12 @@ const partnerLogos = [
   { name: "GoldBet", src: goldbetLogo },
   { name: "LuvaBet", src: luvabetLogo },
   { name: "BetMGM", src: mgmbetLogo },
-  { name: "Betsul", src: betsulLogo },
+  { name: "BetSul", src: betsulLogo },
+  {
+    name: "Multibet",
+    // Sem asset local no momento: usa placeholder.
+    src: "https://placehold.co/200x80/1e293b/ffffff?text=Multibet",
+  },
 ];
 
 const Plataformas = () => {

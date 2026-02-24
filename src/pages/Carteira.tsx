@@ -1,25 +1,27 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  Crown,
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
   Clock,
   CheckCircle,
   XCircle,
-  DollarSign,
-  CreditCard,
-  Building2,
   QrCode,
-  ArrowLeft,
   Download,
   TrendingUp,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiGet, apiPost } from "@/lib/api-client";
+
+interface WalletData {
+  valorRecebidoTotal: number;
+  saldoDisponivel: number;
+  valorTotalSacado: number;
+  updatedAt: string | null;
+}
 
 interface Transaction {
   id: string;
@@ -35,69 +37,42 @@ const Carteira = () => {
   const { toast } = useToast();
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("pix");
+  const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
 
-  const balance = 4850.0;
-  const pendingBalance = 1680.0;
-  const totalWithdrawn = 12450.0;
+  useEffect(() => {
+    let cancelled = false;
+    setWalletLoading(true);
+    apiGet<WalletData>("/me/wallet")
+      .then((data) => {
+        if (!cancelled) {
+          setWallet({
+            valorRecebidoTotal: Number(data.valorRecebidoTotal) || 0,
+            saldoDisponivel: Number(data.saldoDisponivel) || 0,
+            valorTotalSacado: Number(data.valorTotalSacado) || 0,
+            updatedAt: data.updatedAt ?? null,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setWallet(null);
+      })
+      .finally(() => {
+        if (!cancelled) setWalletLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const transactions: Transaction[] = [
-    {
-      id: "1",
-      type: "entrada",
-      amount: 520.0,
-      description: "Comissão Bet365 - Janeiro",
-      status: "concluido",
-      date: "28/01/2024",
-      method: "Sistema",
-    },
-    {
-      id: "2",
-      type: "saida",
-      amount: 1250.0,
-      description: "Saque via PIX",
-      status: "concluido",
-      date: "25/01/2024",
-      method: "PIX",
-    },
-    {
-      id: "3",
-      type: "entrada",
-      amount: 380.0,
-      description: "Comissão Betano - Janeiro",
-      status: "concluido",
-      date: "22/01/2024",
-      method: "Sistema",
-    },
-    {
-      id: "4",
-      type: "saida",
-      amount: 500.0,
-      description: "Saque via Transferência",
-      status: "pendente",
-      date: "20/01/2024",
-      method: "Transferência",
-    },
-    {
-      id: "5",
-      type: "entrada",
-      amount: 890.0,
-      description: "Bônus de Performance",
-      status: "concluido",
-      date: "18/01/2024",
-      method: "Sistema",
-    },
-    {
-      id: "6",
-      type: "saida",
-      amount: 200.0,
-      description: "Saque via PIX",
-      status: "cancelado",
-      date: "15/01/2024",
-      method: "PIX",
-    },
-  ];
+  const balance = wallet?.saldoDisponivel ?? 0;
+  const totalWithdrawn = wallet?.valorTotalSacado ?? 0;
+  const totalReceived = wallet?.valorRecebidoTotal ?? 0;
+  const pendingBalance = Math.max(0, totalReceived - balance - totalWithdrawn);
 
-  const handleWithdraw = () => {
+  const transactions: Transaction[] = [];
+
+  const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
       toast({
@@ -124,13 +99,30 @@ const Carteira = () => {
       return;
     }
 
-    toast({
-      title: "Saque solicitado!",
-      description: `Saque de R$ ${amount.toFixed(
-        2
-      )} via ${selectedMethod.toUpperCase()} foi solicitado.`,
-    });
-    setWithdrawAmount("");
+    try {
+      await apiPost<{ id: string; status: string }>("/me/withdrawals", {
+        valor: amount,
+        metodo: selectedMethod,
+      });
+      toast({
+        title: "Saque solicitado!",
+        description: `Sua solicitação de R$ ${amount.toFixed(2)} via ${selectedMethod.toUpperCase()} foi enviada para análise.`,
+      });
+      setWithdrawAmount("");
+      const data = await apiGet<WalletData>("/me/wallet");
+      setWallet({
+        valorRecebidoTotal: Number(data.valorRecebidoTotal) || 0,
+        saldoDisponivel: Number(data.saldoDisponivel) || 0,
+        valorTotalSacado: Number(data.valorTotalSacado) || 0,
+        updatedAt: data.updatedAt ?? null,
+      });
+    } catch (err) {
+      toast({
+        title: "Erro ao solicitar saque",
+        description: err instanceof Error ? err.message : "Erro inesperado.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -173,7 +165,7 @@ const Carteira = () => {
           </p>
         </div>
 
-        {/* Balance Cards */}
+        {/* Balance Cards - dados do BD (wallet_totals) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/30 p-6">
             <div className="flex items-center gap-4">
@@ -185,10 +177,16 @@ const Carteira = () => {
                   Saldo Disponível
                 </p>
                 <p className="text-3xl font-display font-bold text-foreground">
-                  R${" "}
-                  {balance.toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2,
-                  })}
+                  {walletLoading ? (
+                    <span className="text-muted-foreground">...</span>
+                  ) : (
+                    <>
+                      R${" "}
+                      {balance.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -201,10 +199,16 @@ const Carteira = () => {
               <div>
                 <p className="text-muted-foreground text-sm">Saldo Pendente</p>
                 <p className="text-2xl font-display font-bold text-foreground">
-                  R${" "}
-                  {pendingBalance.toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2,
-                  })}
+                  {walletLoading ? (
+                    <span className="text-muted-foreground">...</span>
+                  ) : (
+                    <>
+                      R${" "}
+                      {pendingBalance.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -217,10 +221,16 @@ const Carteira = () => {
               <div>
                 <p className="text-muted-foreground text-sm">Total Sacado</p>
                 <p className="text-2xl font-display font-bold text-foreground">
-                  R${" "}
-                  {totalWithdrawn.toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2,
-                  })}
+                  {walletLoading ? (
+                    <span className="text-muted-foreground">...</span>
+                  ) : (
+                    <>
+                      R${" "}
+                      {totalWithdrawn.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -312,64 +322,72 @@ const Carteira = () => {
             </div>
 
             <div className="space-y-3">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`p-2 rounded-lg ${
-                        transaction.type === "entrada"
-                          ? "bg-primary/10 text-primary"
-                          : "bg-destructive/10 text-destructive"
-                      }`}
-                    >
-                      {transaction.type === "entrada" ? (
-                        <ArrowDownRight className="w-5 h-5" />
-                      ) : (
-                        <ArrowUpRight className="w-5 h-5" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {transaction.description}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {transaction.date} • {transaction.method}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p
-                        className={`font-display font-bold ${
-                          transaction.type === "entrada"
-                            ? "text-primary"
-                            : "text-foreground"
-                        }`}
-                      >
-                        {transaction.type === "entrada" ? "+" : "-"} R${" "}
-                        {transaction.amount.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 min-w-[100px]">
-                      {getStatusIcon(transaction.status)}
-                      <span
-                        className={`text-xs font-medium ${
-                          transaction.status === "concluido"
-                            ? "text-primary"
-                            : transaction.status === "pendente"
-                            ? "text-secondary"
-                            : "text-destructive"
-                        }`}
-                      >
-                        {getStatusText(transaction.status)}
-                      </span>
-                    </div>
-                  </div>
+              {transactions.length === 0 ? (
+                <div className="p-8 text-center rounded-xl bg-muted/30 border border-border/50">
+                  <p className="text-muted-foreground">
+                    Nenhuma movimentação registrada. O histórico de transações será exibido aqui quando houver lançamentos.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`p-2 rounded-lg ${
+                          transaction.type === "entrada"
+                            ? "bg-primary/10 text-primary"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
+                      >
+                        {transaction.type === "entrada" ? (
+                          <ArrowDownRight className="w-5 h-5" />
+                        ) : (
+                          <ArrowUpRight className="w-5 h-5" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {transaction.description}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {transaction.date} • {transaction.method}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p
+                          className={`font-display font-bold ${
+                            transaction.type === "entrada"
+                              ? "text-primary"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {transaction.type === "entrada" ? "+" : "-"} R${" "}
+                          {transaction.amount.toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 min-w-[100px]">
+                        {getStatusIcon(transaction.status)}
+                        <span
+                          className={`text-xs font-medium ${
+                            transaction.status === "concluido"
+                              ? "text-primary"
+                              : transaction.status === "pendente"
+                              ? "text-secondary"
+                              : "text-destructive"
+                          }`}
+                        >
+                          {getStatusText(transaction.status)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
         </div>

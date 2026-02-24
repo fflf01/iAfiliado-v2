@@ -14,6 +14,7 @@ import { AppError, ValidationError } from "./errors/AppError.js";
 import { adminAuthMiddleware } from "./auth/adminAuthMiddleware.js";
 import { authMiddleware } from "./auth/authMiddleware.js";
 import { asyncHandler } from "./middleware/errorHandler.js";
+import { listPublicCasinos } from "./controllers/casinosController.js";
 import {
   register,
   getClients,
@@ -42,6 +43,13 @@ import {
   getClientMessages,
 } from "./controllers/supportController.js";
 import { getMyStats, getMyWallet, getMyEntradas, getMyCasas } from "./controllers/dashboardController.js";
+import { listPendingContracts, requestMyContract, updateContractStatus } from "./controllers/contractsController.js";
+import {
+  createWithdrawal,
+  listMyWithdrawals,
+  listWithdrawalsAdmin,
+  updateWithdrawalStatus,
+} from "./controllers/withdrawalsController.js";
 import { UPLOAD, RATE_LIMIT, AUTH, TICKET, VALIDATION } from "./config/constants.js";
 
 const router = express.Router();
@@ -256,7 +264,42 @@ const updateCadastroStatusRules = [
     .withMessage("Status invalido. Use em_analise, aprovado ou rejeitado."),
 ];
 
+const createContractRules = [
+  body("platformName")
+    .trim()
+    .notEmpty()
+    .withMessage("platformName e obrigatorio.")
+    .isLength({ max: 120 })
+    .withMessage("platformName muito longo."),
+];
+
+const updateContractStatusRules = [
+  param("id").notEmpty().withMessage("ID do contrato invalido."),
+  body("status")
+    .trim()
+    .notEmpty()
+    .withMessage("Status e obrigatorio.")
+    .isIn(["aprovado", "rejeitado"])
+    .withMessage("Status invalido. Use aprovado ou rejeitado."),
+];
+
+const createWithdrawalRules = [
+  body("valor").isFloat({ min: 50 }).withMessage("Valor minimo R$ 50,00."),
+  body("metodo").optional().trim().isLength({ max: 50 }),
+];
+
+const updateWithdrawalStatusRules = [
+  param("id").notEmpty().withMessage("ID da solicitacao invalido."),
+  body("status")
+    .trim()
+    .notEmpty()
+    .withMessage("Status e obrigatorio.")
+    .isIn(["aprovado", "rejeitado"])
+    .withMessage("Status invalido. Use aprovado ou rejeitado."),
+];
+
 // --- Rotas publicas (com rate limiting e validacao) ---
+router.get("/casinos", asyncHandler(listPublicCasinos));
 router.post("/register", authLimiter, registerRules, handleValidationErrors, asyncHandler(register));
 router.post("/login", authLimiter, loginRules, handleValidationErrors, asyncHandler(login));
 
@@ -299,6 +342,21 @@ router.get("/me/stats", authMiddleware, asyncHandler(getMyStats));
 router.get("/me/casas", authMiddleware, asyncHandler(getMyCasas));
 router.get("/me/wallet", authMiddleware, asyncHandler(getMyWallet));
 router.get("/me/entradas", authMiddleware, asyncHandler(getMyEntradas));
+router.post(
+  "/me/contracts",
+  authMiddleware,
+  createContractRules,
+  handleValidationErrors,
+  asyncHandler(requestMyContract),
+);
+router.get("/me/withdrawals", authMiddleware, asyncHandler(listMyWithdrawals));
+router.post(
+  "/me/withdrawals",
+  authMiddleware,
+  createWithdrawalRules,
+  handleValidationErrors,
+  asyncHandler(createWithdrawal),
+);
 
 // --- Rotas de admin ---
 router.get("/admin", authMiddleware, adminAuthMiddleware, (_req, res) => {
@@ -320,6 +378,24 @@ router.put(
   updateCadastroStatusRules,
   handleValidationErrors,
   asyncHandler(updateCadastroStatus),
+);
+router.get("/admin/contracts", authMiddleware, adminAuthMiddleware, asyncHandler(listPendingContracts));
+router.put(
+  "/admin/contracts/:id/status",
+  authMiddleware,
+  adminAuthMiddleware,
+  updateContractStatusRules,
+  handleValidationErrors,
+  asyncHandler(updateContractStatus),
+);
+router.get("/admin/withdrawals", authMiddleware, adminAuthMiddleware, asyncHandler(listWithdrawalsAdmin));
+router.put(
+  "/admin/withdrawals/:id/status",
+  authMiddleware,
+  adminAuthMiddleware,
+  updateWithdrawalStatusRules,
+  handleValidationErrors,
+  asyncHandler(updateWithdrawalStatus),
 );
 router.get("/support/messages", authMiddleware, adminAuthMiddleware, asyncHandler(getSupportMessages));
 router.put(
