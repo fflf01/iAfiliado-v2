@@ -16,10 +16,10 @@ export function useAdminUserDashboard(params: {
   active: boolean;
   userId: number | null;
   selectedHouse: string;
+  onResetSelectedHouse?: () => void;
   dateRange: DateRange;
   customStart: string;
   customEnd: string;
-  onResetSelectedHouse?: () => void;
 }) {
   const { active, userId, selectedHouse, dateRange, customStart, customEnd } = params;
 
@@ -35,7 +35,12 @@ export function useAdminUserDashboard(params: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const casinoId = selectedHouse !== "todas" ? selectedHouse : undefined;
+  // Casa efetiva: evita refetch quando a casa não está na lista (sem resetar estado no parent)
+  const effectiveHouse =
+    selectedHouse === "todas" || casas.some((c) => c.casinoId === selectedHouse)
+      ? selectedHouse
+      : "todas";
+  const casinoId = effectiveHouse !== "todas" ? effectiveHouse : undefined;
 
   useEffect(() => {
     if (!active) return;
@@ -53,7 +58,6 @@ export function useAdminUserDashboard(params: {
         if (cancelled) return;
         setProfile(profileData?.user || null);
         setCasas(Array.isArray(casasData) ? casasData : []);
-        params.onResetSelectedHouse?.();
       })
       .catch((err) => {
         if (cancelled) return;
@@ -68,7 +72,6 @@ export function useAdminUserDashboard(params: {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, userId]);
 
   useEffect(() => {

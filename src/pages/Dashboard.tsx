@@ -180,7 +180,15 @@ const Dashboard = () => {
   const [selectedHouse, setSelectedHouse] = useState("todas");
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
+  const [casasLoaded, setCasasLoaded] = useState(false);
 
+  // Casa efetiva: evita refetch quando a casa selecionada não está na lista (derivação em vez de reset em effect)
+  const effectiveHouse =
+    selectedHouse === "todas" || casasVinculadas.some((c) => c.casinoId === selectedHouse)
+      ? selectedHouse
+      : "todas";
+
+  // 1) Profile e casas em paralelo (carga inicial)
   useEffect(() => {
     let cancelled = false;
     apiGet<{ message: string; user: AppUser }>("/profile")
@@ -197,34 +205,54 @@ const Dashboard = () => {
 
   useEffect(() => {
     let cancelled = false;
-    setStatsError(null);
-    setStatsLoading(true);
-    const casinoId = selectedHouse !== "todas" ? selectedHouse : undefined;
-    apiGet<MeStats>(`/me/stats${buildQuery({ casinoId })}`)
+    setCasasLoading(true);
+    apiGet<MeCasaVinculada[]>("/me/casas")
       .then((data) => {
         if (!cancelled) {
-          setMeStats(data);
+          setCasasVinculadas(Array.isArray(data) ? data : []);
+          setCasasLoaded(true);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setStatsError("Não foi possível carregar as estatísticas.");
+          setCasasVinculadas([]);
+          setCasasLoaded(true);
         }
       })
       .finally(() => {
-        if (!cancelled) {
-          setStatsLoading(false);
-        }
+        if (!cancelled) setCasasLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [selectedHouse]);
+  }, []);
+
+  // 2) Stats e entradas só após casas carregadas (reduz requisições simultâneas e evita refetch desnecessário)
+  useEffect(() => {
+    if (!casasLoaded) return;
+    let cancelled = false;
+    setStatsError(null);
+    setStatsLoading(true);
+    const casinoId = effectiveHouse !== "todas" ? effectiveHouse : undefined;
+    apiGet<MeStats>(`/me/stats${buildQuery({ casinoId })}`)
+      .then((data) => {
+        if (!cancelled) setMeStats(data);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError("Não foi possível carregar as estatísticas.");
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [casasLoaded, effectiveHouse]);
 
   useEffect(() => {
+    if (!casasLoaded) return;
     let cancelled = false;
-    const casinoId = selectedHouse !== "todas" ? selectedHouse : undefined;
-
+    const casinoId = effectiveHouse !== "todas" ? effectiveHouse : undefined;
     const today = new Date();
     let fromMs: number | undefined;
     let toMs: number | undefined;
@@ -241,62 +269,23 @@ const Dashboard = () => {
       fromMs = startOfDayMs(start);
       toMs = endOfDayMs(today);
     } else if (dateRange === "custom") {
-      if (customStartDate) {
-        fromMs = startOfDayMs(new Date(`${customStartDate}T00:00:00`));
-      }
-      if (customEndDate) {
-        toMs = endOfDayMs(new Date(`${customEndDate}T00:00:00`));
-      }
+      if (customStartDate) fromMs = startOfDayMs(new Date(`${customStartDate}T00:00:00`));
+      if (customEndDate) toMs = endOfDayMs(new Date(`${customEndDate}T00:00:00`));
     }
 
     apiGet<MeEntrada[]>(
       `/me/entradas${buildQuery({ casinoId, fromMs, toMs })}`,
     )
       .then((data) => {
-        if (!cancelled) {
-          setMeEntradas(Array.isArray(data) ? data : []);
-        }
+        if (!cancelled) setMeEntradas(Array.isArray(data) ? data : []);
       })
       .catch(() => {
-        if (!cancelled) {
-          setMeEntradas([]);
-        }
+        if (!cancelled) setMeEntradas([]);
       });
     return () => {
       cancelled = true;
     };
-  }, [selectedHouse, dateRange, customStartDate, customEndDate]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setCasasLoading(true);
-    apiGet<MeCasaVinculada[]>("/me/casas")
-      .then((data) => {
-        if (!cancelled) {
-          setCasasVinculadas(Array.isArray(data) ? data : []);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCasasVinculadas([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setCasasLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (selectedHouse === "todas") return;
-    if (!casasVinculadas.some((c) => c.casinoId === selectedHouse)) {
-      setSelectedHouse("todas");
-    }
-  }, [casasVinculadas, selectedHouse]);
+  }, [casasLoaded, effectiveHouse, dateRange, customStartDate, customEndDate]);
 
   const activeView = location.pathname.includes("/plataformas")
     ? "plataformas"
@@ -431,7 +420,7 @@ const Dashboard = () => {
                   </label>
                   <select
                     className="h-10 px-3 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                    value={selectedHouse}
+                    value={effectiveHouse}
                     onChange={(e) => setSelectedHouse(e.target.value)}
                   >
                     <option value="todas">Todas as casas</option>

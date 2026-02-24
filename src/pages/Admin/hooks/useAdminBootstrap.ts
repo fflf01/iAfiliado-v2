@@ -52,24 +52,21 @@ export function useAdminBootstrap() {
     setLoading(true);
     setError(null);
     try {
-      const [
-        casinosData,
-        entradasData,
-        walletsData,
-        clientsData,
-        contractsData,
-        withdrawalsData,
-      ] = await Promise.all([
+      // Primeiro lote: casinos, clients, contracts (reduz pico de requisições simultâneas)
+      const [casinosData, clientsData, contractsData] = await Promise.all([
         apiGet<Casino[]>("/admin/casinos"),
-        apiGet<EntradaAdmin[]>("/admin/entradas"),
-        apiGet<UserWallet[]>("/admin/wallets"),
         apiGet<ClientRow[]>("/clients"),
         apiGet<ContractRowApi[]>("/admin/contracts"),
-        apiGet<WithdrawalRowApi[]>("/admin/withdrawals"),
       ]);
-
       const safeClients = Array.isArray(clientsData) ? clientsData : [];
       const safeContracts = Array.isArray(contractsData) ? contractsData : [];
+
+      // Segundo lote: entradas, wallets, withdrawals
+      const [entradasData, walletsData, withdrawalsData] = await Promise.all([
+        apiGet<EntradaAdmin[]>("/admin/entradas"),
+        apiGet<UserWallet[]>("/admin/wallets"),
+        apiGet<WithdrawalRowApi[]>("/admin/withdrawals"),
+      ]);
       const safeWithdrawals = Array.isArray(withdrawalsData) ? withdrawalsData : [];
 
       setData({
