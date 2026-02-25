@@ -194,6 +194,8 @@ const Dashboard = () => {
   const [managedAccounts, setManagedAccounts] = useState<ManagedAccountItem[]>([]);
   const [managedAccountsLoading, setManagedAccountsLoading] = useState(false);
 
+  const isEmAnalise = profileUser?.cadastro_status === "em_analise";
+
   // Casa efetiva: evita refetch quando a casa selecionada não está na lista (derivação em vez de reset em effect)
   const effectiveHouse =
     selectedHouse === "todas" || casasVinculadas.some((c) => c.casinoId === selectedHouse)
@@ -730,6 +732,22 @@ const Dashboard = () => {
           ) : null}
         </main>
       </div>
+      {isEmAnalise && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Card className="max-w-md mx-4 p-6 text-center shadow-lg border-border/60 bg-card/95">
+            <h2 className="text-2xl font-display font-bold mb-2">
+              Conta em análise
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Seu cadastro está em análise pela nossa equipe. Assim que for aprovado,
+              seu painel será liberado para uso.
+            </p>
+            <Button variant="outline" onClick={logout}>
+              Sair
+            </Button>
+          </Card>
+        </div>
+      )}
       <Footer />
     </div>
   );
