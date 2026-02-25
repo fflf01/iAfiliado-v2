@@ -17,6 +17,7 @@ function toCasinoUi(row) {
     nome: row.name,
     comissaoCPA: Number(row.comissao_cpa || 0),
     comissaoRevShare: Number(row.comissao_revshare || 0),
+    comissaoDepositoC: Number(row.comissao_depositoc || 0),
     status: row.status === "inactive" ? "inativo" : "ativo",
     urlAfiliado: row.url_afiliado || row.url || "",
   };
@@ -61,6 +62,7 @@ export const adminService = {
       urlAfiliado: payload?.urlAfiliado || null,
       comissaoCpa: Number(payload?.comissaoCPA) || 0,
       comissaoRevshare: Number(payload?.comissaoRevShare) || 0,
+      comissaoDepositoc: Number(payload?.comissaoDepositoC) || 0,
       status: normalizeCasinoStatus(payload?.status) || "active",
     });
 
@@ -76,6 +78,8 @@ export const adminService = {
       payload?.comissaoCPA === undefined ? null : Number(payload.comissaoCPA) || 0;
     const comissaoRevshare =
       payload?.comissaoRevShare === undefined ? null : Number(payload.comissaoRevShare) || 0;
+    const comissaoDepositoc =
+      payload?.comissaoDepositoC === undefined ? null : Number(payload.comissaoDepositoC) || 0;
 
     const result = adminRepository.updateCasino(casinoId, {
       name: payload?.nome != null ? String(payload.nome).trim() : null,
@@ -83,6 +87,7 @@ export const adminService = {
       urlAfiliado: payload?.urlAfiliado != null ? String(payload.urlAfiliado).trim() : null,
       comissaoCpa,
       comissaoRevshare,
+      comissaoDepositoc,
       status,
     });
 

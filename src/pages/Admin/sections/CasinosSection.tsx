@@ -64,6 +64,12 @@ export function CasinosSection(props: {
                 </p>
               </div>
               <div className="text-center">
+                <p className="text-xs text-muted-foreground">DepósitoC (%)</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {casino.comissaoDepositoC}%
+                </p>
+              </div>
+              <div className="text-center">
                 <p className="text-xs text-muted-foreground">Rev Share</p>
                 <p className="text-sm font-semibold text-foreground">
                   {casino.comissaoRevShare}%

@@ -61,6 +61,14 @@ try {
   ensureColumn("casinos", "url_afiliado", "TEXT");
   ensureColumn("casinos", "comissao_cpa", "REAL NOT NULL DEFAULT 0");
   ensureColumn("casinos", "comissao_revshare", "REAL NOT NULL DEFAULT 0");
+  ensureColumn("casinos", "comissao_depositoc", "REAL NOT NULL DEFAULT 0");
+  // Índices para acelerar consultas de métricas e auditoria em entradas
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_entradas_user_date ON entradas(user_id, data_hora);",
+  );
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS idx_entradas_casino_date ON entradas(casino_id, data_hora);",
+  );
   ensureColumn("users", "cpf_cnpj", "TEXT");
   ensureColumn("users", "cadastro_status", "TEXT");
   // Punição / bloqueio de usuário (admin)
@@ -89,22 +97,76 @@ try {
 
 // Seed: casas listadas em Plataformas_D.tsx (INSERT OR IGNORE para nao duplicar)
 const defaultCasinos = [
-  { id: "brasilbet", name: "BrasilBet", comissao_cpa: 0, comissao_revshare: 11 },
-  { id: "betsul", name: "BetSul", comissao_cpa: 0, comissao_revshare: 10 },
-  { id: "multibet", name: "Multibet", comissao_cpa: 0, comissao_revshare: 10 },
-  { id: "betmgm", name: "BetMGM", comissao_cpa: 100, comissao_revshare: 0 },
-  { id: "luvabet", name: "LuvaBet", comissao_cpa: 0, comissao_revshare: 11 },
-  { id: "bigbet", name: "BigBet", comissao_cpa: 0, comissao_revshare: 10 },
-  { id: "betmgmpro", name: "BetMGM Pro", comissao_cpa: 80, comissao_revshare: 0 },
-  { id: "seubet", name: "SeuBet", comissao_cpa: 0, comissao_revshare: 60 },
+  {
+    id: "brasilbet",
+    name: "BrasilBet",
+    comissao_cpa: 0,
+    comissao_revshare: 11,
+    comissao_depositoc: 0,
+  },
+  {
+    id: "betsul",
+    name: "BetSul",
+    comissao_cpa: 0,
+    comissao_revshare: 10,
+    comissao_depositoc: 0,
+  },
+  {
+    id: "multibet",
+    name: "Multibet",
+    comissao_cpa: 0,
+    comissao_revshare: 10,
+    comissao_depositoc: 0,
+  },
+  {
+    id: "betmgm",
+    name: "BetMGM",
+    comissao_cpa: 100,
+    comissao_revshare: 0,
+    comissao_depositoc: 0,
+  },
+  {
+    id: "luvabet",
+    name: "LuvaBet",
+    comissao_cpa: 0,
+    comissao_revshare: 11,
+    comissao_depositoc: 0,
+  },
+  {
+    id: "bigbet",
+    name: "BigBet",
+    comissao_cpa: 0,
+    comissao_revshare: 10,
+    comissao_depositoc: 0,
+  },
+  {
+    id: "betmgmpro",
+    name: "BetMGM Pro",
+    comissao_cpa: 80,
+    comissao_revshare: 0,
+    comissao_depositoc: 0,
+  },
+  {
+    id: "seubet",
+    name: "SeuBet",
+    comissao_cpa: 0,
+    comissao_revshare: 60,
+    comissao_depositoc: 0,
+  },
 ];
 try {
   const insertCasino = db.prepare(
-    `INSERT OR IGNORE INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, status)
-     VALUES (?, ?, NULL, NULL, ?, ?, 'active')`,
+    `INSERT OR IGNORE INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc, status)
+     VALUES (?, ?, NULL, NULL, ?, ?, ?, 'active')`,
   );
   for (const c of defaultCasinos) {
-    insertCasino.run(c.id, c.name, c.comissao_cpa, c.comissao_revshare);
+    insertCasino.run(
+      c.id,
+      c.name,
+      c.comissao_cpa,
+      c.comissao_revshare,
+      c.comissao_depositoc,
+    );
   }
 } catch (err) {
   logger.warn("Falha ao seed de casinos padrao", { error: err.message });

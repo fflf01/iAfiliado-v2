@@ -5,17 +5,26 @@ export const adminRepository = {
   listCasinos() {
     return db
       .prepare(
-        `SELECT id, name, status, url, url_afiliado, comissao_cpa, comissao_revshare
+        `SELECT id, name, status, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc
          FROM casinos
          ORDER BY updated_at DESC, created_at DESC`,
       )
       .all();
   },
 
-  createCasino({ id, name, url, urlAfiliado, comissaoCpa, comissaoRevshare, status }) {
+  createCasino({
+    id,
+    name,
+    url,
+    urlAfiliado,
+    comissaoCpa,
+    comissaoRevshare,
+    comissaoDepositoc,
+    status,
+  }) {
     db.prepare(
-      `INSERT INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       name,
@@ -23,16 +32,25 @@ export const adminRepository = {
       urlAfiliado || null,
       comissaoCpa || 0,
       comissaoRevshare || 0,
+      comissaoDepositoc || 0,
       status || "active",
     );
     return db
       .prepare(
-        "SELECT id, name, status, url, url_afiliado, comissao_cpa, comissao_revshare FROM casinos WHERE id = ?",
+        "SELECT id, name, status, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc FROM casinos WHERE id = ?",
       )
       .get(id);
   },
 
-  updateCasino(id, { name, url, urlAfiliado, comissaoCpa, comissaoRevshare, status }) {
+  updateCasino(id, {
+    name,
+    url,
+    urlAfiliado,
+    comissaoCpa,
+    comissaoRevshare,
+    comissaoDepositoc,
+    status,
+  }) {
     const result = db
       .prepare(
         `UPDATE casinos
@@ -41,6 +59,7 @@ export const adminRepository = {
              url_afiliado = COALESCE(?, url_afiliado),
              comissao_cpa = COALESCE(?, comissao_cpa),
              comissao_revshare = COALESCE(?, comissao_revshare),
+             comissao_depositoc = COALESCE(?, comissao_depositoc),
              status = COALESCE(?, status),
              updated_at = datetime('now')
          WHERE id = ?`,
@@ -51,6 +70,7 @@ export const adminRepository = {
         urlAfiliado ?? null,
         comissaoCpa ?? null,
         comissaoRevshare ?? null,
+        comissaoDepositoc ?? null,
         status ?? null,
         id,
       );
@@ -67,7 +87,7 @@ export const adminRepository = {
     return (
       db
         .prepare(
-          "SELECT id, name, status, url, url_afiliado, comissao_cpa, comissao_revshare FROM casinos WHERE id = ?",
+          "SELECT id, name, status, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc FROM casinos WHERE id = ?",
         )
         .get(id) || null
     );

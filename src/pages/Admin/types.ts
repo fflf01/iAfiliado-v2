@@ -5,6 +5,7 @@ export interface Casino {
   nome: string;
   comissaoCPA: number;
   comissaoRevShare: number;
+   comissaoDepositoC: number;
   status: "ativo" | "inativo";
   urlAfiliado: string;
 }

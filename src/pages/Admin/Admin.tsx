@@ -106,6 +106,7 @@ const Admin = () => {
     nome: "",
     comissaoCPA: "",
     comissaoRevShare: "",
+    comissaoDepositoC: "",
     urlAfiliado: "",
   });
 
@@ -181,6 +182,7 @@ const Admin = () => {
       nome: c.nome,
       comissaoCPA: String(c.comissaoCPA),
       comissaoRevShare: String(c.comissaoRevShare),
+      comissaoDepositoC: String(c.comissaoDepositoC),
       urlAfiliado: c.urlAfiliado,
     });
     setCasinoDialog(true);
@@ -200,6 +202,7 @@ const Admin = () => {
       nome: casinoForm.nome,
       comissaoCPA: Number(casinoForm.comissaoCPA) || 0,
       comissaoRevShare: Number(casinoForm.comissaoRevShare) || 0,
+      comissaoDepositoC: Number(casinoForm.comissaoDepositoC) || 0,
       urlAfiliado: casinoForm.urlAfiliado,
     };
 
@@ -806,7 +809,7 @@ const Admin = () => {
                 className="bg-muted/30 border-border/50"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm text-muted-foreground mb-1">
                   Comissão CPA (R$)
@@ -836,6 +839,23 @@ const Admin = () => {
                     setCasinoForm((f) => ({
                       ...f,
                       comissaoRevShare: e.target.value,
+                    }))
+                  }
+                  className="bg-muted/30 border-border/50"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  DepósitoC (%)
+                </label>
+                <Input
+                  type="number"
+                  placeholder="10"
+                  value={casinoForm.comissaoDepositoC}
+                  onChange={(e) =>
+                    setCasinoForm((f) => ({
+                      ...f,
+                      comissaoDepositoC: e.target.value,
                     }))
                   }
                   className="bg-muted/30 border-border/50"

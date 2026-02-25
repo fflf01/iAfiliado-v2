@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS casinos (
   url_afiliado TEXT,
   comissao_cpa REAL NOT NULL DEFAULT 0,
   comissao_revshare REAL NOT NULL DEFAULT 0,
+  comissao_depositoc REAL NOT NULL DEFAULT 0,
   status      TEXT NOT NULL DEFAULT 'active',
   description TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
