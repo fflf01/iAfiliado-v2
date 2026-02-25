@@ -331,5 +331,47 @@ export const adminService = {
       offset: query?.offset,
     });
   },
+
+  // --- Contas dos managers ---
+  listManagers() {
+    return adminRepository.listManagers();
+  },
+
+  getManagerAccounts(managerId) {
+    const id = Number.parseInt(String(managerId), 10);
+    if (!Number.isInteger(id) || id <= 0) throw new ValidationError("ID do manager invalido.");
+    const manager = adminRepository.findUserById(id);
+    if (!manager) throw new NotFoundError("Manager nao encontrado.");
+    if (!manager.is_manager) throw new ValidationError("Usuario nao e manager.");
+    return adminRepository.getManagedAccountsWithDetails(id);
+  },
+
+  addManagerAccount(managerId, managedUserId) {
+    const managerIdNum = Number.parseInt(String(managerId), 10);
+    const userIdNum = Number.parseInt(String(managedUserId), 10);
+    if (!Number.isInteger(managerIdNum) || managerIdNum <= 0)
+      throw new ValidationError("ID do manager invalido.");
+    if (!Number.isInteger(userIdNum) || userIdNum <= 0)
+      throw new ValidationError("ID do usuario invalido.");
+    if (managerIdNum === userIdNum)
+      throw new ValidationError("Manager nao pode ser a propria conta gerenciada.");
+    const manager = adminRepository.findUserById(managerIdNum);
+    if (!manager || !manager.is_manager) throw new NotFoundError("Manager nao encontrado.");
+    const user = adminRepository.findUserById(userIdNum);
+    if (!user) throw new NotFoundError("Usuario a adicionar nao encontrado.");
+    const result = adminRepository.addManagedAccount(managerIdNum, userIdNum);
+    return { added: result.changes > 0, accounts: adminRepository.getManagedAccountsWithDetails(managerIdNum) };
+  },
+
+  removeManagerAccount(managerId, managedUserId) {
+    const managerIdNum = Number.parseInt(String(managerId), 10);
+    const userIdNum = Number.parseInt(String(managedUserId), 10);
+    if (!Number.isInteger(managerIdNum) || managerIdNum <= 0)
+      throw new ValidationError("ID do manager invalido.");
+    if (!Number.isInteger(userIdNum) || userIdNum <= 0)
+      throw new ValidationError("ID do usuario invalido.");
+    const result = adminRepository.removeManagedAccount(managerIdNum, userIdNum);
+    return { removed: result.changes > 0, accounts: adminRepository.getManagedAccountsWithDetails(managerIdNum) };
+  },
 };
 

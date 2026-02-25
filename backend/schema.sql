@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
   rede_an       TEXT,
   cadastro_status TEXT,
   is_admin      INTEGER NOT NULL DEFAULT 0 CHECK(is_admin IN (0, 1)),
+  is_manager    INTEGER NOT NULL DEFAULT 0 CHECK(is_manager IN (0, 1)),
   -- Punicao administrativa (bloqueio imediato)
   is_blocked    INTEGER NOT NULL DEFAULT 0 CHECK(is_blocked IN (0, 1)),
   blocked_reason TEXT,
@@ -162,6 +163,16 @@ CREATE TABLE IF NOT EXISTS admin_logs (
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(action);
 CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_user_id ON admin_logs(admin_user_id);
+
+-- Contas que cada manager pode visualizar e administrar (admin as atribui)
+CREATE TABLE IF NOT EXISTS manager_managed_accounts (
+  manager_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  managed_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (manager_id, managed_user_id),
+  CHECK (manager_id <> managed_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_manager_managed_accounts_manager_id ON manager_managed_accounts(manager_id);
 
 -- ============================================================
 -- TRIGGERS — auto-atualizar updated_at

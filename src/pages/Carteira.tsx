@@ -298,7 +298,10 @@ const Carteira = () => {
                   Informações de Saque
                 </h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• PIX: Processamento em até 2 dias</li>
+                  <li>
+                    • PIX: Pagamento em ate 24h, apois a emição da nota apos a
+                    provação{" "}
+                  </li>
                 </ul>
               </div>
             </div>

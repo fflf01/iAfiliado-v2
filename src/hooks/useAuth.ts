@@ -23,6 +23,7 @@ export function useAuth() {
     token,
     isAuthenticated: !!token,
     isAdmin: !!user?.is_admin,
+    isManager: !!user?.is_manager,
     logout,
   };
 }

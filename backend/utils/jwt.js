@@ -9,7 +9,7 @@ import { AUTH } from "../config/constants.js";
 
 /**
  * Gera um token JWT com os dados essenciais do usuario.
- * @param {{ id: number, full_name: string, email: string, is_admin: number|boolean }} user
+ * @param {{ id: number, full_name: string, email: string, is_admin: number|boolean, is_manager: number|boolean }} user
  * @returns {string} Token JWT assinado
  */
 export function generateToken(user) {
@@ -19,6 +19,7 @@ export function generateToken(user) {
       full_name: user.full_name,
       email: user.email,
       is_admin: !!user.is_admin,
+      is_manager: !!user.is_manager,
     },
     process.env.JWT_SECRET,
     { expiresIn: AUTH.TOKEN_EXPIRY }

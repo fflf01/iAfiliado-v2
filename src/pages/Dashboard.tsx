@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Footer from "@/components/Footer";
@@ -20,6 +20,7 @@ import {
   HelpCircle,
   Rocket,
   CalendarDays,
+  UserCog,
 } from "lucide-react";
 import {
   XAxis,
@@ -166,9 +167,18 @@ function endOfDayMs(d: Date): number {
   return copy.getTime();
 }
 
+interface ManagedAccountItem {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout, isManager } = useAuth();
   const [profileUser, setProfileUser] = useState<AppUser | null>(null);
   const [meStats, setMeStats] = useState<MeStats>(defaultStats);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -181,6 +191,8 @@ const Dashboard = () => {
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [casasLoaded, setCasasLoaded] = useState(false);
+  const [managedAccounts, setManagedAccounts] = useState<ManagedAccountItem[]>([]);
+  const [managedAccountsLoading, setManagedAccountsLoading] = useState(false);
 
   // Casa efetiva: evita refetch quando a casa selecionada não está na lista (derivação em vez de reset em effect)
   const effectiveHouse =
@@ -287,15 +299,45 @@ const Dashboard = () => {
     };
   }, [casasLoaded, effectiveHouse, dateRange, customStartDate, customEndDate]);
 
-  const activeView = location.pathname.includes("/plataformas")
-    ? "plataformas"
-    : location.pathname.includes("/entradas")
-      ? "entradas"
-    : location.pathname.includes("/links")
-      ? "links"
-      : location.pathname.includes("/carteira")
-        ? "carteira"
-        : "dashboard";
+  // Só manager pode acessar a aba "Contas que administro" — redireciona quem não for
+  const isContasManagerPath = location.pathname.includes("/contas-manager");
+  useEffect(() => {
+    if (isContasManagerPath && user !== undefined && user !== null && !isManager) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isContasManagerPath, user, isManager, navigate]);
+
+  const activeView = isContasManagerPath
+    ? "contas_manager"
+    : location.pathname.includes("/plataformas")
+      ? "plataformas"
+      : location.pathname.includes("/entradas")
+        ? "entradas"
+        : location.pathname.includes("/links")
+          ? "links"
+          : location.pathname.includes("/carteira")
+            ? "carteira"
+            : "dashboard";
+
+  // Contas que o manager administra (só quando é manager e está na aba)
+  useEffect(() => {
+    if (!isManager || activeView !== "contas_manager") return;
+    let cancelled = false;
+    setManagedAccountsLoading(true);
+    apiGet<ManagedAccountItem[]>("/me/managed-accounts")
+      .then((data) => {
+        if (!cancelled) setManagedAccounts(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setManagedAccounts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setManagedAccountsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isManager, activeView]);
 
   const sidebarItems = [
     { icon: LinkIcon, label: "DashBoard", id: "dashboard", path: "/dashboard" },
@@ -303,6 +345,9 @@ const Dashboard = () => {
     { icon: Wallet, label: "Casas Parceiras", id: "plataformas", path: "/dashboard/plataformas" },
     { icon: Crown, label: "Meus Links", id: "links", path: "/dashboard/links" },
     { icon: Rocket, label: "Carteira", id: "carteira", path: "/dashboard/carteira" },
+    ...(isManager
+      ? [{ icon: UserCog, label: "Contas que administro", id: "contas_manager" as const, path: "/dashboard/contas-manager" }]
+      : []),
     { icon: HelpCircle, label: "Fale com Suporte", id: "suporte", path: user?.is_admin ? "/suporteadmin" : "/suporte-cliente" },
   ];
 
@@ -634,6 +679,46 @@ const Dashboard = () => {
 
 
             </>
+          ) : activeView === "contas_manager" && isManager ? (
+            <Card className="bg-card/80 border-border/50 p-6">
+              <div className="mb-6">
+                <h1 className="text-2xl md:text-3xl font-display font-bold mb-2">
+                  <span className="text-foreground">Contas que </span>
+                  <span className="texto-gradiente-destaque">administro</span>
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Contas que você pode visualizar e administrar (definidas pelo admin).
+                </p>
+              </div>
+              {managedAccountsLoading ? (
+                <p className="text-muted-foreground py-8">Carregando...</p>
+              ) : managedAccounts.length === 0 ? (
+                <p className="text-muted-foreground py-8 rounded-lg bg-muted/20 border border-border/50 text-center">
+                  Nenhuma conta atribuída. O administrador pode vincular contas em Admin → Contas dos Managers.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {managedAccounts.map((acc) => (
+                    <li
+                      key={acc.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all gap-2"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{acc.full_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            @{acc.username} · {acc.email}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
           ) : activeView === "plataformas" ? (
             <PlataformasD />
           ) : activeView === "links" ? (

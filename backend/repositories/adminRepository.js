@@ -238,14 +238,32 @@ export const adminRepository = {
 
   // --- Solicitações de cadastro (aprovação iAfiliado) ---
   updateCadastroStatus(userId, status) {
-    const result = db
-      .prepare(
-        `UPDATE users
-         SET cadastro_status = ?,
-             updated_at = datetime('now')
-         WHERE id = ?`,
-      )
-      .run(status, userId);
+    const row = db.prepare("SELECT tipo_cliente FROM users WHERE id = ?").get(userId);
+    if (!row) return { changes: 0 };
+
+    const isManager =
+      status === "aprovado" &&
+      (row.tipo_cliente === "gestor_vip" || row.tipo_cliente === "gestor_afiliados");
+
+    const result = isManager
+      ? db
+          .prepare(
+            `UPDATE users
+             SET cadastro_status = ?,
+                 is_manager = 1,
+                 updated_at = datetime('now')
+             WHERE id = ?`,
+          )
+          .run(status, userId)
+      : db
+          .prepare(
+            `UPDATE users
+             SET cadastro_status = ?,
+                 updated_at = datetime('now')
+             WHERE id = ?`,
+          )
+          .run(status, userId);
+
     return { changes: result.changes };
   },
 
@@ -265,6 +283,7 @@ export const adminRepository = {
              phone,
              role,
              is_admin,
+             is_manager,
              cadastro_status,
              is_blocked,
              blocked_reason,
@@ -289,6 +308,7 @@ export const adminRepository = {
            phone,
            role,
            is_admin,
+           is_manager,
            cadastro_status,
            is_blocked,
            blocked_reason,
@@ -317,6 +337,7 @@ export const adminRepository = {
              phone,
              role,
              is_admin,
+             is_manager,
              cadastro_status,
              is_blocked,
              blocked_reason,
@@ -377,6 +398,60 @@ export const adminRepository = {
         requestId != null ? String(requestId) : null,
       );
     return result.lastInsertRowid;
+  },
+
+  // --- Contas dos managers (quem cada manager pode ver/admin) ---
+  listManagers() {
+    return db
+      .prepare(
+        `SELECT id, username, full_name, email, is_manager
+         FROM users
+         WHERE is_manager = 1
+         ORDER BY full_name`,
+      )
+      .all();
+  },
+
+  getManagedAccountIds(managerId) {
+    const rows = db
+      .prepare(
+        `SELECT managed_user_id FROM manager_managed_accounts WHERE manager_id = ? ORDER BY created_at`,
+      )
+      .all(managerId);
+    return rows.map((r) => r.managed_user_id);
+  },
+
+  getManagedAccountsWithDetails(managerId) {
+    return db
+      .prepare(
+        `SELECT u.id, u.username, u.full_name, u.email, m.created_at
+         FROM manager_managed_accounts m
+         JOIN users u ON u.id = m.managed_user_id
+         WHERE m.manager_id = ?
+         ORDER BY m.created_at`,
+      )
+      .all(managerId);
+  },
+
+  addManagedAccount(managerId, managedUserId) {
+    if (Number(managerId) === Number(managedUserId)) {
+      return { changes: 0 };
+    }
+    const result = db
+      .prepare(
+        `INSERT OR IGNORE INTO manager_managed_accounts (manager_id, managed_user_id) VALUES (?, ?)`,
+      )
+      .run(managerId, managedUserId);
+    return { changes: result.changes };
+  },
+
+  removeManagedAccount(managerId, managedUserId) {
+    const result = db
+      .prepare(
+        `DELETE FROM manager_managed_accounts WHERE manager_id = ? AND managed_user_id = ?`,
+      )
+      .run(managerId, managedUserId);
+    return { changes: result.changes };
   },
 
   listAdminLogs({ q, limit = 200, offset = 0 }) {

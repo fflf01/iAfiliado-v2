@@ -5,7 +5,7 @@ export const authRepository = {
     return (
       db
         .prepare(
-          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, password_hash, is_admin, is_blocked FROM users WHERE email = ? OR username = ?",
+          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, password_hash, is_admin, is_manager, is_blocked FROM users WHERE email = ? OR username = ?",
         )
         .get(identifier, identifier) || null
     );
@@ -15,7 +15,7 @@ export const authRepository = {
     return (
       db
         .prepare(
-          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, is_admin, is_blocked FROM users WHERE id = ?",
+          "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, is_admin, is_manager, is_blocked FROM users WHERE id = ?",
         )
         .get(id) || null
     );
@@ -51,7 +51,7 @@ export const authRepository = {
   listClients() {
     return db
       .prepare(
-        "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, created_at, is_admin FROM users ORDER BY id DESC",
+        "SELECT id, username, full_name, email, phone, cpf_cnpj, tipo_cliente, tele_an, rede_an, cadastro_status, created_at, is_admin, is_manager FROM users ORDER BY id DESC",
       )
       .all();
   },

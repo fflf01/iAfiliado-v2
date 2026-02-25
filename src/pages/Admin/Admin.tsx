@@ -19,6 +19,7 @@ import {
   Banknote,
   UserX,
   ScrollText,
+  UserCog,
 } from "lucide-react";
 import {
   Dialog,
@@ -63,6 +64,7 @@ import { EntradasSection } from "./sections/EntradasSection";
 import { CarteirasSection } from "./sections/CarteirasSection";
 import { SaquesSection } from "./sections/SaquesSection";
 import { UsersSection } from "./sections/UsersSection";
+import { ManagerAccountsSection } from "./sections/ManagerAccountsSection";
 import { AdminLogsSection } from "./sections/AdminLogsSection";
 import { AdminSidebar } from "./ui/AdminSidebar";
 import { AdminTopBar } from "./ui/AdminTopBar";
@@ -76,6 +78,7 @@ const sidebarItems = [
   { id: "entradas", label: "Entradas", icon: Calendar },
   { id: "carteiras", label: "Carteiras", icon: Wallet },
   { id: "saques", label: "Verificação de saque", icon: Banknote },
+  { id: "contas_manager", label: "Contas dos Managers", icon: UserCog },
   { id: "usuarios", label: "Usuários", icon: UserX },
   { id: "log_admin", label: "Log Admin", icon: ScrollText },
 ];
@@ -319,10 +322,11 @@ const Admin = () => {
     }
   };
 
-  const aprovarContrato = async (id: string) => {
+  const aprovarContrato = async (id: string, link?: string) => {
     try {
       await apiPut<{ ok: true }>(`/admin/contracts/${id}/status`, {
         status: "aprovado",
+        ...(link ? { link } : {}),
       });
       refresh();
       toast({
@@ -628,6 +632,9 @@ const Admin = () => {
             />
           )}
 
+          {/* ── Contas dos Managers ────────────────────────────── */}
+          {activeTab === "contas_manager" && <ManagerAccountsSection active />}
+
           {/* ── Usuários (punição) ────────────────────────────── */}
           {activeTab === "usuarios" && <UsersSection active />}
 
@@ -722,18 +729,25 @@ const Admin = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Status</p>
-                  <span
-                    className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                      selectedSolicitacao.status === "pendente"
-                        ? "bg-secondary/15 text-secondary"
-                        : selectedSolicitacao.status === "aprovado"
-                          ? "bg-primary/15 text-primary"
-                          : "bg-destructive/15 text-destructive"
-                    }`}
-                  >
-                    {selectedSolicitacao.status.charAt(0).toUpperCase() +
-                      selectedSolicitacao.status.slice(1)}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                        selectedSolicitacao.status === "pendente"
+                          ? "bg-secondary/15 text-secondary"
+                          : selectedSolicitacao.status === "aprovado"
+                            ? "bg-primary/15 text-primary"
+                            : "bg-destructive/15 text-destructive"
+                      }`}
+                    >
+                      {selectedSolicitacao.status.charAt(0).toUpperCase() +
+                        selectedSolicitacao.status.slice(1)}
+                    </span>
+                    {selectedSolicitacao.is_manager && (
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                        Manager
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

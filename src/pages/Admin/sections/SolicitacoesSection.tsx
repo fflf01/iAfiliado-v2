@@ -1,6 +1,15 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CheckCircle, Clock, Eye, Search, XCircle } from "lucide-react";
 import type { ContractRequest, Solicitacao } from "../types";
 import { tipoClienteLabel } from "../utils";
@@ -18,10 +27,27 @@ export function SolicitacoesSection(props: {
   onOpenDetail: (s: Solicitacao) => void;
   onApproveSolicitacao: (id: number) => void;
   onRejectSolicitacao: (id: number) => void;
-  onApproveContract: (id: string) => void;
+  onApproveContract: (id: string, link?: string) => void;
   onRejectContract: (id: string) => void;
 }) {
   const statusOptions = ["todos", "pendente", "aprovado", "rejeitado"];
+  const [approveContractDialogOpen, setApproveContractDialogOpen] = useState(false);
+  const [selectedContractRequest, setSelectedContractRequest] = useState<ContractRequest | null>(null);
+  const [contractLinkInput, setContractLinkInput] = useState("");
+
+  const openApproveContractDialog = (req: ContractRequest) => {
+    setSelectedContractRequest(req);
+    setContractLinkInput("");
+    setApproveContractDialogOpen(true);
+  };
+
+  const confirmApproveContract = () => {
+    if (!selectedContractRequest) return;
+    props.onApproveContract(selectedContractRequest.id, contractLinkInput.trim() || undefined);
+    setApproveContractDialogOpen(false);
+    setSelectedContractRequest(null);
+    setContractLinkInput("");
+  };
 
   return (
     <Card className="bg-card/80 border-border/50 p-6">
@@ -122,6 +148,11 @@ export function SolicitacoesSection(props: {
               >
                 {sol.status.charAt(0).toUpperCase() + sol.status.slice(1)}
               </span>
+              {sol.is_manager && (
+                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                  Manager
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -238,7 +269,7 @@ export function SolicitacoesSection(props: {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => props.onApproveContract(req.id)}
+                      onClick={() => openApproveContractDialog(req)}
                       className="text-primary hover:text-primary"
                       title="Aprovar"
                     >
@@ -266,6 +297,57 @@ export function SolicitacoesSection(props: {
           )}
         </div>
       </div>
+
+      {/* Modal: Aprovar contrato — dados da solicitação + link da casa */}
+      <Dialog open={approveContractDialogOpen} onOpenChange={setApproveContractDialogOpen}>
+        <DialogContent className="bg-card border-border/50 max-w-md">
+          <DialogHeader>
+            <DialogTitle>Aprovar solicitação de contrato</DialogTitle>
+            <DialogDescription>
+              Confirme os dados e insira o link de afiliado da casa para o usuário.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedContractRequest && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg bg-muted/30 border border-border/50 p-4 space-y-2">
+                <p className="text-sm font-medium text-foreground">{selectedContractRequest.afiliadoNome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedContractRequest.afiliadoEmail}
+                  {selectedContractRequest.afiliadoPhone ? ` • ${selectedContractRequest.afiliadoPhone}` : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Casa: <span className="text-foreground font-medium">{selectedContractRequest.casaNome}</span>
+                </p>
+                <p className="text-xs text-muted-foreground">Data: {selectedContractRequest.dataCriacao}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Link da casa</label>
+                <Input
+                  placeholder="Cole o link de afiliado da casa solicitada"
+                  value={contractLinkInput}
+                  onChange={(e) => setContractLinkInput(e.target.value)}
+                  className="bg-muted/30 border-border/50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Opcional. O usuário verá este link em Meus Links após a aprovação.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setApproveContractDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="neon"
+              onClick={confirmApproveContract}
+              className="gap-2"
+            >
+              <CheckCircle className="w-4 h-4" /> Confirmar aprovação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

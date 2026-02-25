@@ -67,6 +67,18 @@ try {
   ensureColumn("users", "is_blocked", "INTEGER NOT NULL DEFAULT 0 CHECK(is_blocked IN (0, 1))");
   ensureColumn("users", "blocked_reason", "TEXT");
   ensureColumn("users", "blocked_at", "TEXT");
+  ensureColumn("users", "is_manager", "INTEGER NOT NULL DEFAULT 0");
+  // Tabela para contas que cada manager pode visualizar/administrar
+  if (!db.pragma("table_info(manager_managed_accounts)").length) {
+    db.exec(
+      `CREATE TABLE IF NOT EXISTS manager_managed_accounts (
+        manager_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        managed_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (manager_id, managed_user_id)
+      ); CREATE INDEX IF NOT EXISTS idx_manager_managed_accounts_manager_id ON manager_managed_accounts(manager_id);`,
+    );
+  }
   // contracts.status default no schema e 'pendente' (bases antigas podem manter 'ativo')
   ensureDefaultValue("contracts", "status", "'pendente'");
 } catch (err) {

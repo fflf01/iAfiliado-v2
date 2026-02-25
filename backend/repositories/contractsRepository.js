@@ -16,6 +16,15 @@ export const contractsRepository = {
     return db.prepare("SELECT id, name FROM casinos WHERE id = ? LIMIT 1").get(slug) || null;
   },
 
+  countPendingByAffiliateAndCasa(afiliadoId, casaId) {
+    const row = db
+      .prepare(
+        `SELECT COUNT(*) AS total FROM contracts WHERE afiliado_id = ? AND casa_id = ? AND status = 'pendente'`,
+      )
+      .get(afiliadoId, casaId);
+    return Number(row?.total ?? 0);
+  },
+
   findExistingContract({ afiliadoId, casaId }) {
     return (
       db
@@ -108,11 +117,17 @@ export const contractsRepository = {
     );
   },
 
-  insertAffiliateCasinoLink({ id, userId, casinoId, status }) {
+  insertAffiliateCasinoLink({ id, userId, casinoId, status, link }) {
     db.prepare(
-      `INSERT INTO affiliate_casinos (id, user_id, casino_id, status)
-       VALUES (?, ?, ?, ?)`,
-    ).run(id, userId, casinoId, status || "active");
+      `INSERT INTO affiliate_casinos (id, user_id, casino_id, status, link)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).run(id, userId, casinoId, status || "active", link || null);
+  },
+
+  updateAffiliateCasinoLink({ userId, casinoId, link }) {
+    return db
+      .prepare(`UPDATE affiliate_casinos SET link = ? WHERE user_id = ? AND casino_id = ?`)
+      .run(link || null, userId, casinoId);
   },
 };
 

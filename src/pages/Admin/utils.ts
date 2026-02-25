@@ -113,12 +113,13 @@ export function buildSolicitacoesFromClients(clientsData: ClientRow[]): Solicita
       tipoCliente: u.tipo_cliente,
       contatoAnalise: u.tipo_cliente === "influencer" ? u.rede_an : u.tele_an,
       dataCadastro: formatDatePtBr(u.created_at),
-      status:
-        u.cadastro_status === "aprovado"
-          ? "aprovado"
-          : u.cadastro_status === "rejeitado"
-            ? "rejeitado"
-            : "pendente",
+      status: (() => {
+        const st = String(u.cadastro_status ?? "").trim().toLowerCase();
+        if (st === "aprovado") return "aprovado";
+        if (st === "rejeitado") return "rejeitado";
+        return "pendente";
+      })(),
+      is_manager: !!u.is_manager,
     }));
 }
 

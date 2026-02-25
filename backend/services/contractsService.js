@@ -14,13 +14,11 @@ export const contractsService = {
       throw new NotFoundError("Casa nao encontrada.");
     }
 
-    const existing = contractsRepository.findExistingContract({
-      afiliadoId: userId,
-      casaId: casino.id,
-    });
-    if (existing) {
-      // idempotente: evita spam de solicitacoes duplicadas
-      return { ok: true, id: existing.id, status: existing.status };
+    const pendingForThisCasa = contractsRepository.countPendingByAffiliateAndCasa(userId, casino.id);
+    if (pendingForThisCasa >= 3) {
+      throw new ValidationError(
+        "Voce ja possui 3 solicitacoes pendentes para esta casa. Aguarde a analise ou aprovacao antes de criar novas.",
+      );
     }
 
     const id = crypto.randomUUID();
@@ -55,17 +53,24 @@ export const contractsService = {
     if (result.changes === 0) throw new NotFoundError("Contrato nao encontrado.");
 
     if (status === "aprovado") {
-      // Ao aprovar, garante vinculo afiliado <-> casino para aparecer em /me/casas.
-      const link = contractsRepository.findAffiliateCasinoLink({
+      const linkUrl = payload?.link != null ? String(payload.link).trim() : null;
+      const existingLink = contractsRepository.findAffiliateCasinoLink({
         userId: existing.afiliado_id,
         casinoId: existing.casa_id,
       });
-      if (!link) {
+      if (!existingLink) {
         contractsRepository.insertAffiliateCasinoLink({
           id: crypto.randomUUID(),
           userId: existing.afiliado_id,
           casinoId: existing.casa_id,
           status: "active",
+          link: linkUrl || null,
+        });
+      } else if (linkUrl !== null && linkUrl !== "") {
+        contractsRepository.updateAffiliateCasinoLink({
+          userId: existing.afiliado_id,
+          casinoId: existing.casa_id,
+          link: linkUrl,
         });
       }
     }

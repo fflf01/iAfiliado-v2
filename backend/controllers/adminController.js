@@ -132,3 +132,23 @@ export function listAdminLogs(req, res) {
   return res.json(adminService.listAdminLogs(req.query));
 }
 
+// --- Contas dos managers ---
+export function listManagers(req, res) {
+  return res.json(adminService.listManagers());
+}
+
+export function getManagerAccounts(req, res) {
+  return res.json(adminService.getManagerAccounts(req.params.id));
+}
+
+export function addManagerAccount(req, res) {
+  const managedUserId = req.body?.user_id ?? req.body?.userId;
+  const out = adminService.addManagerAccount(req.params.id, managedUserId);
+  return res.status(out.added ? 201 : 200).json(out);
+}
+
+export function removeManagerAccount(req, res) {
+  const out = adminService.removeManagerAccount(req.params.id, req.params.userId);
+  return res.json(out);
+}
+

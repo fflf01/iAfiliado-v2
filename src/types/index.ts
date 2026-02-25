@@ -12,6 +12,7 @@ export interface User {
   rede_an?: string | null;
   cadastro_status?: string | null;
   is_admin: boolean;
+  is_manager?: boolean;
 }
 
 export interface Ticket {

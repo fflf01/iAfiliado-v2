@@ -179,15 +179,22 @@ export function UsersSection(props: { active: boolean }) {
                     </td>
                     <td className="px-4 py-3 text-foreground">{u.email}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                          blocked
-                            ? "bg-destructive/15 text-destructive"
-                            : "bg-primary/15 text-primary"
-                        }`}
-                      >
-                        {blocked ? "bloqueado" : "ativo"}
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                            blocked
+                              ? "bg-destructive/15 text-destructive"
+                              : "bg-primary/15 text-primary"
+                          }`}
+                        >
+                          {blocked ? "bloqueado" : "ativo"}
+                        </span>
+                        {!!u.is_manager && (
+                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                            Manager
+                          </span>
+                        )}
+                      </div>
                       {blocked && u.blocked_reason && (
                         <div className="text-xs text-muted-foreground mt-1 max-w-[28rem] truncate">
                           Motivo: {u.blocked_reason}

@@ -1,4 +1,6 @@
 import { dashboardService } from "../services/dashboardService.js";
+import { adminRepository } from "../repositories/adminRepository.js";
+import { ForbiddenError } from "../errors/AppError.js";
 
 /**
  * GET /me/stats - Estatísticas agregadas do usuário (cliques, depósitos, comissão, FTDs).
@@ -34,4 +36,16 @@ export function getMyCasas(req, res) {
 export function getMyEntradas(req, res) {
   const list = dashboardService.getMyEntradas(req.user.id, req.query);
   return res.json(list);
+}
+
+/**
+ * GET /me/managed-accounts - Contas que o manager pode visualizar/administrar.
+ * Requer authMiddleware. Apenas usuários com is_manager podem acessar.
+ */
+export function getMyManagedAccounts(req, res) {
+  if (!req.user?.is_manager) {
+    throw new ForbiddenError("Acesso restrito a managers.");
+  }
+  const accounts = adminRepository.getManagedAccountsWithDetails(req.user.id);
+  return res.json(accounts);
 }

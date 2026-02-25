@@ -36,6 +36,10 @@ import {
   blockUserAdmin,
   deleteUserAdmin,
   listAdminLogs,
+  listManagers,
+  getManagerAccounts,
+  addManagerAccount,
+  removeManagerAccount,
 } from "./controllers/adminController.js";
 import {
   saveSupportMessage,
@@ -46,7 +50,7 @@ import {
   getTicketReplies,
   getClientMessages,
 } from "./controllers/supportController.js";
-import { getMyStats, getMyWallet, getMyEntradas, getMyCasas } from "./controllers/dashboardController.js";
+import { getMyStats, getMyWallet, getMyEntradas, getMyCasas, getMyManagedAccounts } from "./controllers/dashboardController.js";
 import {
   getUserProfile,
   getUserStats,
@@ -293,6 +297,7 @@ const updateContractStatusRules = [
     .withMessage("Status e obrigatorio.")
     .isIn(["aprovado", "rejeitado"])
     .withMessage("Status invalido. Use aprovado ou rejeitado."),
+  body("link").optional().trim().isLength({ max: 2048 }).withMessage("Link muito longo."),
 ];
 
 const createWithdrawalRules = [
@@ -362,6 +367,7 @@ router.get("/me/stats", authMiddleware, asyncHandler(getMyStats));
 router.get("/me/casas", authMiddleware, asyncHandler(getMyCasas));
 router.get("/me/wallet", authMiddleware, asyncHandler(getMyWallet));
 router.get("/me/entradas", authMiddleware, asyncHandler(getMyEntradas));
+router.get("/me/managed-accounts", authMiddleware, asyncHandler(getMyManagedAccounts));
 router.post(
   "/me/contracts",
   authMiddleware,
@@ -437,6 +443,27 @@ router.delete(
   asyncHandler(deleteUserAdmin),
 );
 router.get("/admin/log_admin", authMiddleware, adminAuthMiddleware, asyncHandler(listAdminLogs));
+
+// Contas dos managers (admin define quais contas cada manager pode ver/admin)
+router.get("/admin/managers", authMiddleware, adminAuthMiddleware, asyncHandler(listManagers));
+router.get(
+  "/admin/managers/:id/accounts",
+  authMiddleware,
+  adminAuthMiddleware,
+  asyncHandler(getManagerAccounts),
+);
+router.post(
+  "/admin/managers/:id/accounts",
+  authMiddleware,
+  adminAuthMiddleware,
+  asyncHandler(addManagerAccount),
+);
+router.delete(
+  "/admin/managers/:id/accounts/:userId",
+  authMiddleware,
+  adminAuthMiddleware,
+  asyncHandler(removeManagerAccount),
+);
 
 // Dashboard por usuario (admin)
 router.get(

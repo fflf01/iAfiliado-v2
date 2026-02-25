@@ -51,6 +51,7 @@ export interface Solicitacao {
   contatoAnalise?: string | null;
   dataCadastro: string;
   status: "pendente" | "aprovado" | "rejeitado";
+  is_manager?: boolean;
 }
 
 export interface ClientRow {
@@ -65,6 +66,7 @@ export interface ClientRow {
   rede_an: string | null;
   cadastro_status: string | null;
   created_at: string;
+  is_manager?: number | boolean;
 }
 
 export interface ContractRowApi {
@@ -98,12 +100,29 @@ export interface AdminUserRow {
   phone: string | null;
   role: "user" | "admin";
   is_admin: number | boolean;
+  is_manager?: number | boolean;
   cadastro_status: string | null;
   is_blocked: number | boolean;
   blocked_reason: string | null;
   blocked_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ManagerRow {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string;
+  is_manager: number | boolean;
+}
+
+export interface ManagedAccountRow {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string;
+  created_at: string;
 }
 
 export interface AdminLogRow {
