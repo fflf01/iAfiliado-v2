@@ -1,4 +1,11 @@
 import db from "../db.js";
+import { ADMIN_DEFAULT_LIMIT, ADMIN_MAX_LIMIT } from "../utils/pagination.js";
+
+function clampAdminLimit(limit) {
+  const n = Number(limit);
+  if (!Number.isFinite(n) || n < 1) return ADMIN_DEFAULT_LIMIT;
+  return Math.min(n, ADMIN_MAX_LIMIT);
+}
 
 export const contractsRepository = {
   findCasinoByName(name) {
@@ -58,7 +65,9 @@ export const contractsRepository = {
     );
   },
 
-  listContractsByStatus(status) {
+  listContractsByStatus(status, { limit, offset } = {}) {
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
+    const safeOffset = Math.max(0, Number(offset) || 0);
     return db
       .prepare(
         `SELECT
@@ -79,9 +88,9 @@ export const contractsRepository = {
          JOIN casinos c ON c.id = ct.casa_id
          WHERE ct.status = ?
          ORDER BY ct.data_criacao DESC
-         LIMIT 1000`,
+         LIMIT ? OFFSET ?`,
       )
-      .all(status);
+      .all(status, safeLimit, safeOffset);
   },
 
   updateContractStatus(contractId, status) {

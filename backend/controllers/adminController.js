@@ -2,7 +2,7 @@ import { adminService } from "../services/adminService.js";
 import { adminLogService } from "../services/adminLogService.js";
 
 export function listCasinos(req, res) {
-  return res.json(adminService.listCasinos());
+  return res.json(adminService.listCasinos(req.query));
 }
 
 export function createCasino(req, res) {
@@ -74,7 +74,7 @@ export function recomputeWalletTotals(req, res) {
 }
 
 export function listWalletsAdmin(req, res) {
-  return res.json(adminService.listWalletsAdmin());
+  return res.json(adminService.listWalletsAdmin(req.query));
 }
 
 export function updateCadastroStatus(req, res) {
@@ -144,11 +144,11 @@ export function listAdminLogs(req, res) {
 
 // --- Contas dos managers ---
 export function listManagers(req, res) {
-  return res.json(adminService.listManagers());
+  return res.json(adminService.listManagers(req.query));
 }
 
 export function getManagerAccounts(req, res) {
-  return res.json(adminService.getManagerAccounts(req.params.id));
+  return res.json(adminService.getManagerAccounts(req.params.id, req.query));
 }
 
 export function addManagerAccount(req, res) {

@@ -39,6 +39,7 @@ Opcionais:
 - `PORT`: porta HTTP (padrao `3000`).
 - `DB_PATH`: caminho do arquivo SQLite (padrao: `data/iafiliado.db` relativo ao backend). Em `NODE_ENV=test` os testes usam um arquivo temporario.
 - `DISCORD_WEBHOOK_URL`: webhook para notificacoes de tickets/respostas.
+- `DISCORD_WEBHOOK_TIMEOUT_MS`: timeout em ms para requisicoes ao Discord (padrao `8000`; min 1000, max 60000). Cancela a requisicao e libera recursos ao estourar.
 - `NODE_ENV`: `development`, `test` ou `production`.
 - `LOG_LEVEL`: nivel de log (`debug`, `info`, `warn`, `error`).
 

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { ValidationError, NotFoundError } from "../errors/AppError.js";
 import { contractsRepository } from "../repositories/contractsRepository.js";
+import { resolveAdminListLimit } from "../utils/pagination.js";
 
 export const contractsService = {
   requestContract(userId, payload) {
@@ -33,8 +34,9 @@ export const contractsService = {
     return { ok: true, id: row.id, status: row.status };
   },
 
-  listPendingContracts() {
-    return contractsRepository.listContractsByStatus("pendente");
+  listPendingContracts(query = {}) {
+    const { limit, offset } = resolveAdminListLimit(query);
+    return contractsRepository.listContractsByStatus("pendente", { limit, offset });
   },
 
   updateContractStatus(contractId, payload) {

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { ValidationError, NotFoundError, AppError } from "../errors/AppError.js";
 import { withdrawalsRepository } from "../repositories/withdrawalsRepository.js";
-import { resolvePagination } from "../utils/pagination.js";
+import { resolvePagination, ADMIN_DEFAULT_LIMIT, ADMIN_MAX_LIMIT } from "../utils/pagination.js";
 
 const MIN_VALOR = 50;
 
@@ -32,7 +32,10 @@ export const withdrawalsService = {
   },
 
   listForAdmin(query = {}) {
-    const pagination = resolvePagination(query);
+    const pagination = resolvePagination(query, {
+      defaultLimit: ADMIN_DEFAULT_LIMIT,
+      maxLimit: ADMIN_MAX_LIMIT,
+    });
     const status = typeof query.status === "string" && query.status.trim()
       ? query.status.trim().toLowerCase()
       : null;

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { NotFoundError, ValidationError } from "../errors/AppError.js";
 import { adminRepository } from "../repositories/adminRepository.js";
+import { resolveAdminListLimit } from "../utils/pagination.js";
 
 function normalizeCasinoStatus(value) {
   if (!value) return null;
@@ -46,8 +47,9 @@ function toNumber(value, fallback = 0) {
 }
 
 export const adminService = {
-  listCasinos() {
-    return adminRepository.listCasinos().map(toCasinoUi);
+  listCasinos(query = {}) {
+    const { limit, offset } = resolveAdminListLimit(query);
+    return adminRepository.listCasinos({ limit, offset }).map(toCasinoUi);
   },
 
   createCasino(payload) {
@@ -104,11 +106,14 @@ export const adminService = {
   },
 
   listEntradasAdmin(query) {
+    const { limit, offset } = resolveAdminListLimit(query);
     const rows = adminRepository.listEntradasAdmin({
       fromMs: parseMs(query?.from),
       toMs: parseMs(query?.to),
       casinoId: query?.casinoId ? String(query.casinoId) : null,
       userId: query?.userId ? Number(query.userId) : null,
+      limit,
+      offset,
     });
 
     // Converte cada linha "entradas" em múltiplos eventos para o UI.
@@ -241,8 +246,9 @@ export const adminService = {
     return { ok: true, updatedUsers };
   },
 
-  listWalletsAdmin() {
-    return adminRepository.listWalletsAdmin().map((row) => {
+  listWalletsAdmin(query = {}) {
+    const { limit, offset } = resolveAdminListLimit(query);
+    return adminRepository.listWalletsAdmin({ limit, offset }).map((row) => {
       const totalRecebido = Number(row.valor_recebido_total || 0);
       const saldoDisponivel = Number(row.saldo_disponivel || 0);
       const totalSacado = Number(row.valor_total_sacado || 0);
@@ -279,9 +285,10 @@ export const adminService = {
 
   // --- Usuários (punição/admin) ---
   listUsers(query) {
+    const { limit } = resolveAdminListLimit(query);
     return adminRepository.listUsers({
       q: query?.q ?? query?.query ?? "",
-      limit: query?.limit,
+      limit,
     });
   },
 
@@ -330,25 +337,28 @@ export const adminService = {
 
   // --- Log admin (auditoria) ---
   listAdminLogs(query) {
+    const { limit, offset } = resolveAdminListLimit(query);
     return adminRepository.listAdminLogs({
       q: query?.q ?? query?.query ?? "",
-      limit: query?.limit,
-      offset: query?.offset,
+      limit,
+      offset,
     });
   },
 
   // --- Contas dos managers ---
-  listManagers() {
-    return adminRepository.listManagers();
+  listManagers(query = {}) {
+    const { limit, offset } = resolveAdminListLimit(query);
+    return adminRepository.listManagers({ limit, offset });
   },
 
-  getManagerAccounts(managerId) {
+  getManagerAccounts(managerId, query = {}) {
     const id = Number.parseInt(String(managerId), 10);
     if (!Number.isInteger(id) || id <= 0) throw new ValidationError("ID do manager invalido.");
     const manager = adminRepository.findUserById(id);
     if (!manager) throw new NotFoundError("Manager nao encontrado.");
     if (!manager.is_manager) throw new ValidationError("Usuario nao e manager.");
-    return adminRepository.getManagedAccountsWithDetails(id);
+    const { limit, offset } = resolveAdminListLimit(query);
+    return adminRepository.getManagedAccountsWithDetails(id, { limit, offset });
   },
 
   addManagerAccount(managerId, managedUserId) {

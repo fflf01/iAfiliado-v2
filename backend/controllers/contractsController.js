@@ -7,9 +7,9 @@ export function requestMyContract(req, res) {
   return res.status(201).json(out);
 }
 
-// GET /admin/contracts?status=pendente
-export function listPendingContracts(_req, res) {
-  return res.json(contractsService.listPendingContracts());
+// GET /admin/contracts
+export function listPendingContracts(req, res) {
+  return res.json(contractsService.listPendingContracts(req.query));
 }
 
 // PUT /admin/contracts/:id/status

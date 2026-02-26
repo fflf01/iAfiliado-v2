@@ -1,15 +1,25 @@
 import db from "../db.js";
+import { ADMIN_DEFAULT_LIMIT, ADMIN_MAX_LIMIT } from "../utils/pagination.js";
+
+function clampAdminLimit(limit) {
+  const n = Number(limit);
+  if (!Number.isFinite(n) || n < 1) return ADMIN_DEFAULT_LIMIT;
+  return Math.min(n, ADMIN_MAX_LIMIT);
+}
 
 export const adminRepository = {
   // --- Casinos ---
-  listCasinos() {
+  listCasinos({ limit, offset } = {}) {
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
+    const safeOffset = Math.max(0, Number(offset) || 0);
     return db
       .prepare(
         `SELECT id, name, status, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc
          FROM casinos
-         ORDER BY updated_at DESC, created_at DESC`,
+         ORDER BY updated_at DESC, created_at DESC
+         LIMIT ? OFFSET ?`,
       )
-      .all();
+      .all(safeLimit, safeOffset);
   },
 
   createCasino({
@@ -94,7 +104,7 @@ export const adminRepository = {
   },
 
   // --- Entradas (auditoria admin) ---
-  listEntradasAdmin({ fromMs, toMs, casinoId, userId }) {
+  listEntradasAdmin({ fromMs, toMs, casinoId, userId, limit, offset }) {
     const conditions = [];
     const params = [];
 
@@ -116,6 +126,9 @@ export const adminRepository = {
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
+    const safeOffset = Math.max(0, Number(offset) || 0);
+    params.push(safeLimit, safeOffset);
 
     return db
       .prepare(
@@ -137,7 +150,7 @@ export const adminRepository = {
          JOIN casinos c ON c.id = e.casino_id
          ${where}
          ORDER BY e.data_hora DESC
-         LIMIT 1000`,
+         LIMIT ? OFFSET ?`,
       )
       .all(...params);
   },
@@ -237,7 +250,9 @@ export const adminRepository = {
   },
 
   // --- Carteiras (wallet_totals) ---
-  listWalletsAdmin() {
+  listWalletsAdmin({ limit, offset } = {}) {
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
+    const safeOffset = Math.max(0, Number(offset) || 0);
     return db
       .prepare(
         `SELECT
@@ -251,9 +266,9 @@ export const adminRepository = {
          FROM wallet_totals w
          JOIN users u ON u.id = w.user_id
          ORDER BY w.updated_at DESC
-         LIMIT 1000`,
+         LIMIT ? OFFSET ?`,
       )
-      .all();
+      .all(safeLimit, safeOffset);
   },
 
   // --- Solicitações de cadastro (aprovação iAfiliado) ---
@@ -288,9 +303,9 @@ export const adminRepository = {
   },
 
   // --- Usuários (admin) ---
-  listUsers({ q, limit = 200 }) {
+  listUsers({ q, limit }) {
     const query = String(q || "").trim().toLowerCase();
-    const safeLimit = Math.max(1, Math.min(1000, Number(limit) || 200));
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
 
     if (!query) {
       return db
@@ -424,15 +439,18 @@ export const adminRepository = {
   },
 
   // --- Contas dos managers (quem cada manager pode ver/admin) ---
-  listManagers() {
+  listManagers({ limit, offset } = {}) {
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
+    const safeOffset = Math.max(0, Number(offset) || 0);
     return db
       .prepare(
         `SELECT id, username, full_name, email, is_manager
          FROM users
          WHERE is_manager = 1
-         ORDER BY full_name`,
+         ORDER BY full_name
+         LIMIT ? OFFSET ?`,
       )
-      .all();
+      .all(safeLimit, safeOffset);
   },
 
   getManagedAccountIds(managerId) {
@@ -444,16 +462,19 @@ export const adminRepository = {
     return rows.map((r) => r.managed_user_id);
   },
 
-  getManagedAccountsWithDetails(managerId) {
+  getManagedAccountsWithDetails(managerId, { limit, offset } = {}) {
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
+    const safeOffset = Math.max(0, Number(offset) || 0);
     return db
       .prepare(
         `SELECT u.id, u.username, u.full_name, u.email, m.created_at
          FROM manager_managed_accounts m
          JOIN users u ON u.id = m.managed_user_id
          WHERE m.manager_id = ?
-         ORDER BY m.created_at`,
+         ORDER BY m.created_at
+         LIMIT ? OFFSET ?`,
       )
-      .all(managerId);
+      .all(managerId, safeLimit, safeOffset);
   },
 
   addManagedAccount(managerId, managedUserId) {
@@ -477,9 +498,9 @@ export const adminRepository = {
     return { changes: result.changes };
   },
 
-  listAdminLogs({ q, limit = 200, offset = 0 }) {
+  listAdminLogs({ q, limit, offset }) {
     const query = String(q || "").trim().toLowerCase();
-    const safeLimit = Math.max(1, Math.min(1000, Number(limit) || 200));
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_DEFAULT_LIMIT);
     const safeOffset = Math.max(0, Number(offset) || 0);
 
     if (!query) {
