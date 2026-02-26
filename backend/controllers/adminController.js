@@ -79,10 +79,20 @@ export function listWalletsAdmin(req, res) {
 
 export function updateCadastroStatus(req, res) {
   const out = adminService.updateCadastroStatus(req.params.id, req.body);
+  const status = (req.body?.status || "").trim().toLowerCase();
+  const message =
+    status === "rejeitado"
+      ? "Requisição de cadastro recusada"
+      : status === "aprovado"
+        ? "Requisição de cadastro aprovada"
+        : status
+          ? `Status alterado para ${status}`
+          : null;
   adminLogService.tryLog(req, {
-    action: "user_cadastro_status_update",
+    action: status === "rejeitado" ? "user_cadastro_rejected" : "user_cadastro_status_update",
     targetType: "user",
     targetId: req.params.id,
+    message,
     payload: req.body,
   });
   return res.json(out);

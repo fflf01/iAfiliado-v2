@@ -30,7 +30,7 @@ export function SolicitacoesSection(props: {
   onApproveContract: (id: string, link?: string) => void;
   onRejectContract: (id: string) => void;
 }) {
-  const statusOptions = ["todos", "pendente", "aprovado", "rejeitado"];
+  const statusOptions = ["todos", "pendente", "aprovado"];
   const [approveContractDialogOpen, setApproveContractDialogOpen] = useState(false);
   const [selectedContractRequest, setSelectedContractRequest] = useState<ContractRequest | null>(null);
   const [contractLinkInput, setContractLinkInput] = useState("");

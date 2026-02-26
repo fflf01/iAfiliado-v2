@@ -54,25 +54,14 @@ export const contractsService = {
 
     if (status === "aprovado") {
       const linkUrl = payload?.link != null ? String(payload.link).trim() : null;
-      const existingLink = contractsRepository.findAffiliateCasinoLink({
+      // Sempre insere uma nova linha: mesmo cassino pode ter vários links
+      contractsRepository.insertAffiliateCasinoLink({
+        id: crypto.randomUUID(),
         userId: existing.afiliado_id,
         casinoId: existing.casa_id,
+        status: "active",
+        link: linkUrl || null,
       });
-      if (!existingLink) {
-        contractsRepository.insertAffiliateCasinoLink({
-          id: crypto.randomUUID(),
-          userId: existing.afiliado_id,
-          casinoId: existing.casa_id,
-          status: "active",
-          link: linkUrl || null,
-        });
-      } else if (linkUrl !== null && linkUrl !== "") {
-        contractsRepository.updateAffiliateCasinoLink({
-          userId: existing.afiliado_id,
-          casinoId: existing.casa_id,
-          link: linkUrl,
-        });
-      }
     }
 
     return { ok: true };

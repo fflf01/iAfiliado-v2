@@ -15,11 +15,24 @@ export const dashboardService = {
 
   getMyCasas(userId) {
     const rows = dashboardRepository.listLinkedCasinosByUserId(userId);
-    return rows.map((row) => ({
-      casinoId: row.casino_id,
-      casinoName: row.casino_name,
-      status: row.affiliate_status,
-      link: row.affiliate_link,
+    // Agrupa por casino: mesmo cassino pode ter vários links (várias linhas em affiliate_casinos)
+    const byCasino = new Map();
+    for (const row of rows) {
+      const key = row.casino_id;
+      if (!byCasino.has(key)) {
+        byCasino.set(key, {
+          casinoId: row.casino_id,
+          casinoName: row.casino_name,
+          status: row.affiliate_status,
+          links: [],
+        });
+      }
+      const link = row.affiliate_link != null ? String(row.affiliate_link).trim() : null;
+      if (link) byCasino.get(key).links.push(link);
+    }
+    return Array.from(byCasino.values()).map((c) => ({
+      ...c,
+      link: c.links[0] ?? null, // retrocompat: primeiro link como .link
     }));
   },
 

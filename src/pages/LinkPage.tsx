@@ -20,6 +20,8 @@ interface CasaVinculada {
   casinoName: string;
   status: string;
   link: string | null;
+  /** Múltiplos links por cassino (API pode enviar links[] ou apenas link) */
+  links?: string[];
 }
 
 interface CasinoDoBanco {
@@ -108,6 +110,13 @@ const Links = () => {
   }, [entradas]);
 
   const casinoIdsVinculados = useMemo(() => new Set(casas.map((c) => c.casinoId)), [casas]);
+
+  /** Lista de links de uma casa: usa links[] se existir, senão [link] se houver link */
+  const linksDeCasa = (casa: CasaVinculada): string[] => {
+    if (casa.links && casa.links.length > 0) return casa.links;
+    if (casa.link) return [casa.link];
+    return [];
+  };
   const casinosParaNovoLink = useMemo(
     () => casinos.filter((c) => !casinoIdsVinculados.has(c.id)),
     [casinos, casinoIdsVinculados],
@@ -122,6 +131,8 @@ const Links = () => {
     });
     setTimeout(() => setCopiedLink(null), 2000);
   };
+
+  const copyId = (casinoId: string, index: number) => `${casinoId}-${index}`;
 
   const cliquesPorCasino = useMemo(() => {
     const m: Record<string, number> = {};
@@ -306,9 +317,46 @@ const Links = () => {
                         {casa.status === "active" ? "Ativo" : casa.status}
                       </span>
                     </div>
-                    <p className="text-muted-foreground text-sm mb-3 font-mono">
-                      {casa.link || "Link pendente (aguardando definição pelo admin)"}
-                    </p>
+                    <div className="space-y-2 mb-3">
+                      {linksDeCasa(casa).length > 0 ? (
+                        linksDeCasa(casa).map((url, idx) => (
+                          <div
+                            key={copyId(casa.casinoId, idx)}
+                            className="flex items-center gap-2 flex-wrap"
+                          >
+                            <p className="text-muted-foreground text-sm font-mono flex-1 min-w-0 truncate">
+                              {url}
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => copyToClipboard(url, copyId(casa.casinoId, idx))}
+                                title="Copiar link"
+                              >
+                                {copiedLink === copyId(casa.casinoId, idx) ? (
+                                  <Check className="w-4 h-4 text-primary" />
+                                ) : (
+                                  <Copy className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                title="Abrir link"
+                                onClick={() => window.open(url, "_blank")}
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-sm font-mono">
+                          Link pendente (aguardando definição pelo admin)
+                        </p>
+                      )}
+                    </div>
                     <div className="flex items-center gap-6 text-sm">
                       <div className="flex items-center gap-2">
                         <MousePointer className="w-4 h-4 text-primary" />
@@ -325,31 +373,8 @@ const Links = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {casa.link ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => copyToClipboard(casa.link!, casa.casinoId)}
-                          title="Copiar link"
-                        >
-                          {copiedLink === casa.casinoId ? (
-                            <Check className="w-4 h-4 text-primary" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          title="Abrir link"
-                          onClick={() => window.open(casa.link!, "_blank")}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      </>
-                    ) : (
+                  <div className="flex items-center gap-2 shrink-0">
+                    {linksDeCasa(casa).length === 0 && (
                       <span className="text-sm text-muted-foreground">Aguardando link</span>
                     )}
                   </div>
