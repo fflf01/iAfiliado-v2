@@ -189,6 +189,16 @@ export function UsersSection(props: { active: boolean }) {
                         >
                           {blocked ? "bloqueado" : "ativo"}
                         </span>
+                        {!!u.is_admin && (
+                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-500/15 text-red-700 dark:text-red-400">
+                            Admin CEO
+                          </span>
+                        )}
+                        {!!u.is_support && (
+                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-400">
+                            Suporte
+                          </span>
+                        )}
                         {!!u.is_manager && (
                           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
                             Manager

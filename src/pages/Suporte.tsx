@@ -18,8 +18,6 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiPostForm } from "@/lib/api-client";
 import { formatPhoneNumber } from "@/lib/format";
-import "@/Stilos/stilo.css";
-
 const contactMethods = [
   {
     icon: MessageCircle,

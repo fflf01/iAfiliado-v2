@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,6 +24,7 @@ import { getUser } from "@/lib/auth";
 import { getStatusColor, getStatusLabel, type ChatMessage } from "@/lib/support-utils";
 import { formatTime } from "@/lib/format";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { useSmartPolling } from "@/hooks/useSmartPolling";
 
 interface TicketView {
   id: string;
@@ -86,11 +87,12 @@ const SuporteCliente = () => {
     fetchTickets();
   }, []);
 
-  // Busca respostas quando um ticket e selecionado
-  useEffect(() => {
-    if (!selectedTicket) return;
+  const repliesCountRef = useRef<Record<string, number>>({});
 
-    const fetchReplies = async () => {
+  const fetchReplies = useMemo(
+    () => async () => {
+      if (!selectedTicket) return false;
+
       try {
         const replies = await apiGet<any[]>(`/support/ticket/${selectedTicket}/replies`);
 
@@ -111,15 +113,26 @@ const SuporteCliente = () => {
             [selectedTicket]: initialMsg ? [initialMsg, ...mappedReplies] : mappedReplies,
           };
         });
+
+        const prevCount = repliesCountRef.current[selectedTicket] ?? 0;
+        const newCount = replies.length;
+        repliesCountRef.current[selectedTicket] = newCount;
+
+        return newCount > prevCount;
       } catch (error) {
         console.error("Erro ao buscar respostas:", error);
+        return false;
       }
-    };
+    },
+    [selectedTicket],
+  );
 
-    fetchReplies();
-    const intervalId = setInterval(fetchReplies, 3000);
-    return () => clearInterval(intervalId);
-  }, [selectedTicket]);
+  const { notifyActivity: notifyRepliesActivity } = useSmartPolling({
+    callback: fetchReplies,
+    enabled: Boolean(selectedTicket),
+    baseIntervalMs: 5000,
+    maxIntervalMs: 60000,
+  });
 
   const sendMessage = async () => {
     if ((!newMessage.trim() && attachments.length === 0) || !selectedTicket) return;
@@ -148,6 +161,7 @@ const SuporteCliente = () => {
       setNewMessage("");
       clearFiles();
       toast({ title: "Mensagem enviada", description: "Sua resposta foi registrada." });
+      notifyRepliesActivity();
     } catch {
       toast({ title: "Erro", description: "Falha ao enviar mensagem.", variant: "destructive" });
     }
@@ -250,6 +264,7 @@ const SuporteCliente = () => {
                       setSelectedTicket(ticket.id);
                       setShowNewTicket(false);
                       setAttachments([]);
+                      notifyRepliesActivity();
                     }}
                     className={`p-3 rounded-lg cursor-pointer transition-colors border ${
                       selectedTicket === ticket.id
@@ -395,12 +410,12 @@ const SuporteCliente = () => {
                                 {message.attachments.map((filename, idx) => (
                                   <a
                                     key={idx}
-                                    href={`${API_BASE_URL}/uploads/${filename}`}
+                                    href={`${API_BASE_URL}/uploads/${encodeURIComponent(filename)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                   >
                                     <img
-                                      src={`${API_BASE_URL}/uploads/${filename}`}
+                                      src={`${API_BASE_URL}/uploads/${encodeURIComponent(filename)}`}
                                       alt="Anexo"
                                       className="max-w-full rounded-lg border border-border/50 hover:opacity-90 transition-opacity"
                                       style={{ maxHeight: "200px" }}
@@ -486,7 +501,10 @@ const SuporteCliente = () => {
                     <Input
                       placeholder="Digite sua mensagem..."
                       value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
+                      onChange={(e) => {
+                        setNewMessage(e.target.value);
+                        notifyRepliesActivity();
+                      }}
                       onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                       className="flex-1 bg-muted/30 border-border/50"
                     />

@@ -2,16 +2,15 @@ import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { clearAuth } from "@/lib/auth";
 
 const LogoutButton = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogout = () => {
-    // Limpa as credenciais do armazenamento local e sessão
-    // Isso garante que o usuário seja desconectado
-    localStorage.clear();
-    sessionStorage.clear();
+    // Limpa apenas credenciais (token e user); evita apagar outros dados do app
+    clearAuth();
 
     toast({
       title: "Logout realizado",

@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
   rede_an       TEXT,
   cadastro_status TEXT,
   is_admin      INTEGER NOT NULL DEFAULT 0 CHECK(is_admin IN (0, 1)),
+  is_support    INTEGER NOT NULL DEFAULT 0 CHECK(is_support IN (0, 1)),
   is_manager    INTEGER NOT NULL DEFAULT 0 CHECK(is_manager IN (0, 1)),
   -- Punicao administrativa (bloqueio imediato)
   is_blocked    INTEGER NOT NULL DEFAULT 0 CHECK(is_blocked IN (0, 1)),

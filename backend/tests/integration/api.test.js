@@ -262,6 +262,81 @@ test("POST /support/ticket cria ticket autenticado e GET /support/my-messages li
   assert.equal(listRes.body[0].subject, "Titulo ticket");
 });
 
+test("listagens pesadas aplicam paginacao por page/limit", async () => {
+  const adminToken = await registerAndLoginUser({
+    name: "Admin Paginacao",
+    login: "admin_paginacao",
+    email: "admin.paginacao@example.com",
+    isAdmin: true,
+  });
+  const clientToken = await registerAndLoginUser({
+    name: "Cliente Paginacao",
+    login: "cliente_paginacao",
+    email: "cliente.paginacao@example.com",
+  });
+  const clientRow = db.prepare("SELECT id FROM users WHERE username = ?").get("cliente_paginacao");
+  assert.ok(clientRow?.id);
+
+  let firstTicketId = null;
+  for (let i = 0; i < 5; i += 1) {
+    const info = db.prepare(
+      `INSERT INTO support_messages (name, email, subject, message, user_id)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).run("Cliente Paginacao", "cliente.paginacao@example.com", `Assunto ${i}`, `Mensagem ${i}`, clientRow.id);
+    if (firstTicketId == null) firstTicketId = Number(info.lastInsertRowid);
+  }
+  assert.ok(firstTicketId);
+
+  for (let i = 0; i < 5; i += 1) {
+    db.prepare(
+      `INSERT INTO support_replies (ticket_id, user_id, sender_type, message)
+       VALUES (?, ?, 'user', ?)`,
+    ).run(firstTicketId, clientRow.id, `Resposta ${i}`);
+  }
+
+  for (let i = 0; i < 4; i += 1) {
+    db.prepare(
+      `INSERT INTO withdrawal_requests (id, user_id, valor, metodo, status)
+       VALUES (?, ?, ?, 'PIX', 'pendente')`,
+    ).run(`wr-pag-${i}`, clientRow.id, 100 + i);
+  }
+
+  const supportMessagesRes = await request(app)
+    .get("/support/messages?page=1&limit=2")
+    .set("Authorization", `Bearer ${adminToken}`);
+  assert.equal(supportMessagesRes.status, 200);
+  assert.equal(Array.isArray(supportMessagesRes.body), true);
+  assert.equal(supportMessagesRes.body.length, 2);
+
+  const myMessagesRes = await request(app)
+    .get("/support/my-messages?page=2&limit=2")
+    .set("Authorization", `Bearer ${clientToken}`);
+  assert.equal(myMessagesRes.status, 200);
+  assert.equal(Array.isArray(myMessagesRes.body), true);
+  assert.equal(myMessagesRes.body.length, 2);
+
+  const repliesRes = await request(app)
+    .get(`/support/ticket/${firstTicketId}/replies?page=2&limit=2`)
+    .set("Authorization", `Bearer ${clientToken}`);
+  assert.equal(repliesRes.status, 200);
+  assert.equal(Array.isArray(repliesRes.body), true);
+  assert.equal(repliesRes.body.length, 2);
+
+  const clientsRes = await request(app)
+    .get("/clients?page=1&limit=1")
+    .set("Authorization", `Bearer ${adminToken}`);
+  assert.equal(clientsRes.status, 200);
+  assert.equal(Array.isArray(clientsRes.body), true);
+  assert.equal(clientsRes.body.length, 1);
+
+  const withdrawalsRes = await request(app)
+    .get("/admin/withdrawals?page=1&limit=3")
+    .set("Authorization", `Bearer ${adminToken}`);
+  assert.equal(withdrawalsRes.status, 200);
+  assert.equal(Array.isArray(withdrawalsRes.body), true);
+  assert.equal(withdrawalsRes.body.length, 3);
+});
+
 test("POST /support/ticket/:id/reply bloqueia acesso a ticket de outro usuario", async () => {
   const ownerToken = await registerAndLoginUser({
     name: "Owner",

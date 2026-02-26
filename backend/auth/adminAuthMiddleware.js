@@ -1,11 +1,9 @@
 import { ForbiddenError, UnauthorizedError } from "../errors/AppError.js";
 
 /**
- * Middleware que exige req.user.is_admin === true. Deve ser usado após authMiddleware.
- * Responde 401 se não autenticado, 403 se não for admin.
- * @param {import("express").Request} req
- * @param {import("express").Response} res
- * @param {import("express").NextFunction} next
+ * Middleware que exige acesso ao painel admin.
+ * Permite acesso para roles admin_ceo (is_admin) e support (is_support).
+ * Deve ser usado após authMiddleware.
  */
 export function adminAuthMiddleware(req, res, next) {
   const reqLogger = req.log;
@@ -14,8 +12,7 @@ export function adminAuthMiddleware(req, res, next) {
     return next(new UnauthorizedError("Usuario nao autenticado."));
   }
 
-  // Verifica a flag correta (is_admin) que vem do banco de dados/token
-  if (!req.user.is_admin) {
+  if (!req.user.is_admin && !req.user.is_support) {
     reqLogger?.warn("Autorizacao admin falhou: privilegios insuficientes", {
       userId: req.user.id,
     });

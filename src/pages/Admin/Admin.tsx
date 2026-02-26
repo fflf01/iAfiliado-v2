@@ -30,9 +30,11 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api-client";
+import { canSeeAdminSection } from "@/lib/permissions";
 import type { User as AppUser } from "@/types";
 import type {
   AdminUserCasaVinculada,
@@ -69,8 +71,8 @@ import { AdminLogsSection } from "./sections/AdminLogsSection";
 import { AdminSidebar } from "./ui/AdminSidebar";
 import { AdminTopBar } from "./ui/AdminTopBar";
 
-// ── Sidebar nav items ────────────────────────────────────────────────────
-const sidebarItems = [
+// ── Sidebar nav items (filtrados por role no componente) ─────────────────
+const allAdminSidebarItems = [
   { id: "overview", label: "Visão Geral", icon: LayoutDashboard },
   { id: "user_dashboard", label: "Dashboard Usuário", icon: Users },
   { id: "solicitacoes", label: "Solicitações", icon: ClipboardList },
@@ -87,6 +89,12 @@ const sidebarItems = [
 const Admin = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { role } = useAuth();
+
+  const sidebarItems = useMemo(
+    () => allAdminSidebarItems.filter((item) => canSeeAdminSection(item.id, role)),
+    [role],
+  );
 
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -489,7 +497,7 @@ const Admin = () => {
 
         <main className="p-4 md:p-8">
           {/* ── Overview ──────────────────────────────── */}
-          {activeTab === "overview" && (
+          {activeTab === "overview" && canSeeAdminSection("overview", role) && (
             <OverviewSection
               casinos={casinos}
               entradas={entradas}
@@ -507,7 +515,7 @@ const Admin = () => {
           )}
 
           {/* ── Solicitações ─────────────────────────── */}
-          {activeTab === "solicitacoes" && (
+          {activeTab === "solicitacoes" && canSeeAdminSection("solicitacoes", role) && (
             <SolicitacoesSection
               totalPendencias={totalPendencias}
               pendentesCount={pendentesCount}
@@ -527,7 +535,7 @@ const Admin = () => {
           )}
 
           {/* ── Dashboard Usuário ─────────────────────────── */}
-          {activeTab === "user_dashboard" && (
+          {activeTab === "user_dashboard" && canSeeAdminSection("user_dashboard", role) && (
             <UserDashboardSection
               clients={clients}
               userId={dashUserId}
@@ -552,7 +560,7 @@ const Admin = () => {
           )}
 
           {/* ── Casinos ──────────────────────────────── */}
-          {activeTab === "casinos" && (
+          {activeTab === "casinos" && canSeeAdminSection("casinos", role) && (
             <CasinosSection
               casinos={filteredCasinos}
               search={searchCasinos}
@@ -566,7 +574,7 @@ const Admin = () => {
           )}
 
           {/* ── Entradas ─────────────────────────────── */}
-          {activeTab === "entradas" && (
+          {activeTab === "entradas" && canSeeAdminSection("entradas", role) && (
             <EntradasSection
               entradas={filteredEntradas}
               search={searchEntradas}
@@ -579,7 +587,7 @@ const Admin = () => {
           )}
 
           {/* ── Carteiras ────────────────────────────── */}
-          {activeTab === "carteiras" && (
+          {activeTab === "carteiras" && canSeeAdminSection("carteiras", role) && (
             <CarteirasSection
               wallets={filteredWallets}
               search={searchWallets}
@@ -589,7 +597,7 @@ const Admin = () => {
           )}
 
           {/* ── Verificação de saque ────────────────────────────── */}
-          {activeTab === "saques" && (
+          {activeTab === "saques" && canSeeAdminSection("saques", role) && (
             <SaquesSection
               withdrawals={withdrawals}
               withdrawalUpdating={withdrawalUpdating}
@@ -636,13 +644,13 @@ const Admin = () => {
           )}
 
           {/* ── Contas dos Managers ────────────────────────────── */}
-          {activeTab === "contas_manager" && <ManagerAccountsSection active />}
+          {activeTab === "contas_manager" && canSeeAdminSection("contas_manager", role) && <ManagerAccountsSection active />}
 
           {/* ── Usuários (punição) ────────────────────────────── */}
-          {activeTab === "usuarios" && <UsersSection active />}
+          {activeTab === "usuarios" && canSeeAdminSection("usuarios", role) && <UsersSection active />}
 
           {/* ── Log Admin (auditoria) ─────────────────────────── */}
-          {activeTab === "log_admin" && <AdminLogsSection active />}
+          {activeTab === "log_admin" && canSeeAdminSection("log_admin", role) && <AdminLogsSection active />}
         </main>
       </div>
 

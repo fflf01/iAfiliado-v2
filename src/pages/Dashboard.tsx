@@ -32,9 +32,9 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import "@/Stilos/stilo.css";
 import { useAuth } from "@/hooks/useAuth";
 import { apiGet } from "@/lib/api-client";
+import { canSeeDashboardSection, canAccessAdmin } from "@/lib/permissions";
 import type { User as AppUser } from "@/types";
 import PlataformasD from "./Plataformas_D";
 import LinkPage from "./LinkPage";
@@ -178,7 +178,7 @@ interface ManagedAccountItem {
 const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, isManager } = useAuth();
+  const { user, logout, isManager, role } = useAuth();
   const [profileUser, setProfileUser] = useState<AppUser | null>(null);
   const [meStats, setMeStats] = useState<MeStats>(defaultStats);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -341,17 +341,19 @@ const Dashboard = () => {
     };
   }, [isManager, activeView]);
 
-  const sidebarItems = [
+  const allSidebarItems = [
     { icon: LinkIcon, label: "DashBoard", id: "dashboard", path: "/dashboard" },
     { icon: CalendarDays, label: "Entradas", id: "entradas", path: "/entradas" },
     { icon: Wallet, label: "Casas Parceiras", id: "plataformas", path: "/dashboard/plataformas" },
     { icon: Crown, label: "Meus Links", id: "links", path: "/dashboard/links" },
     { icon: Rocket, label: "Carteira", id: "carteira", path: "/dashboard/carteira" },
-    ...(isManager
-      ? [{ icon: UserCog, label: "Contas que administro", id: "contas_manager" as const, path: "/dashboard/contas-manager" }]
-      : []),
-    { icon: HelpCircle, label: "Fale com Suporte", id: "suporte", path: user?.is_admin ? "/suporteadmin" : "/suporte-cliente" },
+    { icon: UserCog, label: "Contas que administro", id: "contas_manager", path: "/dashboard/contas-manager" },
+    { icon: HelpCircle, label: "Fale com Suporte", id: "suporte", path: canAccessAdmin(role) ? "/suporteadmin" : "/suporte-cliente" },
   ];
+
+  const sidebarItems = allSidebarItems.filter((item) =>
+    canSeeDashboardSection(item.id, role),
+  );
 
   const baseStats = useMemo(() => {
     return statTemplates.map((t) => ({
@@ -402,7 +404,7 @@ const Dashboard = () => {
                 {user?.full_name || "Afiliado"}
               </span>
             </span>
-            {user?.is_admin && (
+            {canAccessAdmin(role) && (
               <Link to="/admin">
                 <Button className="gap-2 btn-principal" size="sm">
                   <Shield className="w-4 h-4" />

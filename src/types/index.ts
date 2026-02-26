@@ -1,5 +1,7 @@
 /** Tipos centralizados da aplicacao. */
 
+import type { UserRole } from "@/lib/permissions";
+
 export interface User {
   id: number;
   full_name: string;
@@ -12,7 +14,9 @@ export interface User {
   rede_an?: string | null;
   cadastro_status?: string | null;
   is_admin: boolean;
+  is_support?: boolean;
   is_manager?: boolean;
+  role?: UserRole;
 }
 
 export interface Ticket {

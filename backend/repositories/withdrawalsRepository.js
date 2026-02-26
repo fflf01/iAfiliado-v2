@@ -24,7 +24,7 @@ export const withdrawalsRepository = {
       .all(userId);
   },
 
-  listForAdmin(status = null) {
+  listForAdmin(status = null, { limit, offset }) {
     const sql = `
       SELECT
         wr.id,
@@ -40,9 +40,10 @@ export const withdrawalsRepository = {
       JOIN users u ON u.id = wr.user_id
       ${status ? "WHERE wr.status = ?" : ""}
       ORDER BY wr.created_at DESC
+      LIMIT ? OFFSET ?
     `;
     const stmt = db.prepare(sql);
-    return status ? stmt.all(status) : stmt.all();
+    return status ? stmt.all(status, limit, offset) : stmt.all(limit, offset);
   },
 
   updateStatus(id, status) {

@@ -67,6 +67,7 @@ export interface ClientRow {
   rede_an: string | null;
   cadastro_status: string | null;
   created_at: string;
+  is_support?: number | boolean;
   is_manager?: number | boolean;
 }
 
@@ -99,8 +100,9 @@ export interface AdminUserRow {
   full_name: string;
   email: string;
   phone: string | null;
-  role: "user" | "admin";
+  role: string;
   is_admin: number | boolean;
+  is_support?: number | boolean;
   is_manager?: number | boolean;
   cadastro_status: string | null;
   is_blocked: number | boolean;

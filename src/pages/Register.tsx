@@ -19,7 +19,6 @@ import { apiPost } from "@/lib/api-client";
 import { setAuth, clearAuth } from "@/lib/auth";
 import { formatPhoneNumber } from "@/lib/format";
 import type { AuthResponse } from "@/types";
-import "@/Stilos/stilo.css";
 import IAfiliadoSection from "@/components/IAfiliadoSection";
 
 const Register = () => {

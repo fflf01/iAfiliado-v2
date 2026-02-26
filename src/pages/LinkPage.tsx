@@ -344,7 +344,11 @@ const Links = () => {
                                 variant="outline"
                                 size="icon"
                                 title="Abrir link"
-                                onClick={() => window.open(url, "_blank")}
+                                onClick={() => {
+                                  if (url.startsWith("http://") || url.startsWith("https://")) {
+                                    window.open(url, "_blank", "noopener,noreferrer");
+                                  }
+                                }}
                               >
                                 <ExternalLink className="w-4 h-4" />
                               </Button>

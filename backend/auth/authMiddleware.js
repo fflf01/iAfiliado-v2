@@ -45,11 +45,12 @@ export function authMiddleware(req, res, next) {
       return next(new ForbiddenError("Conta bloqueada."));
     }
 
-    req.user = decoded; // { id, email, is_admin, is_manager }
-    req.userId = decoded.id; // Compatibilidade
+    req.user = decoded; // { id, email, is_admin, is_support, is_manager }
+    req.userId = decoded.id;
     req.log = reqLogger?.withContext({
       userId: decoded.id,
       userIsAdmin: Boolean(decoded.is_admin),
+      userIsSupport: Boolean(decoded.is_support),
       userIsManager: Boolean(decoded.is_manager),
     });
     next();

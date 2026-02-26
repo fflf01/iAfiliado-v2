@@ -16,7 +16,7 @@ Plataforma web para gestao de afiliados, com autenticacao, painel administrativo
 ### Backend
 
 - **Node.js** + **Express 5**
-- **PostgreSQL** (Supabase) — banco de dados com SSL
+- **SQLite** (better-sqlite3) — banco de dados em arquivo (WAL, foreign keys)
 - **JWT** (`jsonwebtoken`) — autenticacao
 - **bcrypt** — hash de senhas (salt rounds: 10)
 - **Multer** — upload de arquivos (5MB, JPEG/PNG/WebP/PDF)
@@ -29,7 +29,6 @@ Plataforma web para gestao de afiliados, com autenticacao, painel administrativo
 ## Pre-requisitos
 
 - Node.js (recomendado: LTS 20+)
-- PostgreSQL (ou Supabase)
 - npm
 
 ## Quick Start
@@ -50,18 +49,22 @@ Copie o exemplo e preencha com suas credenciais:
 cp backend/.env.example backend/.env
 ```
 
-Variaveis obrigatorias:
+Variaveis obrigatorias (backend):
 
 | Variavel | Descricao |
 | --- | --- |
-| `DB_HOST` | Host do PostgreSQL (ex: `db.xxx.supabase.co`) |
-| `DB_PORT` | Porta (padrao: `5432`) |
-| `DB_NAME` | Nome do banco (padrao: `postgres`) |
-| `DB_USER` | Usuario do banco |
-| `DB_PASSWORD` | Senha do banco |
-| `JWT_SECRET` | Chave secreta para assinatura JWT |
+| `JWT_SECRET` | Chave secreta para assinatura JWT (min. 32 caracteres em producao) |
 | `CORS_ORIGINS` | Origens permitidas em producao (separadas por virgula) |
+
+Opcionais (backend):
+
+| Variavel | Descricao |
+| --- | --- |
+| `DB_PATH` | Caminho do arquivo SQLite (padrao: `backend/data/iafiliado.db`) |
 | `DISCORD_WEBHOOK_URL` | URL do webhook Discord para notificacoes |
+| `PORT` | Porta HTTP (padrao: `3000`) |
+| `NODE_ENV` | `development`, `test` ou `production` |
+| `LOG_LEVEL` | `debug`, `info`, `warn`, `error` |
 
 Frontend (opcional):
 
@@ -71,14 +74,9 @@ Frontend (opcional):
 
 ### 3. Banco de dados
 
-O projeto usa PostgreSQL. As tabelas necessarias sao:
+O backend usa **SQLite**. O schema e aplicado automaticamente na primeira execucao (`backend/schema.sql`). Em teste (`NODE_ENV=test`) e usado um arquivo temporario.
 
-- `clients` — usuarios e afiliados
-- `support_messages` — tickets de suporte
-- `support_replies` — respostas aos tickets
-- `support_attachments` — anexos de tickets/respostas
-
-Consulte [docs/DATABASE.md](docs/DATABASE.md) para o schema completo e ordem de criacao.
+Consulte [docs/DATABASE.md](docs/DATABASE.md) para o schema completo e tabelas (users, support_messages, support_replies, support_attachments, casinos, etc.).
 
 ### 4. Executar o projeto
 
@@ -115,10 +113,17 @@ Para desenvolvimento, **ambos precisam estar rodando**. O frontend usa o proxy d
 | `npm run build` | Build de producao do frontend |
 | `npm run preview` | Preview do build |
 | `npm run lint` | Executa o ESLint |
-| `npm run test` | Executa os testes (Vitest) |
+| `npm run test` | Executa os testes do frontend (Vitest) |
+| `npm run test:backend` | Executa os testes do backend (Node `--test`: integração, fluxos, infra) |
+| `npm run test:all` | Executa testes do backend e do frontend em sequência |
 | `npm run test:e2e` | Testes E2E (Playwright) |
 | `npm run test:e2e:security` | Apenas testes E2E de seguranca |
 | `npm run deploy` | Deploy em producao via SSH (build no servidor) |
+
+**Testes**
+
+- **Backend** (`backend/`): `npm run test` (ou na raiz: `npm run test:backend`). Inclui testes de integração (`tests/integration`), fluxos (`tests/flows`: auth/dashboard, suporte, admin) e infraestrutura (`tests/infrastructure`: health, error handler). Usa SQLite em arquivo temporário quando `NODE_ENV=test`.
+- **Frontend** (raiz): `npm test` executa Vitest (testes em `src/`, ex.: `src/lib/auth.test.ts`, `src/lib/api-client.test.ts`).
 
 ## Deploy em producao (SSH)
 
@@ -145,20 +150,21 @@ Para desenvolvimento, **ambos precisam estar rodando**. O frontend usa o proxy d
 ```
 iAfiliado-v2/
 ├── backend/
-│   ├── auth/              # Login, registro, middlewares de auth
-│   ├── config/
-│   │   └── constants.js   # Constantes centralizadas (AUTH, UPLOAD, TICKET, RATE_LIMIT)
-│   ├── middleware/
-│   │   ├── errorHandler.js  # asyncHandler + error handler centralizado
-│   │   └── adminAuthMiddleware.js
-│   ├── support/
-│   │   └── message.js     # CRUD de tickets, respostas e anexos
-│   ├── utils/
-│   │   └── jwt.js         # Geracao centralizada de tokens JWT
-│   ├── db.js              # Pool PostgreSQL com SSL automatico
+│   ├── auth/              # Middlewares de autenticacao (authMiddleware, adminAuthMiddleware)
+│   ├── config/            # constants.js, env.js (validacao de variaveis)
+│   ├── controllers/       # Handlers das rotas (auth, admin, dashboard, support, etc.)
+│   ├── middleware/        # errorHandler (asyncHandler + tratamento de erros)
+│   ├── repositories/      # Acesso a dados (auth, admin, dashboard, support, etc.)
+│   ├── services/          # Regras de negocio
+│   ├── utils/             # logger.js, jwt.js
+│   ├── errors/            # AppError, ValidationError, UnauthorizedError, etc.
+│   ├── scripts/           # backup.cjs, migrate.cjs
+│   ├── tests/             # Integracao, fluxos, infraestrutura (Node --test)
+│   ├── db.js              # Conexao SQLite (better-sqlite3), schema
 │   ├── discord.js         # Integracao Discord (webhook)
-│   ├── routes.js          # Rotas, validacao e rate limiting
-│   ├── server.js          # Entrada do servidor
+│   ├── routes.js          # Rotas, validacao (express-validator), Multer
+│   ├── server.js          # Entrada do servidor (helmet, CORS, rate-limit)
+│   ├── schema.sql         # DDL das tabelas
 │   ├── .env               # Variaveis de ambiente (nao versionado)
 │   └── .env.example       # Exemplo de configuracao
 ├── src/
@@ -186,6 +192,8 @@ iAfiliado-v2/
 │   │   ├── Suporte.tsx
 │   │   ├── Carteira.tsx
 │   │   └── ...
+│   ├── styles/            # index.css (Tailwind, variaveis CSS, tema global)
+│   ├── test/              # setup Vitest, testes unitarios
 │   ├── types/
 │   │   └── index.ts       # Interfaces TypeScript (User, Ticket, Reply, etc.)
 │   └── App.tsx            # Roteamento e providers
@@ -200,7 +208,7 @@ iAfiliado-v2/
 
 - **Constantes centralizadas** (`config/constants.js`): magic numbers e strings em um unico lugar
 - **JWT centralizado** (`utils/jwt.js`): geracao de token sem duplicacao
-- **Error handler** (`middleware/errorHandler.js`): `asyncHandler` elimina try-catch repetitivos; error handler trata erros do Multer, Postgres (23505) e retorna mensagens seguras em producao
+- **Error handler** (`middleware/errorHandler.js`): `asyncHandler` elimina try-catch repetitivos; error handler trata erros do Multer, SQLite (UNIQUE, NOT NULL, FOREIGN KEY) e retorna mensagens seguras em producao (sem stack no cliente)
 - **Validacao** (`routes.js`): express-validator sanitiza e valida todos os inputs antes de chegarem aos handlers
 - **Rate limiting**: global (100 req/15min) e especifico para auth (10 req/15min)
 - **Seguranca**: helmet (CSP, HSTS, X-Frame-Options), bcrypt (salt 10), JWT com expiracao de 1 dia, CORS configuravel
@@ -220,6 +228,7 @@ iAfiliado-v2/
 | [docs/API.md](docs/API.md) | Endpoints da API, exemplos e codigos de erro |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Visao geral da arquitetura e fluxos |
 | [docs/DATABASE.md](docs/DATABASE.md) | Schema do banco de dados |
+| [docs/SECURITY-BACKEND.md](docs/SECURITY-BACKEND.md) | Seguranca no backend: vazamentos, vulnerabilidades e boas praticas |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Como contribuir e padroes de codigo |
 
 ### Resumo da API
@@ -252,7 +261,7 @@ iAfiliado-v2/
 
 | Problema | Solucao |
 | --- | --- |
-| Banco nao conecta | Verifique `DB_*` no `.env`. Para Supabase, SSL e habilitado automaticamente. |
+| Banco nao conecta | Verifique `DB_PATH` no `.env` do backend ou a pasta `backend/data/` (criada automaticamente). |
 | 401 em rotas protegidas | Token invalido/expirado. Faca login novamente. |
 | 403 em rotas de admin | Apenas `is_admin = true` pode acessar. |
 | CORS em producao | Configure `CORS_ORIGINS` no `.env` com as origens do frontend. |

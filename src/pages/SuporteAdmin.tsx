@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import { apiGet, apiPostForm, API_BASE_URL } from "@/lib/api-client";
 import { getStatusColor, type ChatMessage } from "@/lib/support-utils";
 import { formatTime } from "@/lib/format";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { useSmartPolling } from "@/hooks/useSmartPolling";
 
 interface AdminTicket {
   id: string;
@@ -41,10 +42,15 @@ const SuporteAdmin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { attachments, handleFileChange, removeFile, clearFiles } = useFileUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const ticketsRef = useRef<AdminTicket[]>([]);
+  const repliesCountRef = useRef<Record<string, number>>({});
 
-  // Busca TODOS os tickets (Rota de Admin)
   useEffect(() => {
-    const fetchTickets = async () => {
+    ticketsRef.current = tickets;
+  }, [tickets]);
+
+  const fetchTickets = useMemo(
+    () => async () => {
       try {
         const data = await apiGet<any[]>("/support/messages");
 
@@ -58,6 +64,7 @@ const SuporteAdmin = () => {
           unreadCount: 0,
         }));
 
+        const prevTickets = ticketsRef.current;
         setTickets(mappedTickets);
 
         const initialMessages: Record<string, ChatMessage[]> = {};
@@ -74,21 +81,29 @@ const SuporteAdmin = () => {
           ];
         });
         setMessages((prev) => ({ ...initialMessages, ...prev }));
+
+        const hasNewTickets = mappedTickets.length > prevTickets.length;
+        ticketsRef.current = mappedTickets;
+        return hasNewTickets;
       } catch (error) {
         console.error("Erro ao buscar tickets:", error);
+        return false;
       }
-    };
+    },
+    [],
+  );
 
-    fetchTickets();
-    const interval = setInterval(fetchTickets, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const { notifyActivity: notifyTicketsActivity } = useSmartPolling({
+    callback: fetchTickets,
+    enabled: true,
+    baseIntervalMs: 5000,
+    maxIntervalMs: 60000,
+  });
 
-  // Busca respostas quando um ticket e selecionado
-  useEffect(() => {
-    if (!selectedTicket) return;
+  const fetchReplies = useMemo(
+    () => async () => {
+      if (!selectedTicket) return false;
 
-    const fetchReplies = async () => {
       try {
         const replies = await apiGet<any[]>(`/support/ticket/${selectedTicket}/replies`);
 
@@ -109,15 +124,26 @@ const SuporteAdmin = () => {
             [selectedTicket]: initialMsg ? [initialMsg, ...mappedReplies] : mappedReplies,
           };
         });
+
+        const prevCount = repliesCountRef.current[selectedTicket] ?? 0;
+        const newCount = replies.length;
+        repliesCountRef.current[selectedTicket] = newCount;
+
+        return newCount > prevCount;
       } catch (error) {
         console.error("Erro ao buscar respostas:", error);
+        return false;
       }
-    };
+    },
+    [selectedTicket],
+  );
 
-    fetchReplies();
-    const interval = setInterval(fetchReplies, 3000);
-    return () => clearInterval(interval);
-  }, [selectedTicket]);
+  const { notifyActivity: notifyRepliesActivity } = useSmartPolling({
+    callback: fetchReplies,
+    enabled: Boolean(selectedTicket),
+    baseIntervalMs: 5000,
+    maxIntervalMs: 60000,
+  });
 
   const sendMessage = async () => {
     if ((!newMessage.trim() && attachments.length === 0) || !selectedTicket) return;
@@ -145,6 +171,8 @@ const SuporteAdmin = () => {
       setNewMessage("");
       clearFiles();
       toast({ title: "Resposta enviada", description: "O cliente foi notificado." });
+      notifyRepliesActivity();
+      notifyTicketsActivity();
     } catch {
       toast({ title: "Erro", description: "Falha ao enviar mensagem.", variant: "destructive" });
     }
@@ -202,7 +230,10 @@ const SuporteAdmin = () => {
                 <Input
                   placeholder="Buscar por ID, nome ou assunto..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    notifyTicketsActivity();
+                  }}
                   className="pl-8 bg-background/50 border-border/50 h-8 text-sm"
                 />
               </div>
@@ -216,7 +247,11 @@ const SuporteAdmin = () => {
                 filteredTickets.map((ticket) => (
                   <div
                     key={ticket.id}
-                    onClick={() => setSelectedTicket(ticket.id)}
+                    onClick={() => {
+                      setSelectedTicket(ticket.id);
+                      notifyRepliesActivity();
+                      notifyTicketsActivity();
+                    }}
                     className={`p-3 rounded-lg cursor-pointer transition-colors border ${
                       selectedTicket === ticket.id
                         ? "bg-primary/10 border-primary/30"
@@ -296,7 +331,7 @@ const SuporteAdmin = () => {
                             {message.attachments.map((filename, idx) => (
                               <img
                                 key={idx}
-                                src={`${API_BASE_URL}/uploads/${filename}`}
+                                src={`${API_BASE_URL}/uploads/${encodeURIComponent(filename)}`}
                                 alt="Anexo"
                                 className="max-w-full rounded-lg border border-border/50"
                                 style={{ maxHeight: "200px" }}

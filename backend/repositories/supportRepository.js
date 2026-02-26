@@ -56,10 +56,10 @@ export const supportRepository = {
     );
   },
 
-  listSupportMessages() {
+  listSupportMessages({ limit, offset }) {
     return db
-      .prepare("SELECT * FROM support_messages ORDER BY created_at DESC")
-      .all();
+      .prepare("SELECT * FROM support_messages ORDER BY created_at DESC LIMIT ? OFFSET ?")
+      .all(limit, offset);
   },
 
   updateSupportMessage(ticketId, { status, priority }) {
@@ -97,16 +97,18 @@ export const supportRepository = {
     );
   },
 
-  listRepliesByTicketId(ticketId) {
+  listRepliesByTicketId(ticketId, { limit, offset }) {
     return db
-      .prepare("SELECT * FROM support_replies WHERE ticket_id = ? ORDER BY created_at ASC")
-      .all(ticketId);
+      .prepare(
+        "SELECT * FROM support_replies WHERE ticket_id = ? ORDER BY created_at ASC LIMIT ? OFFSET ?",
+      )
+      .all(ticketId, limit, offset);
   },
 
-  listMessagesByUserId(userId) {
+  listMessagesByUserId(userId, { limit, offset }) {
     return db
-      .prepare("SELECT * FROM support_messages WHERE user_id = ? ORDER BY id DESC")
-      .all(userId);
+      .prepare("SELECT * FROM support_messages WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?")
+      .all(userId, limit, offset);
   },
 
   listAttachmentsByTicketIds(ticketIds) {

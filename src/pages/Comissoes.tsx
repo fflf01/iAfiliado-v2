@@ -9,8 +9,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
-import "@/Stilos/stilo.css";
-
 const benefits = [
   {
     icon: TrendingUp,

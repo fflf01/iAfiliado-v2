@@ -20,6 +20,6 @@ export function getProfile(req, res) {
 }
 
 export function getClients(req, res) {
-  const users = authService.listClients();
+  const users = authService.listClients(req.query);
   return res.json(users);
 }

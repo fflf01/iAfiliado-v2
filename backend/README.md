@@ -1,5 +1,29 @@
 # Backend iAfiliado
 
+API REST em Node.js + Express 5 com **SQLite** (better-sqlite3), autenticacao JWT, suporte a tickets com anexos, painel admin e integracao Discord.
+
+## Estrutura
+
+| Pasta / arquivo | Descricao |
+| --- | --- |
+| `auth/` | Middlewares de autenticacao (`authMiddleware`, `adminAuthMiddleware`) |
+| `config/` | Constantes (`constants.js`) e validacao de env (`env.js`) |
+| `controllers/` | Handlers das rotas (auth, admin, dashboard, support, withdrawals, casinos, contracts) |
+| `middleware/` | `errorHandler.js` (asyncHandler + tratamento centralizado de erros) |
+| `repositories/` | Acesso a dados (auth, admin, dashboard, support, withdrawals, contracts, casinos) |
+| `services/` | Regras de negocio (auth, admin, dashboard, support, contracts, withdrawals, adminLog) |
+| `utils/` | `logger.js`, `jwt.js` |
+| `errors/` | `AppError`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError` |
+| `scripts/` | `backup.cjs`, `migrate.cjs` |
+| `tests/` | Testes (Node `--test`): integracao, fluxos, infraestrutura |
+| `db.js` | Conexao SQLite, carregamento do `schema.sql`, migrations leves |
+| `discord.js` | Envio de notificacoes via webhook Discord |
+| `routes.js` | Rotas, express-validator, Multer (upload) |
+| `server.js` | Entrada do servidor (helmet, CORS, rate-limit, body parser) |
+| `schema.sql` | DDL das tabelas (idempotente) |
+
+Seguranca (vazamentos, vulnerabilidades, boas praticas): [../docs/SECURITY-BACKEND.md](../docs/SECURITY-BACKEND.md).
+
 ## Variaveis de ambiente
 
 Obrigatorias:
@@ -13,7 +37,7 @@ Obrigatorias em producao:
 Opcionais:
 
 - `PORT`: porta HTTP (padrao `3000`).
-- `DB_PATH`: caminho do arquivo SQLite.
+- `DB_PATH`: caminho do arquivo SQLite (padrao: `data/iafiliado.db` relativo ao backend). Em `NODE_ENV=test` os testes usam um arquivo temporario.
 - `DISCORD_WEBHOOK_URL`: webhook para notificacoes de tickets/respostas.
 - `NODE_ENV`: `development`, `test` ou `production`.
 - `LOG_LEVEL`: nivel de log (`debug`, `info`, `warn`, `error`).
@@ -30,6 +54,18 @@ Na inicializacao, o backend valida automaticamente:
 - `DISCORD_WEBHOOK_URL` com protocolo `https` e dominio Discord (quando definida).
 - `LOG_LEVEL` com valor permitido (`debug`, `info`, `warn`, `error`) quando definido.
 - Em `production`, falha o boot se `CORS_ORIGINS` estiver vazio.
+
+## Scripts (npm)
+
+| Comando | Descricao |
+| --- | --- |
+| `npm start` | Inicia o servidor (produção) |
+| `npm run dev` | Inicia com `--watch` (reinicia ao alterar arquivos) |
+| `npm test` | Testes de integração, fluxos e infraestrutura |
+| `npm run test:integration` | Apenas testes de integração |
+| `npm run test:flows` | Apenas testes de fluxo (auth, suporte, admin) |
+| `npm run test:infra` | Apenas testes de infraestrutura (health, error-handler) |
+| `npm run backup` | Gera backup do SQLite (ver opções em "Rotina de backup") |
 
 ## Padrao de erro da API
 
@@ -78,11 +114,17 @@ As respostas de erro seguem o formato:
 - Restaurar: parar o servico, substituir o arquivo em `DB_PATH` por um backup valido e subir novamente.
 - Apos restauracao, validar `GET /health` e executar um `integrity_check` no SQLite.
 
+### Testes
+
+- `npm test`: executa testes de integracao (`tests/integration`), fluxos (`tests/flows`: auth-dashboard, suporte, admin) e infraestrutura (`tests/infrastructure`: health, error-handler).
+- Em `NODE_ENV=test` o banco e um SQLite em arquivo temporario; rate-limit e desativado.
+
 ### Observabilidade
 
 - Cada requisicao recebe `requestId` e logs estruturados com contexto de rota/metodo.
+- Em producao, o path logado nao inclui query string (evita vazamento se token for enviado por engano na URL).
 - Em erros, a API sempre responde `error`, `code` e `requestId` para rastreio.
-- Em ambiente de desenvolvimento, stack trace e detalhes de erro sao logados.
+- Em ambiente de desenvolvimento, stack trace e detalhes de erro sao logados; em producao a resposta ao cliente e generica e sem stack.
 
 ### Riscos operacionais e mitigacao
 

@@ -178,6 +178,13 @@ curl -X POST http://localhost:3000/support \
 
 Lista todos os clientes (rota temporária, sem auth).
 
+**Query params (paginação):**
+
+| Param | Tipo   | Obrigatório | Descrição                                  |
+| ----- | ------ | ----------- | ------------------------------------------ |
+| page  | int    | Não         | Página (>= 1). Default: `1`.               |
+| limit | int    | Não         | Itens por página. Default: `50`, máx: `200` |
+
 **Resposta:** `200` — Array de objetos `{ id, name, login, email, phone, is_admin }`
 
 ---
@@ -238,6 +245,13 @@ Lista respostas de um ticket.
 
 **Headers:** `Authorization: Bearer <token>`
 
+**Query params (paginação):**
+
+| Param | Tipo   | Obrigatório | Descrição                                  |
+| ----- | ------ | ----------- | ------------------------------------------ |
+| page  | int    | Não         | Página (>= 1). Default: `1`.               |
+| limit | int    | Não         | Itens por página. Default: `50`, máx: `200` |
+
 **Resposta:** `200` — Array de respostas (com anexos quando existirem)
 
 ---
@@ -247,6 +261,13 @@ Lista respostas de um ticket.
 Lista tickets do usuário logado.
 
 **Headers:** `Authorization: Bearer <token>`
+
+**Query params (paginação):**
+
+| Param | Tipo   | Obrigatório | Descrição                                  |
+| ----- | ------ | ----------- | ------------------------------------------ |
+| page  | int    | Não         | Página (>= 1). Default: `1`.               |
+| limit | int    | Não         | Itens por página. Default: `50`, máx: `200` |
 
 **Exemplo de request:**
 
@@ -296,7 +317,32 @@ Lista **todas** as mensagens de suporte (admin).
 
 **Headers:** `Authorization: Bearer <token>` (admin)
 
+**Query params (paginação):**
+
+| Param | Tipo   | Obrigatório | Descrição                                  |
+| ----- | ------ | ----------- | ------------------------------------------ |
+| page  | int    | Não         | Página (>= 1). Default: `1`.               |
+| limit | int    | Não         | Itens por página. Default: `50`, máx: `200` |
+
 **Resposta:** `200` — Array de todas as mensagens (com anexos)
+
+---
+
+### GET `/admin/withdrawals`
+
+Lista solicitações de saque (admin).
+
+**Headers:** `Authorization: Bearer <token>` (admin)
+
+**Query params (filtro e paginação):**
+
+| Param | Tipo   | Obrigatório | Descrição                                                     |
+| ----- | ------ | ----------- | ------------------------------------------------------------- |
+| status| string | Não         | Filtro opcional: `pendente`, `aprovado` ou `rejeitado`.      |
+| page  | int    | Não         | Página (>= 1). Default: `1`.                                 |
+| limit | int    | Não         | Itens por página. Default: `50`, máx: `200`                  |
+
+**Resposta:** `200` — Array de solicitações de saque com dados do usuário associado
 
 ---
 

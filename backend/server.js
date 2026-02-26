@@ -85,10 +85,12 @@ if (!isProduction && corsOrigins.length === 0) {
 
 app.use((req, _res, next) => {
   req.requestId = crypto.randomUUID();
+  // Em produção não incluir query string no log para evitar vazamento se token/dados sensíveis forem enviados por engano na URL
+  const pathForLog = isProduction ? req.path : req.originalUrl;
   req.log = logger.withContext({
     requestId: req.requestId,
     method: req.method,
-    path: req.originalUrl,
+    path: pathForLog,
   });
   next();
 });

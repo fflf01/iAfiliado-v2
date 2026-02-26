@@ -1,7 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Shield, Zap, Globe } from "lucide-react";
-import "@/Stilos/stilo.css";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import brasilbetLogo from "@/assets/brasilbet.png";

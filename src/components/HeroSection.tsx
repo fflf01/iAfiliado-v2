@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Play } from "lucide-react";
-import "@/Stilos/stilo.css";
 import heroBg from "@/assets/hero-casino-bg.jpg";
 
 const HeroSection = () => {

@@ -7,8 +7,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import "@/Stilos/stilo.css";
-
 const CTASection = () => {
   return (
     <section className="py-14 px-4 relative overflow-hidden">

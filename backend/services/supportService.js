@@ -7,6 +7,7 @@ import {
 } from "../errors/AppError.js";
 import { enviarRespostaDiscord, enviarTicketDiscord } from "../discord.js";
 import { logger } from "../utils/logger.js";
+import { resolvePagination } from "../utils/pagination.js";
 
 function canAccessTicket(ticket, user) {
   if (!user) return false;
@@ -104,8 +105,9 @@ export const supportService = {
     return { id: ticketCode };
   },
 
-  listSupportMessages() {
-    return attachFilesToMessages(supportRepository.listSupportMessages());
+  listSupportMessages(query = {}) {
+    const pagination = resolvePagination(query);
+    return attachFilesToMessages(supportRepository.listSupportMessages(pagination));
   },
 
   updateSupportMessage(rawId, payload) {
@@ -176,18 +178,20 @@ export const supportService = {
     return reply;
   },
 
-  getTicketReplies(rawId, user) {
+  getTicketReplies(rawId, user, query = {}) {
     const id = parseTicketId(rawId);
     const ticket = supportRepository.findTicketById(id);
     if (!ticket) throw new NotFoundError("Ticket nao encontrado.");
     if (!canAccessTicket(ticket, user)) {
       throw new ForbiddenError("Sem permissao para acessar.");
     }
-    const replies = supportRepository.listRepliesByTicketId(id);
+    const pagination = resolvePagination(query);
+    const replies = supportRepository.listRepliesByTicketId(id, pagination);
     return attachFilesToMessages(replies);
   },
 
-  getClientMessages(userId) {
-    return attachFilesToMessages(supportRepository.listMessagesByUserId(userId));
+  getClientMessages(userId, query = {}) {
+    const pagination = resolvePagination(query);
+    return attachFilesToMessages(supportRepository.listMessagesByUserId(userId, pagination));
   },
 };

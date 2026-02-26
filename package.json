@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:backend": "npm test --prefix backend",
+    "test:all": "npm run test:backend && npm test",
     "deploy": "powershell -ExecutionPolicy Bypass -File scripts/deploy-ssh.ps1",
     "ci-cd": "powershell -ExecutionPolicy Bypass -File scripts/ci-cd-manual.ps1"
   },

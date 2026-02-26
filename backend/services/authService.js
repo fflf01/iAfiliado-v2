@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { AUTH } from "../config/constants.js";
 import { generateToken } from "../utils/jwt.js";
 import { authRepository } from "../repositories/authRepository.js";
+import { resolvePagination } from "../utils/pagination.js";
 import {
   UnauthorizedError,
   ValidationError,
@@ -73,7 +74,8 @@ export const authService = {
     return user;
   },
 
-  listClients() {
-    return authRepository.listClients();
+  listClients(query = {}) {
+    const pagination = resolvePagination(query);
+    return authRepository.listClients(pagination);
   },
 };

@@ -53,9 +53,9 @@ const App = () => (
           <Route path="/entradas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/suporte-cliente" element={<ProtectedRoute><SuporteCliente /></ProtectedRoute>} />
 
-          {/* Rotas de admin (requer autenticação + admin) */}
-          <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
-          <Route path="/suporteadmin" element={<ProtectedRoute requireAdmin><SuporteAdmin /></ProtectedRoute>} />
+          {/* Rotas de admin (requer autenticação + acesso admin: admin_ceo ou support) */}
+          <Route path="/admin" element={<ProtectedRoute requireAdminAccess><Admin /></ProtectedRoute>} />
+          <Route path="/suporteadmin" element={<ProtectedRoute requireAdminAccess><SuporteAdmin /></ProtectedRoute>} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

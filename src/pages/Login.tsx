@@ -8,8 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiPost } from "@/lib/api-client";
 import { setAuth, clearAuth } from "@/lib/auth";
 import type { AuthResponse } from "@/types";
-import "@/Stilos/stilo.css";
-
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();

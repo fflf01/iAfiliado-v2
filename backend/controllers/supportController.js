@@ -20,7 +20,7 @@ export function saveSupportMessage(req, res) {
 }
 
 export function getSupportMessages(req, res) {
-  return res.json(supportService.listSupportMessages());
+  return res.json(supportService.listSupportMessages(req.query));
 }
 
 export function updateSupportMessage(req, res) {
@@ -40,10 +40,10 @@ export function addReply(req, res) {
 }
 
 export function getTicketReplies(req, res) {
-  const replies = supportService.getTicketReplies(req.params.id, req.user);
+  const replies = supportService.getTicketReplies(req.params.id, req.user, req.query);
   return res.json(replies);
 }
 
 export function getClientMessages(req, res) {
-  return res.json(supportService.getClientMessages(req.user.id));
+  return res.json(supportService.getClientMessages(req.user.id, req.query));
 }

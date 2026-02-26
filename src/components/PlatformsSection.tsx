@@ -1,4 +1,3 @@
-import "@/Stilos/stilo.css";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import brasilbetLogo from "@/assets/brasilbet.png";
