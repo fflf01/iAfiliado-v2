@@ -317,7 +317,7 @@ const Links = () => {
                         {casa.status === "active" ? "Ativo" : casa.status}
                       </span>
                     </div>
-                    <div className="space-y-2 mb-3">
+                    <div className="space-y-2 mb-3 rounded-lg border border-primary/30 bg-primary/5 p-3 shadow-sm">
                       {linksDeCasa(casa).length > 0 ? (
                         linksDeCasa(casa).map((url, idx) => (
                           <div

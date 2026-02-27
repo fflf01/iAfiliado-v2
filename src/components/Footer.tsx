@@ -158,14 +158,6 @@ const Footer = () => {
         <div className="pt-8 border-t border-border/30 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <p>© 2026 iAfiliado. Todos os direitos reservados.</p>
-            <a
-              href="https://github.com/fflf01"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:texto-secundario transition-colors"
-            >
-              GitHub
-            </a>
           </div>
           <p className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-principal animate-pulse" />

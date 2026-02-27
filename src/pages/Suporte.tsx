@@ -30,7 +30,7 @@ const contactMethods = [
     icon: Mail,
     title: "E-mail",
     description: "Envie sua dúvida por e-mail",
-    contact: "suporte@iafiliado.com",
+    contact: "atendimento@iafiliado.com",
     action: "Enviar E-mail",
   },
 ];
@@ -189,7 +189,14 @@ const Suporte = () => {
                 <p className="texto-secundario font-semibold mb-4">
                   {method.contact}
                 </p>
-                <Button className="w-full btn-principal-outline">
+                <Button
+                  className="w-full btn-principal-outline"
+                  onClick={() => {
+                    if (method.title === "E-mail") {
+                      window.location.href = `mailto:${method.contact}`;
+                    }
+                  }}
+                >
                   {method.action}
                 </Button>
               </div>
