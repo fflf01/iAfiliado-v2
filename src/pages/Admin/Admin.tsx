@@ -506,7 +506,7 @@ const Admin = () => {
           onOpenSidebar={() => setSidebarOpen(true)}
         />
 
-        <main className="p-4 md:p-8 pt-16 md:pt-20">
+        <main className="p-4 md:p-8 pt-16 md:pt-20 lg:pr-52">
           {/* ── Overview ──────────────────────────────── */}
           {activeTab === "overview" && canSeeAdminSection("overview", role) && (
             <OverviewSection
