@@ -92,7 +92,8 @@ const Admin = () => {
   const { role } = useAuth();
 
   const sidebarItems = useMemo(
-    () => allAdminSidebarItems.filter((item) => canSeeAdminSection(item.id, role)),
+    () =>
+      allAdminSidebarItems.filter((item) => canSeeAdminSection(item.id, role)),
     [role],
   );
 
@@ -148,7 +149,9 @@ const Admin = () => {
   const [dashUserId, setDashUserId] = useState<number | null>(null);
   const [dashUserQuery, setDashUserQuery] = useState("");
   const [dashSelectedHouse, setDashSelectedHouse] = useState("todas");
-  const [dashDateRange, setDashDateRange] = useState<"1" | "7" | "30" | "custom">("7");
+  const [dashDateRange, setDashDateRange] = useState<
+    "1" | "7" | "30" | "custom"
+  >("7");
   const [dashCustomStart, setDashCustomStart] = useState("");
   const [dashCustomEnd, setDashCustomEnd] = useState("");
 
@@ -223,7 +226,9 @@ const Admin = () => {
           );
           updateData((prev) => ({
             ...prev,
-            casinos: prev.casinos.map((c) => (c.id === updated.id ? updated : c)),
+            casinos: prev.casinos.map((c) =>
+              c.id === updated.id ? updated : c,
+            ),
           }));
           toast({
             title: "Casino atualizado!",
@@ -231,7 +236,10 @@ const Admin = () => {
           });
         } else {
           const created = await apiPost<Casino>("/admin/casinos", payload);
-          updateData((prev) => ({ ...prev, casinos: [created, ...prev.casinos] }));
+          updateData((prev) => ({
+            ...prev,
+            casinos: [created, ...prev.casinos],
+          }));
           toast({
             title: "Casino cadastrado!",
             description: `${created.nome} foi adicionado.`,
@@ -493,9 +501,12 @@ const Admin = () => {
 
       {/* ── Main Content ─────────────────────────────── */}
       <div className="flex-1 min-w-0">
-        <AdminTopBar isMobile={isMobile} onOpenSidebar={() => setSidebarOpen(true)} />
+        <AdminTopBar
+          isMobile={isMobile}
+          onOpenSidebar={() => setSidebarOpen(true)}
+        />
 
-        <main className="p-4 md:p-8">
+        <main className="p-4 md:p-8 pt-16 md:pt-20">
           {/* ── Overview ──────────────────────────────── */}
           {activeTab === "overview" && canSeeAdminSection("overview", role) && (
             <OverviewSection
@@ -515,49 +526,51 @@ const Admin = () => {
           )}
 
           {/* ── Solicitações ─────────────────────────── */}
-          {activeTab === "solicitacoes" && canSeeAdminSection("solicitacoes", role) && (
-            <SolicitacoesSection
-              totalPendencias={totalPendencias}
-              pendentesCount={pendentesCount}
-              contractPendentesCount={contractPendentesCount}
-              search={searchSolicitacoes}
-              onSearchChange={setSearchSolicitacoes}
-              filtroStatus={filtroStatus}
-              onFiltroStatusChange={setFiltroStatus}
-              solicitacoes={filteredSolicitacoes}
-              contractRequests={filteredContractRequests}
-              onOpenDetail={openDetail}
-              onApproveSolicitacao={aprovarSolicitacao}
-              onRejectSolicitacao={rejeitarSolicitacao}
-              onApproveContract={aprovarContrato}
-              onRejectContract={rejeitarContrato}
-            />
-          )}
+          {activeTab === "solicitacoes" &&
+            canSeeAdminSection("solicitacoes", role) && (
+              <SolicitacoesSection
+                totalPendencias={totalPendencias}
+                pendentesCount={pendentesCount}
+                contractPendentesCount={contractPendentesCount}
+                search={searchSolicitacoes}
+                onSearchChange={setSearchSolicitacoes}
+                filtroStatus={filtroStatus}
+                onFiltroStatusChange={setFiltroStatus}
+                solicitacoes={filteredSolicitacoes}
+                contractRequests={filteredContractRequests}
+                onOpenDetail={openDetail}
+                onApproveSolicitacao={aprovarSolicitacao}
+                onRejectSolicitacao={rejeitarSolicitacao}
+                onApproveContract={aprovarContrato}
+                onRejectContract={rejeitarContrato}
+              />
+            )}
 
           {/* ── Dashboard Usuário ─────────────────────────── */}
-          {activeTab === "user_dashboard" && canSeeAdminSection("user_dashboard", role) && (
-            <UserDashboardSection
-              clients={clients}
-              userId={dashUserId}
-              userQuery={dashUserQuery}
-              onUserQueryChange={setDashUserQuery}
-              onUserIdChange={setDashUserId}
-              selectedHouse={dashSelectedHouse}
-              onSelectedHouseChange={setDashSelectedHouse}
-              dateRange={dashDateRange}
-              onDateRangeChange={setDashDateRange}
-              customStart={dashCustomStart}
-              onCustomStartChange={setDashCustomStart}
-              customEnd={dashCustomEnd}
-              onCustomEndChange={setDashCustomEnd}
-              loading={userDash.loading}
-              error={userDash.error}
-              profile={userDash.profile}
-              casas={userDash.casas}
-              stats={userDash.stats}
-              performanceData={userDash.performanceData}
-            />
-          )}
+          {activeTab === "user_dashboard" &&
+            canSeeAdminSection("user_dashboard", role) && (
+              <UserDashboardSection
+                clients={clients}
+                userId={dashUserId}
+                userQuery={dashUserQuery}
+                onUserQueryChange={setDashUserQuery}
+                onUserIdChange={setDashUserId}
+                selectedHouse={dashSelectedHouse}
+                onSelectedHouseChange={setDashSelectedHouse}
+                dateRange={dashDateRange}
+                onDateRangeChange={setDashDateRange}
+                customStart={dashCustomStart}
+                onCustomStartChange={setDashCustomStart}
+                customEnd={dashCustomEnd}
+                onCustomEndChange={setDashCustomEnd}
+                loading={userDash.loading}
+                error={userDash.error}
+                profile={userDash.profile}
+                casas={userDash.casas}
+                stats={userDash.stats}
+                performanceData={userDash.performanceData}
+              />
+            )}
 
           {/* ── Casinos ──────────────────────────────── */}
           {activeTab === "casinos" && canSeeAdminSection("casinos", role) && (
@@ -587,14 +600,15 @@ const Admin = () => {
           )}
 
           {/* ── Carteiras ────────────────────────────── */}
-          {activeTab === "carteiras" && canSeeAdminSection("carteiras", role) && (
-            <CarteirasSection
-              wallets={filteredWallets}
-              search={searchWallets}
-              onSearchChange={setSearchWallets}
-              fmt={fmt}
-            />
-          )}
+          {activeTab === "carteiras" &&
+            canSeeAdminSection("carteiras", role) && (
+              <CarteirasSection
+                wallets={filteredWallets}
+                search={searchWallets}
+                onSearchChange={setSearchWallets}
+                fmt={fmt}
+              />
+            )}
 
           {/* ── Verificação de saque ────────────────────────────── */}
           {activeTab === "saques" && canSeeAdminSection("saques", role) && (
@@ -605,7 +619,9 @@ const Admin = () => {
               onReject={async (id) => {
                 setWithdrawalUpdating(id);
                 try {
-                  await apiPut(`/admin/withdrawals/${id}/status`, { status: "rejeitado" });
+                  await apiPut(`/admin/withdrawals/${id}/status`, {
+                    status: "rejeitado",
+                  });
                   refresh();
                   toast({
                     title: "Saque rejeitado.",
@@ -624,7 +640,9 @@ const Admin = () => {
               onApprove={async (id) => {
                 setWithdrawalUpdating(id);
                 try {
-                  await apiPut(`/admin/withdrawals/${id}/status`, { status: "aprovado" });
+                  await apiPut(`/admin/withdrawals/${id}/status`, {
+                    status: "aprovado",
+                  });
                   refresh();
                   toast({
                     title: "Saque aprovado.",
@@ -644,13 +662,21 @@ const Admin = () => {
           )}
 
           {/* ── Contas dos Managers ────────────────────────────── */}
-          {activeTab === "contas_manager" && canSeeAdminSection("contas_manager", role) && <ManagerAccountsSection active />}
+          {activeTab === "contas_manager" &&
+            canSeeAdminSection("contas_manager", role) && (
+              <ManagerAccountsSection active />
+            )}
 
           {/* ── Usuários (punição) ────────────────────────────── */}
-          {activeTab === "usuarios" && canSeeAdminSection("usuarios", role) && <UsersSection active />}
+          {activeTab === "usuarios" && canSeeAdminSection("usuarios", role) && (
+            <UsersSection active />
+          )}
 
           {/* ── Log Admin (auditoria) ─────────────────────────── */}
-          {activeTab === "log_admin" && canSeeAdminSection("log_admin", role) && <AdminLogsSection active />}
+          {activeTab === "log_admin" &&
+            canSeeAdminSection("log_admin", role) && (
+              <AdminLogsSection active />
+            )}
         </main>
       </div>
 

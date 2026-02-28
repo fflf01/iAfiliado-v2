@@ -8,8 +8,8 @@ export function AdminTopBar(props: {
 }) {
   return (
     <>
-      {/* Desktop fixed button */}
-      <div className="fixed top-4 right-4 z-40 hidden lg:block">
+      {/* Desktop: container com botão, abaixado no layout */}
+      <div className="fixed top-20 right-4 z-40 hidden lg:block rounded-lg border border-border/50 bg-card/95 backdrop-blur-sm px-3 py-2 shadow-sm">
         <Link to="/dashboard" className="text-foreground">
           <Button
             variant="outline"
@@ -40,4 +40,3 @@ export function AdminTopBar(props: {
     </>
   );
 }
-
