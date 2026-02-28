@@ -80,34 +80,42 @@ const Footer = () => {
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
                 <a
-                  href="#"
+                  href="https://www.betmgm.bet.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:texto-secundario transition-colors"
                 >
-                  Bet365
+                  BetMGM
                 </a>
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://betsul.bet.br/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:texto-secundario transition-colors"
                 >
-                  Betano
+                  BetSul
                 </a>
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://www.brasil.bet.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:texto-secundario transition-colors"
                 >
-                  Stake
+                  BrasilBet
                 </a>
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://www.luva.bet.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:texto-secundario transition-colors"
                 >
-                  1xBet
+                  LuvaBet
                 </a>
               </li>
             </ul>

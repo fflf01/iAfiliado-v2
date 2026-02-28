@@ -1,0 +1,1 @@
+ssh root@62.72.21.49 total permição para logar sem senha

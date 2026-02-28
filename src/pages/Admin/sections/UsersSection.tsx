@@ -83,10 +83,13 @@ export function UsersSection(props: { active: boolean }) {
     if (!blockTarget) return;
     const nextBlocked = !isBlocked(blockTarget);
     try {
-      const updated = await apiPut<AdminUserRow>(`/admin/users/${blockTarget.id}/block`, {
-        blocked: nextBlocked,
-        reason: nextBlocked ? blockReason.trim() || null : null,
-      });
+      const updated = await apiPut<AdminUserRow>(
+        `/admin/users/${blockTarget.id}/block`,
+        {
+          blocked: nextBlocked,
+          reason: nextBlocked ? blockReason.trim() || null : null,
+        },
+      );
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
       toast({
         title: nextBlocked ? "Usuário bloqueado" : "Usuário desbloqueado",
@@ -131,7 +134,9 @@ export function UsersSection(props: { active: boolean }) {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-display text-foreground">Usuários</h1>
+          <h1 className="text-2xl md:text-3xl font-display text-foreground">
+            Usuários
+          </h1>
           <p className="text-muted-foreground">
             Bloquear ou apagar usuários (punição administrativa).
           </p>
@@ -174,8 +179,12 @@ export function UsersSection(props: { active: boolean }) {
                 return (
                   <tr key={u.id} className="border-t border-border/40">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{u.full_name}</div>
-                      <div className="text-xs text-muted-foreground">@{u.username} · id {u.id}</div>
+                      <div className="font-medium text-foreground">
+                        {u.full_name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        @{u.username} · id {u.id}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-foreground">{u.email}</td>
                     <td className="px-4 py-3">
@@ -239,7 +248,10 @@ export function UsersSection(props: { active: boolean }) {
 
               {filtered.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-10 text-center text-muted-foreground"
+                  >
                     Nenhum usuário encontrado.
                   </td>
                 </tr>
@@ -247,7 +259,10 @@ export function UsersSection(props: { active: boolean }) {
 
               {loading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-10 text-center text-muted-foreground"
+                  >
                     Carregando...
                   </td>
                 </tr>
@@ -261,16 +276,18 @@ export function UsersSection(props: { active: boolean }) {
         <DialogContent className="bg-card border-border/50">
           <DialogHeader>
             <DialogTitle className="font-display">
-              {blockTarget && isBlocked(blockTarget) ? "Desbloquear usuário" : "Bloquear usuário"}
+              {blockTarget && isBlocked(blockTarget)
+                ? "Desbloquear usuário"
+                : "Bloquear usuário"}
             </DialogTitle>
-            <DialogDescription>
-              {blockTarget?.email}
-            </DialogDescription>
+            <DialogDescription>{blockTarget?.email}</DialogDescription>
           </DialogHeader>
 
           {blockTarget && !isBlocked(blockTarget) && (
             <div className="space-y-2">
-              <label className="block text-sm text-muted-foreground">Motivo (opcional)</label>
+              <label className="block text-sm text-muted-foreground">
+                Motivo (opcional)
+              </label>
               <Input
                 value={blockReason}
                 onChange={(e) => setBlockReason(e.target.value)}
@@ -285,7 +302,9 @@ export function UsersSection(props: { active: boolean }) {
               <Button variant="outline">Cancelar</Button>
             </DialogClose>
             <Button
-              variant={blockTarget && isBlocked(blockTarget) ? "neon" : "destructive"}
+              variant={
+                blockTarget && isBlocked(blockTarget) ? "neon" : "destructive"
+              }
               onClick={doBlockToggle}
             >
               Confirmar
@@ -297,10 +316,12 @@ export function UsersSection(props: { active: boolean }) {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="bg-card border-border/50">
           <DialogHeader>
-            <DialogTitle className="font-display text-destructive">Apagar usuário</DialogTitle>
+            <DialogTitle className="font-display text-destructive">
+              Apagar usuário
+            </DialogTitle>
             <DialogDescription>
-              Isso remove o usuário e dados relacionados (por cascade). Para confirmar, digite
-              DELETE.
+              Isso remove o usuário e dados relacionados (por cascade). Para
+              confirmar, digite DELETE.
             </DialogDescription>
           </DialogHeader>
 
@@ -329,4 +350,3 @@ export function UsersSection(props: { active: boolean }) {
     </div>
   );
 }
-
