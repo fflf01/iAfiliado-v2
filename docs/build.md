@@ -101,12 +101,12 @@ docker compose up -d
 
 ## Comandos úteis
 
-| Ação | Comando |
-|------|---------|
-| Parar containers | `docker compose -f docker-compose.build.yml down` |
-| Ver logs | `docker compose -f docker-compose.build.yml logs -f` |
-| Rebuildar sem cache | `docker compose -f docker-compose.build.yml build --no-cache && docker compose -f docker-compose.build.yml up -d` |
-| Liberar espaço (imagens órfãs) | `docker image prune -a -f && docker builder prune -af` |
+| Ação                           | Comando                                                                                                           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Parar containers               | `docker compose -f docker-compose.build.yml down`                                                                 |
+| Ver logs                       | `docker compose -f docker-compose.build.yml logs -f`                                                              |
+| Rebuildar sem cache            | `docker compose -f docker-compose.build.yml build --no-cache && docker compose -f docker-compose.build.yml up -d` |
+| Liberar espaço (imagens órfãs) | `docker image prune -a -f && docker builder prune -af`                                                            |
 
 ---
 

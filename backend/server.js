@@ -80,7 +80,9 @@ app.use(
 const corsOrigins = env.corsOrigins;
 
 if (!isProduction && corsOrigins.length === 0) {
-  logger.warn("CORS_ORIGINS nao definido. Ambiente local permitira todas as origens.");
+  logger.warn(
+    "CORS_ORIGINS nao definido. Ambiente local permitira todas as origens.",
+  );
 }
 
 app.use((req, _res, next) => {

@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 
 type SidebarItem = {
@@ -30,27 +29,23 @@ export function AdminSidebar(props: {
           lg:sticky lg:top-0
         `}
       >
-        <div className="p-5 border-b border-border/50 flex items-center justify-between">
-          <Link to="/admin" className="flex items-center gap-3">
-            <img src="/iAfiliado.png" alt="iAfiliado" className="h-11 w-auto" />
-          </Link>
-          {props.isMobile && (
+        {props.isMobile && (
+          <div className="p-5 border-b border-border/50 flex items-center justify-end">
             <button
               onClick={props.onClose}
               className="text-muted-foreground hover:text-foreground"
             >
               <X className="w-5 h-5" />
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="px-5 py-3 border-b border-border/50 space-y-2">
-          <span className="inline-flex text-xs font-semibold uppercase px-3 py-1 rounded-full bg-destructive/20 text-destructive border border-destructive/30">
-            Painel Admin
-          </span>
-        </div>
-
-        <nav className="flex-1 px-3 py-2 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          <div className="px-4 pb-3 mb-2 border-b border-border/50">
+            <span className="inline-flex text-sm font-bold uppercase tracking-wide px-3 py-2 rounded-lg bg-destructive/20 text-destructive border border-destructive/30">
+              Painel Admin
+            </span>
+          </div>
           {props.items.map((item) => (
             <button
               key={item.id}
