@@ -52,7 +52,7 @@ export function UserDashboardSection(props: {
       });
 
   return (
-    <Card className="bg-card/80 border-border/50 p-6">
+    <Card className="bg-card/80 border-border/50 p-6 mt-6 md:mt-8">
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">
