@@ -8,19 +8,19 @@ export function AdminTopBar(props: {
 }) {
   return (
     <>
-      {/* Desktop: botão fixo (sem container); o main tem padding para não ficar por baixo */}
-      <div className="fixed top-20 right-4 z-40 hidden lg:block">
+      {/* Desktop: header bar — separação clara entre navegação e conteúdo */}
+      <header className="hidden lg:flex items-center justify-end shrink-0 px-6 py-5 border-b border-border/50 bg-muted/20">
         <Link to="/dashboard" className="text-foreground">
           <Button
             variant="outline"
             size="sm"
-            className="inline-flex items-center justify-center whitespace-nowrap font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 font-display tracking-wide uppercase border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-4 text-xs gap-2"
+            className="font-display tracking-wide uppercase text-xs gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Voltar ao Dashboard
           </Button>
         </Link>
-      </div>
+      </header>
 
       {/* Top bar (mobile) */}
       {props.isMobile && (

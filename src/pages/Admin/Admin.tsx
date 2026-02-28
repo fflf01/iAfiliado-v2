@@ -500,13 +500,13 @@ const Admin = () => {
       />
 
       {/* ── Main Content ─────────────────────────────── */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex flex-col min-h-0">
         <AdminTopBar
           isMobile={isMobile}
           onOpenSidebar={() => setSidebarOpen(true)}
         />
 
-        <main className="p-4 md:p-8 pt-24 md:pt-28 lg:pr-52">
+        <main className="flex-1 overflow-auto p-6 md:p-8 pt-8 md:pt-10">
           {/* ── Overview ──────────────────────────────── */}
           {activeTab === "overview" && canSeeAdminSection("overview", role) && (
             <OverviewSection
