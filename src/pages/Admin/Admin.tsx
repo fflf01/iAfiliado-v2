@@ -506,7 +506,8 @@ const Admin = () => {
           onOpenSidebar={() => setSidebarOpen(true)}
         />
 
-        <main className="flex-1 overflow-auto p-6 md:p-8 pt-8 md:pt-10">
+        <main className="flex-1 overflow-auto">
+          <div className="container mx-auto px-4 py-8">
           {/* ── Overview ──────────────────────────────── */}
           {activeTab === "overview" && canSeeAdminSection("overview", role) && (
             <OverviewSection
@@ -677,6 +678,7 @@ const Admin = () => {
             canSeeAdminSection("log_admin", role) && (
               <AdminLogsSection active />
             )}
+          </div>
         </main>
       </div>
 
