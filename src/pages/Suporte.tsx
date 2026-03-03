@@ -23,7 +23,7 @@ const contactMethods = [
     icon: MessageCircle,
     title: "WhatsApp",
     description: "Atendimento rápido pelo WhatsApp",
-    contact: "+55 11 99999-9999",
+    contact: "+55 (21) 99780-7793",
     action: "Iniciar Conversa",
   },
   {
@@ -201,6 +201,15 @@ const Suporte = () => {
                         method.contact,
                       )}&su=${subject}&body=${body}`;
                       window.open(gmailUrl, "_blank", "noopener,noreferrer");
+                    }
+
+                    if (method.title === "WhatsApp") {
+                      const phoneNumber = "5521997807793";
+                      const message = encodeURIComponent(
+                        "Olá, equipe de suporte iAfiliado, preciso de ajuda.",
+                      );
+                      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+                      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
                     }
                   }}
                 >
