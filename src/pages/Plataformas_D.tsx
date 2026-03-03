@@ -6,7 +6,7 @@ import { apiGet, apiPost } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import brasilbetLogo from "@/assets/brasilbet.png";
 import betsulLogo from "@/assets/betsul.png";
-import multibetLogo from "@/assets/Multibet.png";
+import multibetLogo from "@/assets/multibet2.png";
 import mgmbetLogo from "@/assets/MGMbet.png";
 import mgmbetProLogo from "@/assets/MGMbet Pro.png";
 import luvabetLogo from "@/assets/luvabet.png";

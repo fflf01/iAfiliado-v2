@@ -7,7 +7,7 @@ import goldbetLogo from "@/assets/goldbet.png";
 import luvabetLogo from "@/assets/luvabet.png";
 import mgmbetLogo from "@/assets/MGMbet.png";
 import betsulLogo from "@/assets/betsul.png";
-import multibetLogo from "@/assets/Multibet.png";
+import multibetLogo from "@/assets/multibet2.png";
 
 // Import Swiper styles
 import "swiper/css";
