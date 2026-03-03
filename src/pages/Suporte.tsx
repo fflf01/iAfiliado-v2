@@ -193,7 +193,14 @@ const Suporte = () => {
                   className="w-full btn-principal-outline"
                   onClick={() => {
                     if (method.title === "E-mail") {
-                      window.location.href = `mailto:${method.contact}`;
+                      const subject = encodeURIComponent("Suporte iAfiliado");
+                      const body = encodeURIComponent(
+                        "Olá, equipe de suporte iAfiliado,\n\n",
+                      );
+                      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                        method.contact,
+                      )}&su=${subject}&body=${body}`;
+                      window.open(gmailUrl, "_blank", "noopener,noreferrer");
                     }
                   }}
                 >
@@ -263,119 +270,6 @@ const Suporte = () => {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Contact Form */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-2xl">
-          <h2 className="text-3xl font-display font-bold text-center mb-12">
-            Envie sua <span className="texto-gradiente-destaque">Mensagem</span>
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Nome
-                </label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Seu nome"
-                  required
-                  className="bg-muted border-border"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  E-mail
-                </label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="seu@email.com"
-                  required
-                  className="bg-muted border-border"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Assunto
-                </label>
-                <Input
-                  value={formData.subject}
-                  onChange={(e) =>
-                    setFormData({ ...formData, subject: e.target.value })
-                  }
-                  placeholder="Sobre o que você precisa de ajuda?"
-                  required
-                  className="bg-muted border-border"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Telefone
-                </label>
-                <Input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      phone: formatPhoneNumber(e.target.value),
-                    })
-                  }
-                  placeholder="(00) 00000-0000"
-                  className="bg-muted border-border"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Mensagem
-              </label>
-              <Textarea
-                value={formData.message}
-                onChange={(e) =>
-                  setFormData({ ...formData, message: e.target.value })
-                }
-                placeholder="Descreva sua dúvida ou solicitação..."
-                rows={5}
-                required
-                className="bg-muted border-border"
-              />
-            </div>
-            <div>
-              <Label
-                htmlFor="file"
-                className="block text-sm font-semibold text-foreground mb-2"
-              >
-                Anexos (Opcional)
-              </Label>
-              <Input
-                id="file"
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="bg-muted border-border cursor-pointer"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full btn-principal"
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? "Enviando..." : "Enviar Mensagem"}
-            </Button>
-          </form>
         </div>
       </section>
 
