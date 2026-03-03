@@ -4,53 +4,61 @@ import { ExternalLink, Shield, Zap, Globe, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import brasilbetLogo from "@/assets/brasilbet.png";
+import betsulLogo from "@/assets/betsul.png";
+import multibetLogo from "@/assets/Multibet.png";
+import mgmbetLogo from "@/assets/MGMbet.png";
+import mgmbetProLogo from "@/assets/MGMbet Pro.png";
+import luvabetLogo from "@/assets/luvabet.png";
+import bigbetLogo from "@/assets/Bigbet.png";
+import seubetLogo from "@/assets/seubet.png";
 
 const platformsFallback = [
   {
     name: "BrasilBet",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=BrasilBet",
+    logo: brasilbetLogo,
     commission: "11% dos depósitos",
     features: ["Pagamento Semanal", "Saque rápido", "Suporte 24h"],
   },
   {
     name: "BetSul",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=BetSul",
+    logo: betsulLogo,
     commission: "10% dos depósitos",
     features: ["Pagamento Semanal"],
   },
   {
     name: "Multibet",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=Multibet",
+    logo: multibetLogo,
     commission: "10% dos depósitos",
     features: ["Pagamento Semanal"],
   },
   {
     name: "BetMGM",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=BetMGM",
+    logo: mgmbetLogo,
     commission: "R$100 de CPA",
     features: ["BaseLine R$25", "Pagamento Mensal", "Suporte 24h"],
   },
   {
     name: "LuvaBet",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=LuvaBet",
+    logo: luvabetLogo,
     commission: "11% dos depósitos",
     features: ["Pagamento Semanal", "Saque rápido", "Suporte 24h"],
   },
   {
     name: "BigBet",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=BigBet",
+    logo: bigbetLogo,
     commission: "10% dos Depósitos",
     features: ["BaseLine R$25", "Suporte 24h"],
   },
   {
     name: "BetMGM Pro",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=BetMGM+Pro",
+    logo: mgmbetProLogo,
     commission: "R$80 de CPA",
     features: ["BaseLine R$25", "Pagamento Semanal", "Suporte 24h"],
   },
   {
     name: "SeuBet",
-    logo: "https://placehold.co/200x80/1e293b/ffffff?text=SeuBet",
+    logo: seubetLogo,
     commission: "60% de Rev Share",
     features: ["Pagamento Mensal"],
   },
@@ -66,10 +74,28 @@ interface PublicCasino {
   description: string | null;
 }
 
+const casinoLogoMap: Record<string, string> = {
+  brasilbet: brasilbetLogo,
+  betsul: betsulLogo,
+  multibet: multibetLogo,
+  betmgm: mgmbetLogo,
+  betmgmpro: mgmbetLogo,
+  luvabet: luvabetLogo,
+  bigbet: bigbetLogo,
+  seubet: seubetLogo,
+};
+
 function commissionLabel(c: PublicCasino): string {
   if (c.comissaoCpa > 0) return `R$${Math.round(c.comissaoCpa)} de CPA`;
   if (c.comissaoRevshare > 0) return `${c.comissaoRevshare}% dos depósitos`;
   return "Comissão a combinar";
+}
+
+function logoForCasino(c: PublicCasino): string {
+  const key = (c.id || c.name).toLowerCase();
+  const assetLogo = casinoLogoMap[key];
+  if (assetLogo) return assetLogo;
+  return `https://placehold.co/200x80/1e293b/ffffff?text=${encodeURIComponent(c.name)}`;
 }
 
 const Plataformas = () => {
@@ -114,7 +140,7 @@ const Plataformas = () => {
     if (!casinos) return platformsFallback;
     return casinos.map((c) => ({
       name: c.name,
-      logo: `https://placehold.co/200x80/1e293b/ffffff?text=${encodeURIComponent(c.name)}`,
+      logo: logoForCasino(c),
       commission: commissionLabel(c),
       features: [
         "Pagamento Semanal",

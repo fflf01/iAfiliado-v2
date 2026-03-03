@@ -7,6 +7,7 @@ import goldbetLogo from "@/assets/goldbet.png";
 import luvabetLogo from "@/assets/luvabet.png";
 import mgmbetLogo from "@/assets/MGMbet.png";
 import betsulLogo from "@/assets/betsul.png";
+import multibetLogo from "@/assets/Multibet.png";
 
 // Import Swiper styles
 import "swiper/css";
@@ -21,6 +22,7 @@ const partnerLogos = [
   { name: "LuvaBet", src: luvabetLogo },
   { name: "BetMGM", src: mgmbetLogo },
   { name: "Betsul", src: betsulLogo },
+  { name: "Multibet", src: multibetLogo },
 ];
 
 const PlatformsSection = () => {

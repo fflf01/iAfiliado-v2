@@ -10,6 +10,7 @@ import goldbetLogo from "@/assets/goldbet.png";
 import luvabetLogo from "@/assets/luvabet.png";
 import mgmbetLogo from "@/assets/MGMbet.png";
 import betsulLogo from "@/assets/betsul.png";
+import multibetLogo from "@/assets/Multibet.png";
 
 const partnerLogos = [
   { name: "BrasilBet", src: brasilbetLogo },
@@ -19,11 +20,7 @@ const partnerLogos = [
   { name: "LuvaBet", src: luvabetLogo },
   { name: "BetMGM", src: mgmbetLogo },
   { name: "BetSul", src: betsulLogo },
-  {
-    name: "Multibet",
-    // Sem asset local no momento: usa placeholder.
-    src: "https://placehold.co/200x80/1e293b/ffffff?text=Multibet",
-  },
+  { name: "Multibet", src: multibetLogo },
 ];
 
 const Plataformas = () => {
