@@ -10,7 +10,7 @@ import multibetLogo from "@/assets/multibet2.png";
 import mgmbetLogo from "@/assets/MGMbet.png";
 import mgmbetProLogo from "@/assets/MGMbet Pro.png";
 import luvabetLogo from "@/assets/luvabet.png";
-import bigbetLogo from "@/assets/Bigbet.png";
+import bigbetLogo from "@/assets/bigbbet.png";
 import seubetLogo from "@/assets/seubet.png";
 
 const platformsFallback = [
