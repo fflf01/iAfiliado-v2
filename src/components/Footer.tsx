@@ -18,13 +18,15 @@ const Footer = () => {
             </p>
             <div className="flex gap-4">
               <a
-                href="#"
+                href="https://wa.me/5521997807793?text=Ol%C3%A1,%20equipe%20de%20suporte%20iAfiliado,%20preciso%20de%20ajuda."
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center hover-bg-principal transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
               </a>
               <a
-                href="#"
+                href="mailto:atendimento@iafiliado.com?subject=Suporte%20iAfiliado"
                 className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center hover-bg-principal transition-colors"
               >
                 <Mail className="w-5 h-5" />
