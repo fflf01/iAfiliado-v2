@@ -45,9 +45,10 @@ flowchart LR
 - **Cliente HTTP**: `src/lib/api-client.ts`.
   - Base URL padrão: `/api`.
   - Em dev, Vite faz proxy para `http://localhost:3000`.
-  - Inclui token automaticamente no `Authorization: Bearer <token>`.
+  - Autenticação via cookie HttpOnly: `credentials: 'include'` (não envia Bearer no header).
 - **Auth client-side**:
-  - `src/lib/auth.ts` (token/user no `localStorage`);
+  - `src/lib/auth.ts`: apenas **dados não sensíveis** em `localStorage` (tipo `StoredUser`: id, username, is_admin, is_support, is_manager, role); token em cookie HttpOnly (não acessível por JS); dados sensíveis (email, telefone, nome) obtidos via API (`GET /profile`) quando necessário;
+  - `src/lib/api-client.ts` (`credentials: 'include'` para enviar o cookie);
   - `src/components/ProtectedRoute.tsx` (proteção de rota e guard de admin).
 - **Módulos de tela**:
   - dashboard de afiliado;
@@ -71,7 +72,13 @@ flowchart LR
   - `auth/authMiddleware.js` e `auth/adminAuthMiddleware.js`,
   - `config/env.js` e `config/constants.js`.
 
-### 2.3 Infra de execução
+### 2.3 Testes
+
+- **Frontend** (Vitest): `src/lib/auth.test.ts`, `src/lib/api-client.test.ts`, `src/pages/Admin/utils.solicitacoes-filter.test.ts`, `src/test/example.test.ts`. Comando: `npm test -- --run` (raiz do projeto). Cobrem auth (cookie HttpOnly, StoredUser em localStorage sem dados sensíveis), api-client (credentials, erros) e utilitários do admin.
+- **Backend** (Node.js `node --test`): `backend/tests/integration/*.test.js`, `backend/tests/flows/*.test.js`, `backend/tests/infrastructure/*.test.js`. Comando: `npm test` (em `backend/`). Cobrem API (registro, login, logout, cookie, suporte, contratos, saques, admin), fluxos de negócio e infra (error handler, CORS, env).
+- **Execução:** frontend e backend devem rodar com sucesso para validar o estado atual da arquitetura (ex.: 23 testes frontend, 44 testes backend).
+
+### 2.4 Infra de execução
 
 - **Local/dev**:
   - frontend via Vite;
@@ -139,11 +146,18 @@ Responsável por:
 
 ### 4.1 Auth
 
-- **Entradas**: `/register`, `/login`, `/profile`.
+- **Entradas**: `/register`, `/login`, `/logout`, `/profile`.
 - **Funções**:
   - hash de senha (`bcrypt`);
   - emissão de JWT com expiração (`1d`);
-  - bloqueio de usuários (`is_blocked`) no middleware.
+  - **token em cookie HttpOnly** (`auth_token`): `Set-Cookie` com `HttpOnly`, `Secure` (produção), `SameSite=Strict`; proteção contra XSS (JS não acessa o token);
+  - bloqueio de usuários (`is_blocked`) no middleware;
+  - `POST /logout` limpa o cookie de autenticação.
+- **Proteção contra força bruta**:
+  - **Rate limiting**: 5 tentativas de login por 15 minutos por IP (`RATE_LIMIT.AUTH`).
+  - **CAPTCHA**: após 3 tentativas falhas por IP, o próximo login exige `captchaToken` (reCAPTCHA v2); em teste o CAPTCHA é dispensado.
+  - **Bloqueio temporário de conta**: após 5 tentativas falhas para o mesmo usuário, a conta fica bloqueada por 15 minutos (`locked_until`); o usuário recebe 403 com mensagem de tempo restante.
+  - **Notificação por email**: ao bloquear a conta, o backend envia email ao usuário (via SendGrid se `SENDGRID_API_KEY` estiver definida) avisando das tentativas suspeitas.
 
 ### 4.2 Dashboard
 
@@ -197,7 +211,7 @@ Responsável por:
 
 Tabelas centrais:
 
-- `users`
+- `users` (inclui `failed_login_attempts`, `locked_until` para bloqueio temporário após falhas de login)
 - `casinos`
 - `affiliate_casinos`
 - `entradas`
@@ -223,8 +237,8 @@ Características relevantes:
 
 1. Frontend envia credenciais para `/login`.
 2. Backend valida input, busca usuário e compara hash.
-3. Backend retorna JWT + dados públicos do usuário.
-4. Frontend persiste token e usa nas próximas chamadas.
+3. Backend retorna JWT (enviado em cookie HttpOnly) + dados do usuário.
+4. Frontend persiste apenas **StoredUser** (id, username, roles) em `localStorage`; token fica no cookie. Perfil completo (nome, email, telefone) é obtido via `GET /profile` quando a tela precisar (ex.: dashboard, suporte).
 
 ### 6.2 Dashboard do afiliado
 
@@ -251,19 +265,37 @@ Características relevantes:
 
 Controles implementados:
 
-- JWT assinado por segredo de ambiente;
+- JWT assinado por segredo de ambiente; token enviado via **cookie HttpOnly** (Secure em produção, SameSite=Strict);
+- **Dados no cliente**: em `localStorage` só são persistidos dados não sensíveis (`StoredUser`: id, username, roles); email, telefone, nome completo e outros PII vêm da API (`GET /profile`) quando necessário, reduzindo risco de vazamento por XSS e alinhando à minimização de dados (LGPD);
 - bcrypt para senha;
 - validação/sanitização com `express-validator`;
+- **rate-limit de auth**: 5 tentativas por 15 min por IP; CAPTCHA (reCAPTCHA v2) após 3 falhas por IP; bloqueio temporário de conta (15 min) após 5 falhas; notificação por email ao bloquear (SendGrid opcional);
 - rate-limit global e por domínio sensível (auth/suporte);
 - helmet (CSP em produção);
+- **X-XSS-Protection**: header `1; mode=block` no backend (Express) e no Nginx para respostas do front;
+- **Nginx**: `server_tokens off` para não expor a versão do servidor no header `Server`;
 - CORS com whitelist em produção;
 - tratamento de erro padronizado sem vazamento de stack em produção;
 - logs com `requestId`;
 - upload com validação de MIME/extensão/limites.
 
+### 7.1 Armazenamento de senhas
+
+Fluxo e responsabilidades:
+
+| Etapa                   | Onde                                     | Detalhe                                                                                                                                  |
+| ----------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Persistência**        | `backend/schema.sql`                     | Coluna `users.password_hash` (TEXT NOT NULL). Apenas o hash é armazenado; a senha em texto claro nunca é gravada.                        |
+| **Constantes**          | `backend/config/constants.js`            | `AUTH.SALT_ROUNDS: 10`, `AUTH.MIN_PASSWORD_LENGTH: 8`.                                                                                   |
+| **Hash no registro**    | `backend/services/authService.js`        | `bcrypt.hash(payload.password, AUTH.SALT_ROUNDS)` antes de inserir; validação de complexidade (pelo menos uma letra e um número).        |
+| **Comparação no login** | `backend/services/authService.js`        | `bcrypt.compare(password, user.password_hash)`; em caso de sucesso, `delete user.password_hash` antes de devolver o usuário na resposta. |
+| **Repositório**         | `backend/repositories/authRepository.js` | `findByIdentifier` inclui `password_hash` apenas para login; `findPublicById` e listagens **não** retornam `password_hash`.              |
+| **Validação HTTP**      | `backend/routes.js`                      | `express-validator`: senha obrigatória e mínimo de caracteres em `/login` e `/register`.                                                 |
+
+Resumo: senhas são hasheadas com **bcrypt** (10 salt rounds), armazenadas somente como hash na tabela `users`, nunca retornadas pela API e removidas do objeto usuário antes de qualquer resposta. Não há fluxo de redefinição de senha (esqueci senha) implementado no backend; a tela correspondente existe apenas no frontend.
+
 Pontos de atenção:
 
-- token é armazenado em `localStorage` (risco maior em cenários de XSS);
 - rota `/uploads` é pública (acesso por nome do arquivo);
 - políticas de retenção/rotação de uploads e logs devem ser definidas operacionalmente.
 
@@ -366,3 +398,4 @@ iAfiliado-v2/
 - Banco de dados: `docs/DATABASE.md`
 - Segurança backend: `docs/SECURITY-BACKEND.md`
 - Setup e execução: `README.md`
+- Testes: na raiz `npm test -- --run` (frontend); em `backend/` executar `npm test` (backend).

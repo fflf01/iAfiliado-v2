@@ -3,15 +3,19 @@ import { AUTH } from "../config/constants.js";
 import { generateToken } from "../utils/jwt.js";
 import { authRepository } from "../repositories/authRepository.js";
 import { resolvePagination } from "../utils/pagination.js";
+import { loginAttemptsStore } from "../utils/loginAttemptsStore.js";
+import { verifyRecaptcha } from "../utils/captcha.js";
+import { notifySuspiciousLoginAttempts } from "../utils/emailService.js";
 import {
   UnauthorizedError,
   ValidationError,
   NotFoundError,
   ForbiddenError,
+  CaptchaRequiredError,
 } from "../errors/AppError.js";
 
 export const authService = {
-  async login({ email, login, password }) {
+  async login({ email, login, password, captchaToken }, { ip = null } = {}) {
     const identifier = email || login;
 
     if (!identifier || !password) {
@@ -19,22 +23,60 @@ export const authService = {
     }
 
     const user = authRepository.findByIdentifier(identifier);
-    if (!user) {
-      throw new UnauthorizedError("Credenciais invalidas.");
+
+    if (user) {
+      if (user.is_blocked) {
+        throw new ForbiddenError("Conta bloqueada. Contate o suporte.");
+      }
+      const lockedUntil = user.locked_until
+        ? new Date(user.locked_until.replace(/(Z)?$/, "Z")).getTime()
+        : null;
+      if (lockedUntil && lockedUntil > Date.now()) {
+        const minutesLeft = Math.ceil((lockedUntil - Date.now()) / 60000);
+        throw new ForbiddenError(
+          `Conta temporariamente bloqueada. Tente novamente em ${minutesLeft} minuto(s).`,
+        );
+      }
     }
 
-    if (user.is_blocked) {
-      // Não revela detalhes; apenas bloqueia o acesso.
-      throw new ForbiddenError("Conta bloqueada. Contate o suporte.");
+    const isTest = process.env.NODE_ENV === "test";
+    const ipAttempts = loginAttemptsStore.get(ip);
+    if (!isTest && ipAttempts >= AUTH.CAPTCHA_AFTER_ATTEMPTS) {
+      if (!captchaToken || typeof captchaToken !== "string" || !captchaToken.trim()) {
+        throw new CaptchaRequiredError("Complete o CAPTCHA para continuar.");
+      }
+      const captchaOk = await verifyRecaptcha(captchaToken.trim(), ip);
+      if (!captchaOk) {
+        throw new ValidationError("CAPTCHA invalido. Tente novamente.");
+      }
+    }
+
+    if (!user) {
+      loginAttemptsStore.increment(ip);
+      throw new UnauthorizedError("Credenciais invalidas.");
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
+      const updated = authRepository.incrementFailedAttemptsAndMaybeLock(
+        user.id,
+        AUTH.LOCKOUT_AFTER_ATTEMPTS,
+        AUTH.LOCKOUT_DURATION_MINUTES,
+      );
+      loginAttemptsStore.increment(ip);
+      if (updated && updated.failed_login_attempts >= AUTH.LOCKOUT_AFTER_ATTEMPTS && updated.locked_until) {
+        notifySuspiciousLoginAttempts(user.email, AUTH.LOCKOUT_DURATION_MINUTES).catch(() => {});
+      }
       throw new UnauthorizedError("Credenciais invalidas.");
     }
 
+    authRepository.resetFailedAttempts(user.id);
+    loginAttemptsStore.reset(ip);
+
     const token = generateToken(user);
     delete user.password_hash;
+    delete user.failed_login_attempts;
+    delete user.locked_until;
     return { user, token };
   },
 

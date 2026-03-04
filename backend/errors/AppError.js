@@ -35,3 +35,11 @@ export class NotFoundError extends AppError {
     this.name = "NotFoundError";
   }
 }
+
+/** Exige CAPTCHA no proximo login (401 + code CAPTCHA_REQUIRED). */
+export class CaptchaRequiredError extends AppError {
+  constructor(message = "Complete o CAPTCHA para continuar.") {
+    super(message, 401, "CAPTCHA_REQUIRED", { captchaRequired: true });
+    this.name = "CaptchaRequiredError";
+  }
+}

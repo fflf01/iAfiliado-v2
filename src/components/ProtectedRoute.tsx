@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { ReactNode } from "react";
-import { getToken, getUser } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import { deriveRole, canAccessAdmin } from "@/lib/permissions";
 
 interface ProtectedRouteProps {
@@ -12,7 +12,8 @@ interface ProtectedRouteProps {
 }
 
 /**
- * Protege rotas verificando autenticacao e permissoes baseadas em role.
+ * Protege rotas verificando autenticacao (user em memoria) e permissoes.
+ * Token fica em cookie HttpOnly; presenca do user indica sessao ativa.
  * Redireciona para /login se nao autenticado, /dashboard se sem permissao.
  */
 export default function ProtectedRoute({
@@ -20,10 +21,9 @@ export default function ProtectedRoute({
   requireAdmin = false,
   requireAdminAccess = false,
 }: ProtectedRouteProps) {
-  const token = getToken();
   const user = getUser();
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 

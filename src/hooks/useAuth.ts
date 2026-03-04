@@ -6,27 +6,31 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { getToken, getUser, clearAuth } from "@/lib/auth";
+import { getUser, clearAuth } from "@/lib/auth";
 import { deriveRole, canAccessAdmin as checkAdminAccess } from "@/lib/permissions";
-import type { User } from "@/types";
+import type { StoredUser } from "@/types";
+import { apiPost } from "@/lib/api-client";
 
 export function useAuth() {
-  const [user] = useState<User | null>(() => getUser());
-  const [token] = useState<string | null>(() => getToken());
+  const [user] = useState<StoredUser | null>(() => getUser());
   const navigate = useNavigate();
 
   const role = useMemo(() => deriveRole(user), [user]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await apiPost("/logout", {});
+    } catch {
+      // Cookie pode já ter expirado; limpa estado local de qualquer forma
+    }
     clearAuth();
     navigate("/login");
   }, [navigate]);
 
   return {
     user,
-    token,
     role,
-    isAuthenticated: !!token,
+    isAuthenticated: !!user,
     isAdmin: !!user?.is_admin,
     isSupport: !!user?.is_support,
     isManager: !!user?.is_manager,

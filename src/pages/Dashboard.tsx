@@ -401,7 +401,7 @@ const Dashboard = () => {
             <span className="text-sm text-muted-foreground hidden sm:block">
               Olá,{" "}
               <span className="text-foreground font-medium">
-                {user?.full_name || "Afiliado"}
+                {profileUser?.full_name || user?.username || "Afiliado"}
               </span>
             </span>
             {canAccessAdmin(role) && (

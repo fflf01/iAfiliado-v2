@@ -101,6 +101,26 @@ test("POST /register cria usuario e retorna token", async () => {
   assert.equal(res.body.user.cpf_cnpj, "12345678909");
 });
 
+test("POST /login retorna Set-Cookie HttpOnly (auth_token)", async () => {
+  await request(app).post("/register").send({
+    name: "Teste Usuario",
+    login: "cookie_user",
+    email: "cookie@example.com",
+    cpfCnpj: "12345678909",
+    password: "Senha1234",
+  });
+  const res = await request(app).post("/login").send({
+    login: "cookie_user",
+    password: "Senha1234",
+  });
+  assert.equal(res.status, 200);
+  const setCookie = res.headers["set-cookie"];
+  assert.ok(Array.isArray(setCookie) && setCookie.length > 0);
+  assert.ok(setCookie[0].includes("auth_token="));
+  assert.ok(setCookie[0].toLowerCase().includes("httponly"));
+  assert.ok(setCookie[0].toLowerCase().includes("samesite=strict"));
+});
+
 test("POST /login falha com senha invalida", async () => {
   await request(app).post("/register").send({
     name: "Teste Usuario",
@@ -117,6 +137,14 @@ test("POST /login falha com senha invalida", async () => {
 
   assert.equal(res.status, 401);
   assert.equal(res.body.code, "UNAUTHORIZED");
+});
+
+test("POST /logout limpa cookie e retorna 204", async () => {
+  const res = await request(app).post("/logout");
+  assert.equal(res.status, 204);
+  const setCookie = res.headers["set-cookie"];
+  assert.ok(Array.isArray(setCookie) && setCookie.length > 0);
+  assert.ok(setCookie[0].includes("auth_token=;") || setCookie[0].toLowerCase().includes("max-age=0"));
 });
 
 test("POST /support exige subject ou title", async () => {

@@ -19,6 +19,7 @@ import {
   register,
   getClients,
   login,
+  logout,
   getProfile,
 } from "./controllers/authController.js";
 import {
@@ -195,6 +196,7 @@ const loginRules = [
   body("email").optional().trim().isEmail().withMessage("Email invalido.").normalizeEmail(),
   body("login").optional().trim().escape(),
   body("password").notEmpty().withMessage("Senha e obrigatoria."),
+  body("captchaToken").optional().trim(),
 ];
 
 const supportRules = [
@@ -327,6 +329,7 @@ const blockUserRules = [
 router.get("/casinos", asyncHandler(listPublicCasinos));
 router.post("/register", authLimiter, registerRules, handleValidationErrors, asyncHandler(register));
 router.post("/login", authLimiter, loginRules, handleValidationErrors, asyncHandler(login));
+router.post("/logout", asyncHandler(logout));
 
 // --- Rotas de suporte ---
 router.post(

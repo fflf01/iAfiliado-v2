@@ -1,38 +1,36 @@
 import jwt from "jsonwebtoken";
 import { ForbiddenError, UnauthorizedError } from "../errors/AppError.js";
 import { authRepository } from "../repositories/authRepository.js";
+import { AUTH } from "../config/constants.js";
 
 /**
- * Middleware que exige header Authorization: Bearer <token>. Verifica o JWT com JWT_SECRET
- * e popula req.user (e req.userId). Responde 401 se token ausente ou inválido.
+ * Obtém o token JWT do request: primeiro do cookie HttpOnly (auth_token),
+ * depois do header Authorization: Bearer (para clientes não-browser / testes).
+ */
+function getTokenFromRequest(req) {
+  const fromCookie = req.cookies?.[AUTH.COOKIE_NAME];
+  if (fromCookie) return fromCookie;
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return null;
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || !/^Bearer$/i.test(parts[0])) return null;
+  return parts[1];
+}
+
+/**
+ * Middleware que exige token JWT (cookie HttpOnly ou Authorization: Bearer).
+ * Verifica o JWT com JWT_SECRET e popula req.user (e req.userId). Responde 401 se token ausente ou inválido.
  * @param {import("express").Request} req
  * @param {import("express").Response} res
  * @param {import("express").NextFunction} next
  */
 export function authMiddleware(req, res, next) {
   const reqLogger = req.log;
-  const authHeader = req.headers.authorization;
+  const token = getTokenFromRequest(req);
 
-  if (!authHeader) {
+  if (!token) {
     reqLogger?.warn("Autenticacao falhou: token ausente");
     return next(new UnauthorizedError("Token nao fornecido."));
-  }
-
-  // Espera formato "Bearer <token>"
-  const parts = authHeader.split(" ");
-
-  if (parts.length !== 2) {
-    reqLogger?.warn("Autenticacao falhou: formato de token invalido", {
-      authorizationHeaderLength: authHeader.length,
-    });
-    return next(new UnauthorizedError("Erro no formato do token."));
-  }
-
-  const [scheme, token] = parts;
-
-  if (!/^Bearer$/i.test(scheme)) {
-    reqLogger?.warn("Autenticacao falhou: esquema invalido", { scheme });
-    return next(new UnauthorizedError("Token malformatado."));
   }
 
   try {

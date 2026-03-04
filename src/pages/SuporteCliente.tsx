@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiGet, apiPostForm, API_BASE_URL } from "@/lib/api-client";
-import { getUser } from "@/lib/auth";
 import { getStatusColor, getStatusLabel, type ChatMessage } from "@/lib/support-utils";
+import type { User } from "@/types";
 import { formatTime } from "@/lib/format";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { useSmartPolling } from "@/hooks/useSmartPolling";
@@ -47,6 +47,14 @@ const SuporteCliente = () => {
 
   const [tickets, setTickets] = useState<TicketView[]>([]);
   const [messages, setMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [profile, setProfile] = useState<User | null>(null);
+
+  // Perfil completo via API (dados sensíveis não vêm do localStorage)
+  useEffect(() => {
+    apiGet<{ message: string; user: User }>("/profile")
+      .then((data) => setProfile(data?.user ?? null))
+      .catch(() => setProfile(null));
+  }, []);
 
   // Busca tickets do backend ao carregar
   useEffect(() => {
@@ -173,12 +181,14 @@ const SuporteCliente = () => {
       return;
     }
 
-    const user = getUser() || { full_name: "Cliente", email: "", phone: "" };
+    const name = profile?.full_name ?? "Cliente";
+    const email = profile?.email ?? "";
+    const phone = profile?.phone ?? "";
 
     const formData = new FormData();
-    formData.append("name", user.full_name);
-    formData.append("email", user.email);
-    formData.append("phone", user.phone || "");
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("phone", phone);
     formData.append("subject", newTicketSubject);
     formData.append("message", newTicketMessage);
     formData.append("priority", "high");

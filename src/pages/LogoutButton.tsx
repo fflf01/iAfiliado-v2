@@ -3,20 +3,23 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { clearAuth } from "@/lib/auth";
+import { apiPost } from "@/lib/api-client";
 
 const LogoutButton = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    // Limpa apenas credenciais (token e user); evita apagar outros dados do app
+  const handleLogout = async () => {
+    try {
+      await apiPost("/logout", {});
+    } catch {
+      // Cookie pode já ter expirado
+    }
     clearAuth();
-
     toast({
       title: "Logout realizado",
       description: "Você saiu da sua conta com sucesso.",
     });
-
     navigate("/login");
   };
 

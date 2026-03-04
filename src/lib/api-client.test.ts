@@ -1,31 +1,20 @@
 /**
- * Testes do API client: base URL, headers de auth e tratamento de erros.
+ * Testes do API client: base URL, credentials (cookie HttpOnly) e tratamento de erros.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { apiGet, apiPost, apiPut, apiDelete, ApiError } from "./api-client";
-import * as auth from "@/lib/auth";
-
-vi.mock("@/lib/auth", () => ({
-  getToken: vi.fn(),
-}));
 
 describe("api-client", () => {
-  const getTokenMock = vi.mocked(auth.getToken);
-
   beforeEach(() => {
     vi.clearAllMocks();
-    getTokenMock.mockReturnValue(null);
   });
 
   describe("apiGet", () => {
-    it("envia Authorization Bearer quando há token", async () => {
-      getTokenMock.mockReturnValue("meu-jwt");
-      let capturedUrl = "";
+    it("envia credentials: include para enviar cookie HttpOnly", async () => {
       let capturedInit: RequestInit = {};
       vi.stubGlobal(
         "fetch",
-        vi.fn((url: string, init?: RequestInit) => {
-          capturedUrl = url;
+        vi.fn((_url: string, init?: RequestInit) => {
           capturedInit = init ?? {};
           return Promise.resolve(
             new Response(JSON.stringify({ ok: true }), {
@@ -35,31 +24,8 @@ describe("api-client", () => {
           );
         })
       );
-
       await apiGet("/me/stats");
-      expect(capturedInit.headers).toEqual(
-        expect.objectContaining({ Authorization: "Bearer meu-jwt" })
-      );
-      expect(capturedUrl).toMatch(/\/api\/me\/stats/);
-      vi.unstubAllGlobals();
-    });
-
-    it("não envia Authorization quando getToken retorna null", async () => {
-      let capturedInit: RequestInit = {};
-      vi.stubGlobal(
-        "fetch",
-        vi.fn((_url: string, init?: RequestInit) => {
-          capturedInit = init ?? {};
-          return Promise.resolve(
-            new Response(JSON.stringify({}), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            })
-          );
-        })
-      );
-      await apiGet("/casinos");
-      expect((capturedInit.headers as Record<string, string>)?.Authorization).toBeUndefined();
+      expect(capturedInit.credentials).toBe("include");
       vi.unstubAllGlobals();
     });
 

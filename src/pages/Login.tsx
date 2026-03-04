@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiPost } from "@/lib/api-client";
+import { apiPost, ApiError } from "@/lib/api-client";
 import { setAuth, clearAuth } from "@/lib/auth";
+import { Recaptcha } from "@/components/Recaptcha";
 import type { AuthResponse } from "@/types";
+
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ login: "", password: "" });
+  const [captchaRequired, setCaptchaRequired] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   useEffect(() => {
     clearAuth();
@@ -27,16 +31,24 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setCaptchaRequired(false);
 
     try {
-      const data = await apiPost<AuthResponse>("/login", {
+      const payload: { login: string; password: string; captchaToken?: string } = {
         login: formData.login,
         password: formData.password,
-      });
+      };
+      if (captchaToken) payload.captchaToken = captchaToken;
+
+      const data = await apiPost<AuthResponse>("/login", payload);
 
       setAuth(data.token, data.user);
       navigate("/dashboard");
     } catch (err) {
+      if (err instanceof ApiError && err.code === "CAPTCHA_REQUIRED") {
+        setCaptchaRequired(true);
+        setCaptchaToken("");
+      }
       toast({
         variant: "destructive",
         title: "Erro",
@@ -46,6 +58,10 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  const handleCaptchaVerify = useCallback((token: string) => {
+    setCaptchaToken(token);
+  }, []);
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -116,6 +132,13 @@ const Login = () => {
               </button>
             </div>
           </div>
+
+          {captchaRequired && (
+            <div className="space-y-2">
+              <Label className="text-foreground">Verificação de segurança</Label>
+              <Recaptcha onVerify={handleCaptchaVerify} />
+            </div>
+          )}
 
           <Button
             type="submit"

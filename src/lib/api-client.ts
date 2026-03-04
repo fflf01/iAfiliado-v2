@@ -4,19 +4,20 @@
  * Auto-attach de Authorization header, validacao de content-type e error handling.
  */
 
-import { getToken } from "@/lib/auth";
 
 // Em dev sem .env: usa /api e o proxy do Vite encaminha para o backend (porta 3000).
 // Em prod: defina VITE_API_BASE_URL (ex: /api ou https://sua-api.com).
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "/api";
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -60,75 +61,72 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const err = data && typeof data === "object" && "error" in data && typeof (data as { error: unknown }).error === "string"
       ? (data as { error: string }).error
       : "Erro inesperado do servidor.";
-    throw new ApiError(err, response.status);
+    const code = data && typeof data === "object" && "code" in data && typeof (data as { code: unknown }).code === "string"
+      ? (data as { code: string }).code
+      : undefined;
+    throw new ApiError(err, response.status, code);
   }
 
   return data as T;
 }
 
-function authHeaders(): Record<string, string> {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+/** Cookie HttpOnly e enviado automaticamente com credentials: 'include'. Nao envia Bearer. */
+const FETCH_CREDENTIALS: RequestCredentials = "include";
 
-/** GET com autenticacao automatica. */
+/** GET com autenticacao via cookie HttpOnly. */
 export async function apiGet<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: { ...authHeaders() },
+    credentials: FETCH_CREDENTIALS,
   });
   return handleResponse<T>(response);
 }
 
-/** POST com body JSON e autenticacao automatica. */
+/** POST com body JSON e autenticacao via cookie. */
 export async function apiPost<T>(
   endpoint: string,
   body: unknown
 ): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-    },
+    credentials: FETCH_CREDENTIALS,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   return handleResponse<T>(response);
 }
 
-/** POST com FormData (uploads) e autenticacao automatica. */
+/** POST com FormData (uploads) e autenticacao via cookie. */
 export async function apiPostForm<T>(
   endpoint: string,
   formData: FormData
 ): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "POST",
-    headers: { ...authHeaders() },
+    credentials: FETCH_CREDENTIALS,
     body: formData,
   });
   return handleResponse<T>(response);
 }
 
-/** PUT com body JSON e autenticacao automatica. */
+/** PUT com body JSON e autenticacao via cookie. */
 export async function apiPut<T>(
   endpoint: string,
   body: unknown
 ): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-    },
+    credentials: FETCH_CREDENTIALS,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   return handleResponse<T>(response);
 }
 
-/** DELETE com autenticacao automatica. */
+/** DELETE com autenticacao via cookie. */
 export async function apiDelete<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: "DELETE",
-    headers: { ...authHeaders() },
+    credentials: FETCH_CREDENTIALS,
   });
   return handleResponse<T>(response);
 }

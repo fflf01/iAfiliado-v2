@@ -77,6 +77,8 @@ try {
   ensureColumn("users", "blocked_at", "TEXT");
   ensureColumn("users", "is_support", "INTEGER NOT NULL DEFAULT 0");
   ensureColumn("users", "is_manager", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("users", "failed_login_attempts", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("users", "locked_until", "TEXT");
   // Tabela para contas que cada manager pode visualizar/administrar
   if (!db.pragma("table_info(manager_managed_accounts)").length) {
     db.exec(

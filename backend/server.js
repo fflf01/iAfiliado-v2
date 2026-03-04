@@ -8,6 +8,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
@@ -63,6 +64,12 @@ app.use(
     crossOriginEmbedderPolicy: false,
   }),
 );
+
+// X-XSS-Protection (legado; CSP e a principal mitigacao moderna)
+app.use((_req, res, next) => {
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  next();
+});
 
 // --- Rate Limiting global ---
 app.use(
@@ -133,6 +140,9 @@ app.use(
     credentials: true,
   }),
 );
+
+// --- Cookie parser (para auth_token HttpOnly) ---
+app.use(cookieParser());
 
 // --- Body parser com limite ---
 app.use(express.json({ limit: "1mb" }));

@@ -2,6 +2,16 @@
 
 import type { UserRole } from "@/lib/permissions";
 
+/** Dados minimos armazenados no cliente (apenas nao sensiveis). Perfil completo via API. */
+export interface StoredUser {
+  id: number;
+  username: string;
+  is_admin: boolean;
+  is_support?: boolean;
+  is_manager?: boolean;
+  role?: UserRole;
+}
+
 export interface User {
   id: number;
   full_name: string;
