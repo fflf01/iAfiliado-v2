@@ -130,5 +130,3 @@ export async function apiDelete<T>(endpoint: string): Promise<T> {
   });
   return handleResponse<T>(response);
 }
-
-export { ApiError };
