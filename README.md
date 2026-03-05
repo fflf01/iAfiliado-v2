@@ -72,6 +72,17 @@ Frontend (opcional):
 | --- | --- |
 | `VITE_API_BASE_URL` | URL base da API. Em **dev** deixe sem definir para usar o proxy do Vite (`/api` -> backend na porta 3000). Em **producao** defina (ex: `/api` ou `https://sua-api.com`). |
 
+#### Ativar CAPTCHA (reCAPTCHA v2)
+
+1. Acesse [Google reCAPTCHA Admin](https://www.google.com/recaptcha/admin) e registre um site (tipo **"Não sou um robô"**).
+2. **Backend** — em `backend/.env` defina:
+   - `RECAPTCHA_SECRET_KEY=` com a **Chave secreta** do reCAPTCHA.
+3. **Frontend** — na raiz do projeto crie ou edite `.env` e defina:
+   - `VITE_RECAPTCHA_SITE_KEY=` com a **Chave do site** do reCAPTCHA.
+4. Reinicie o backend e o frontend.
+
+Com isso: no **login**, o CAPTCHA é exigido após 3 falhas por IP; no **registro**, o usuário precisa resolver o CAPTCHA para se cadastrar. Sem as chaves, o CAPTCHA fica desativado (dev/test).
+
 ### 3. Banco de dados
 
 O backend usa **SQLite**. O schema e aplicado automaticamente na primeira execucao (`backend/schema.sql`). Em teste (`NODE_ENV=test`) e usado um arquivo temporario.

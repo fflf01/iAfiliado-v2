@@ -190,6 +190,7 @@ const registerRules = [
   body("Tipo_Cliente").optional().trim().escape(),
   body("Tele_An").optional().trim().escape(),
   body("Rede_An").optional().trim().escape(),
+  body("captchaToken").optional().trim(),
 ];
 
 const loginRules = [

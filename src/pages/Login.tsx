@@ -62,6 +62,12 @@ const Login = () => {
   const handleCaptchaVerify = useCallback((token: string) => {
     setCaptchaToken(token);
   }, []);
+  const handleCaptchaExpire = useCallback(() => {
+    setCaptchaToken("");
+  }, []);
+
+  const canSubmit = !isLoading && (!captchaRequired || !!captchaToken);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -136,7 +142,10 @@ const Login = () => {
           {captchaRequired && (
             <div className="space-y-2">
               <Label className="text-foreground">Verificação de segurança</Label>
-              <Recaptcha onVerify={handleCaptchaVerify} />
+              <Recaptcha
+                onVerify={handleCaptchaVerify}
+                onExpire={handleCaptchaExpire}
+              />
             </div>
           )}
 
@@ -144,7 +153,7 @@ const Login = () => {
             type="submit"
             size="lg"
             className="w-full h-12 mt-2 btn-principal"
-            disabled={isLoading}
+            disabled={!canSubmit}
           >
             {isLoading ? (
               <div className="flex items-center gap-2">

@@ -20,6 +20,7 @@ import { setAuth, clearAuth } from "@/lib/auth";
 import { formatPhoneNumber } from "@/lib/format";
 import type { AuthResponse } from "@/types";
 import IAfiliadoSection from "@/components/IAfiliadoSection";
+import { Recaptcha } from "@/components/Recaptcha";
 
 const Register = () => {
   const { toast } = useToast();
@@ -27,6 +28,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showIAfiliadoOptions, setShowIAfiliadoOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
   const [formData, setFormData] = useState({
     nome: "",
     login: "",
@@ -126,7 +128,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const responseData = await apiPost<AuthResponse>("/register", {
+      const payload: Record<string, string> = {
         name: formData.nome,
         login: formData.login,
         email: formData.email,
@@ -138,7 +140,9 @@ const Register = () => {
           formData.iAfiliadoType !== "influencer" ? formData.analysisContact : "",
         Rede_An:
           formData.iAfiliadoType === "influencer" ? formData.analysisContact : "",
-      });
+      };
+      if (captchaToken) payload.captchaToken = captchaToken;
+      const responseData = await apiPost<AuthResponse>("/register", payload);
 
       setAuth(responseData.token, responseData.user);
 
@@ -326,12 +330,21 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* CAPTCHA — verificação de segurança */}
+          <div className="space-y-2">
+            <Label className="text-foreground">Verificação de segurança</Label>
+            <Recaptcha
+              onVerify={(token) => setCaptchaToken(token)}
+              onExpire={() => setCaptchaToken("")}
+            />
+          </div>
+
+          {/* Submit Button — quando CAPTCHA está ativo (SITE_KEY definida), exige token */}
           <Button
             type="submit"
             size="lg"
             className="w-full h-12 mt-2 btn-principal"
-            disabled={isLoading}
+            disabled={isLoading || (!!import.meta.env.VITE_RECAPTCHA_SITE_KEY && !captchaToken)}
           >
             {isLoading ? (
               <div className="flex items-center gap-2">

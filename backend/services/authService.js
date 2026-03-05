@@ -4,7 +4,7 @@ import { generateToken } from "../utils/jwt.js";
 import { authRepository } from "../repositories/authRepository.js";
 import { resolvePagination } from "../utils/pagination.js";
 import { loginAttemptsStore } from "../utils/loginAttemptsStore.js";
-import { verifyRecaptcha } from "../utils/captcha.js";
+import { verifyRecaptcha, isCaptchaEnabled } from "../utils/captcha.js";
 import { notifySuspiciousLoginAttempts } from "../utils/emailService.js";
 import {
   UnauthorizedError,
@@ -81,6 +81,25 @@ export const authService = {
   },
 
   async register(payload) {
+    if (isCaptchaEnabled()) {
+      const token =
+        payload.captchaToken && typeof payload.captchaToken === "string"
+          ? payload.captchaToken.trim()
+          : "";
+      if (!token) {
+        throw new ValidationError("Complete o CAPTCHA para continuar.");
+      }
+      const captchaOk = await verifyRecaptcha(token);
+      if (!captchaOk) {
+        throw new ValidationError("CAPTCHA invalido. Tente novamente.");
+      }
+    } else if (payload.captchaToken && typeof payload.captchaToken === "string" && payload.captchaToken.trim()) {
+      const captchaOk = await verifyRecaptcha(payload.captchaToken.trim());
+      if (!captchaOk) {
+        throw new ValidationError("CAPTCHA invalido. Tente novamente.");
+      }
+    }
+
     if (!/[a-zA-Z]/.test(payload.password) || !/[0-9]/.test(payload.password)) {
       throw new ValidationError(
         "A senha deve conter pelo menos uma letra e um numero.",

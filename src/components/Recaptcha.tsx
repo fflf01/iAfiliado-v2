@@ -6,7 +6,14 @@ const RECAPTCHA_SCRIPT = "https://www.google.com/recaptcha/api.js";
 declare global {
   interface Window {
     grecaptcha?: {
-      render: (container: HTMLElement, options: { sitekey: string; callback?: (token: string) => void }) => number;
+      render: (
+        container: HTMLElement,
+        options: {
+          sitekey: string;
+          callback?: (token: string) => void;
+          "expired-callback"?: () => void;
+        }
+      ) => number;
       getResponse: (widgetId?: number) => string;
       reset: (widgetId?: number) => void;
       ready: (cb: () => void) => void;
@@ -53,6 +60,7 @@ export function Recaptcha({ onVerify, onExpire, theme = "light" }: RecaptchaProp
       widgetIdRef.current = window.grecaptcha!.render(containerRef.current, {
         sitekey: SITE_KEY,
         callback: (token) => onVerify(token),
+        "expired-callback": () => onExpire?.(),
       });
     } catch {
       widgetIdRef.current = null;
@@ -60,7 +68,7 @@ export function Recaptcha({ onVerify, onExpire, theme = "light" }: RecaptchaProp
     return () => {
       widgetIdRef.current = null;
     };
-  }, [ready, onVerify]);
+  }, [ready, onVerify, onExpire]);
 
   if (!SITE_KEY) {
     return (
