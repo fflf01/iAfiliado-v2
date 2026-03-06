@@ -4,18 +4,16 @@ import { generateToken } from "../utils/jwt.js";
 import { authRepository } from "../repositories/authRepository.js";
 import { resolvePagination } from "../utils/pagination.js";
 import { loginAttemptsStore } from "../utils/loginAttemptsStore.js";
-import { verifyRecaptcha, isCaptchaEnabled } from "../utils/captcha.js";
 import { notifySuspiciousLoginAttempts } from "../utils/emailService.js";
 import {
   UnauthorizedError,
   ValidationError,
   NotFoundError,
   ForbiddenError,
-  CaptchaRequiredError,
 } from "../errors/AppError.js";
 
 export const authService = {
-  async login({ email, login, password, captchaToken }, { ip = null } = {}) {
+  async login({ email, login, password }, { ip = null } = {}) {
     const identifier = email || login;
 
     if (!identifier || !password) {
@@ -36,18 +34,6 @@ export const authService = {
         throw new ForbiddenError(
           `Conta temporariamente bloqueada. Tente novamente em ${minutesLeft} minuto(s).`,
         );
-      }
-    }
-
-    const isTest = process.env.NODE_ENV === "test";
-    const ipAttempts = loginAttemptsStore.get(ip);
-    if (!isTest && ipAttempts >= AUTH.CAPTCHA_AFTER_ATTEMPTS) {
-      if (!captchaToken || typeof captchaToken !== "string" || !captchaToken.trim()) {
-        throw new CaptchaRequiredError("Complete o CAPTCHA para continuar.");
-      }
-      const captchaOk = await verifyRecaptcha(captchaToken.trim(), ip);
-      if (!captchaOk) {
-        throw new ValidationError("CAPTCHA invalido. Tente novamente.");
       }
     }
 
@@ -81,25 +67,6 @@ export const authService = {
   },
 
   async register(payload) {
-    if (isCaptchaEnabled()) {
-      const token =
-        payload.captchaToken && typeof payload.captchaToken === "string"
-          ? payload.captchaToken.trim()
-          : "";
-      if (!token) {
-        throw new ValidationError("Complete o CAPTCHA para continuar.");
-      }
-      const captchaOk = await verifyRecaptcha(token);
-      if (!captchaOk) {
-        throw new ValidationError("CAPTCHA invalido. Tente novamente.");
-      }
-    } else if (payload.captchaToken && typeof payload.captchaToken === "string" && payload.captchaToken.trim()) {
-      const captchaOk = await verifyRecaptcha(payload.captchaToken.trim());
-      if (!captchaOk) {
-        throw new ValidationError("CAPTCHA invalido. Tente novamente.");
-      }
-    }
-
     if (!/[a-zA-Z]/.test(payload.password) || !/[0-9]/.test(payload.password)) {
       throw new ValidationError(
         "A senha deve conter pelo menos uma letra e um numero.",

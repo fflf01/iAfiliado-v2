@@ -20,7 +20,6 @@ import { setAuth, clearAuth } from "@/lib/auth";
 import { formatPhoneNumber } from "@/lib/format";
 import type { AuthResponse } from "@/types";
 import IAfiliadoSection from "@/components/IAfiliadoSection";
-import { Recaptcha } from "@/components/Recaptcha";
 
 const Register = () => {
   const { toast } = useToast();
@@ -28,7 +27,6 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showIAfiliadoOptions, setShowIAfiliadoOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
   const [formData, setFormData] = useState({
     nome: "",
     login: "",
@@ -141,7 +139,6 @@ const Register = () => {
         Rede_An:
           formData.iAfiliadoType === "influencer" ? formData.analysisContact : "",
       };
-      if (captchaToken) payload.captchaToken = captchaToken;
       const responseData = await apiPost<AuthResponse>("/register", payload);
 
       setAuth(responseData.token, responseData.user);
@@ -330,21 +327,12 @@ const Register = () => {
             </div>
           </div>
 
-          {/* CAPTCHA — verificação de segurança */}
-          <div className="space-y-2">
-            <Label className="text-foreground">Verificação de segurança</Label>
-            <Recaptcha
-              onVerify={(token) => setCaptchaToken(token)}
-              onExpire={() => setCaptchaToken("")}
-            />
-          </div>
-
-          {/* Submit Button — quando CAPTCHA está ativo (SITE_KEY definida), exige token */}
+          {/* Submit Button */}
           <Button
             type="submit"
             size="lg"
             className="w-full h-12 mt-2 btn-principal"
-            disabled={isLoading || (!!import.meta.env.VITE_RECAPTCHA_SITE_KEY && !captchaToken)}
+            disabled={isLoading}
           >
             {isLoading ? (
               <div className="flex items-center gap-2">

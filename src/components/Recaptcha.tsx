@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined;
+const SITE_KEY = (import.meta.env.VITE_RECAPTCHA_SITE_KEY as string | undefined)?.trim() || undefined;
 const RECAPTCHA_SCRIPT = "https://www.google.com/recaptcha/api.js";
 
 declare global {
@@ -70,10 +70,15 @@ export function Recaptcha({ onVerify, onExpire, theme = "light" }: RecaptchaProp
     };
   }, [ready, onVerify, onExpire]);
 
-  if (!SITE_KEY) {
+  if (!SITE_KEY || !String(SITE_KEY).trim()) {
     return (
       <p className="text-sm text-muted-foreground">
         Por segurança, aguarde alguns minutos antes de tentar novamente.
+        {import.meta.env.DEV && (
+          <span className="block mt-2 text-xs">
+            (Configure <code className="bg-muted px-1 rounded">VITE_RECAPTCHA_SITE_KEY</code> no arquivo <code className="bg-muted px-1 rounded">.env</code> na <strong>raiz do projeto</strong>, não em backend/.env. Reinicie o servidor após alterar.)
+          </span>
+        )}
       </p>
     );
   }

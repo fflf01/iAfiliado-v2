@@ -25,6 +25,33 @@ import Admin from "./pages/Admin/Admin";
 
 const queryClient = new QueryClient();
 
+const publicRoutes = [
+  { path: "/", element: <Index /> },
+  { path: "/cadastro", element: <Register /> },
+  { path: "/login", element: <Login /> },
+  { path: "/esqueci-senha", element: <ForgotPassword /> },
+  { path: "/como-funciona", element: <ComoFunciona /> },
+  { path: "/plataformas", element: <Plataformas /> },
+  { path: "/suporte", element: <Suporte /> },
+  { path: "/comissoes", element: <Comissoes /> },
+];
+
+const protectedRoutes = [
+  { path: "/dashboard", element: <Dashboard /> },
+  { path: "/dashboard/links", element: <Dashboard /> },
+  { path: "/dashboard/carteira", element: <Dashboard /> },
+  { path: "/dashboard/plataformas", element: <Dashboard /> },
+  { path: "/dashboard/entradas", element: <Dashboard /> },
+  { path: "/dashboard/contas-manager", element: <Dashboard /> },
+  { path: "/entradas", element: <Dashboard /> },
+  { path: "/suporte-cliente", element: <SuporteCliente /> },
+];
+
+const adminRoutes = [
+  { path: "/admin", element: <Admin /> },
+  { path: "/suporteadmin", element: <SuporteAdmin /> },
+];
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -34,28 +61,35 @@ const App = () => (
         <ScrollToTop />
         <Routes>
           {/* Rotas públicas */}
-          <Route path="/" element={<Index />} />
-          <Route path="/cadastro" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/esqueci-senha" element={<ForgotPassword />} />
-          <Route path="/como-funciona" element={<ComoFunciona />} />
-          <Route path="/plataformas" element={<Plataformas />} />
-          <Route path="/suporte" element={<Suporte />} />
-          <Route path="/comissoes" element={<Comissoes />} />
+          {publicRoutes.map((route) => (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={route.element}
+            />
+          ))}
 
           {/* Rotas protegidas (requer autenticação) */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/links" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/carteira" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/plataformas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/entradas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/contas-manager" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/entradas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/suporte-cliente" element={<ProtectedRoute><SuporteCliente /></ProtectedRoute>} />
+          {protectedRoutes.map((route) => (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+            />
+          ))}
 
           {/* Rotas de admin (requer autenticação + acesso admin: admin_ceo ou support) */}
-          <Route path="/admin" element={<ProtectedRoute requireAdminAccess><Admin /></ProtectedRoute>} />
-          <Route path="/suporteadmin" element={<ProtectedRoute requireAdminAccess><SuporteAdmin /></ProtectedRoute>} />
+          {adminRoutes.map((route) => (
+            <Route
+              key={route.path}
+              path={route.path}
+              element={
+                <ProtectedRoute requireAdminAccess>
+                  {route.element}
+                </ProtectedRoute>
+              }
+            />
+          ))}
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
