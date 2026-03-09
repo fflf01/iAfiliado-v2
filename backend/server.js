@@ -52,7 +52,8 @@ app.use(
           directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
+            // CSP mais restritiva: evita estilos inline em producao
+            styleSrc: ["'self'"],
             imgSrc: ["'self'", "data:", "blob:"],
             connectSrc: ["'self'"],
             fontSrc: ["'self'"],
@@ -140,6 +141,65 @@ app.use(
     credentials: true,
   }),
 );
+
+// --- Protecao adicional contra CSRF baseada em Origin/Referer ---
+app.use((req, res, next) => {
+  const method = req.method.toUpperCase();
+  // Metodos considerados "seguros" nao precisam de validacao CSRF extra
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return next();
+  }
+
+  const origin = req.headers.origin;
+  const referer = req.headers.referer;
+
+  // Se tivermos Origin, seguimos a mesma politica de CORS: apenas origens confiaveis.
+  if (origin) {
+    if (corsOrigins.length === 0 || corsOrigins.includes(origin)) {
+      return next();
+    }
+
+    return next(
+      new AppError("Requisicao bloqueada por politica de CSRF (origin nao confiavel).", 403, "CSRF_FORBIDDEN", {
+        origin,
+      }),
+    );
+  }
+
+  // Sem Origin: verificamos Referer (caso de navegadores antigos ou alguns formularios).
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      const refererOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+
+      if (corsOrigins.length === 0 || corsOrigins.includes(refererOrigin)) {
+        return next();
+      }
+
+      return next(
+        new AppError("Requisicao bloqueada por politica de CSRF (referer nao confiavel).", 403, "CSRF_FORBIDDEN", {
+          referer,
+        }),
+      );
+    } catch {
+      return next(
+        new AppError("Requisicao bloqueada por politica de CSRF (referer invalido).", 403, "CSRF_FORBIDDEN", {
+          referer,
+        }),
+      );
+    }
+  }
+
+  // Sem Origin nem Referer: em ambientes de producao, consideramos suspeito e bloqueamos.
+  if (isProduction) {
+    return next(
+      new AppError("Requisicao bloqueada por politica de CSRF (sem Origin/Referer).", 403, "CSRF_FORBIDDEN"),
+    );
+  }
+
+  // Em desenvolvimento/teste, permitimos para nao atrapalhar ferramentas locais.
+  return next();
+});
 
 // --- Cookie parser (para auth_token HttpOnly) ---
 app.use(cookieParser());
