@@ -138,7 +138,7 @@ const SuporteCliente = () => {
   const { notifyActivity: notifyRepliesActivity } = useSmartPolling({
     callback: fetchReplies,
     enabled: Boolean(selectedTicket),
-    baseIntervalMs: 5000,
+    baseIntervalMs: 15000,
     maxIntervalMs: 60000,
   });
 

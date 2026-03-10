@@ -60,7 +60,7 @@ export const TICKET = {
 };
 
 export const RATE_LIMIT = {
-  GLOBAL: { WINDOW_MS: 15 * 60 * 1000, MAX: 100 },
+  GLOBAL: { WINDOW_MS: 15 * 60 * 1000, MAX: 400 },
   AUTH: { WINDOW_MS: 15 * 60 * 1000, MAX: 5 },
   SUPPORT: { WINDOW_MS: 15 * 60 * 1000, MAX: 20 },
 };

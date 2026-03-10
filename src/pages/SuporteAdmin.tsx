@@ -96,7 +96,7 @@ const SuporteAdmin = () => {
   const { notifyActivity: notifyTicketsActivity } = useSmartPolling({
     callback: fetchTickets,
     enabled: true,
-    baseIntervalMs: 5000,
+    baseIntervalMs: 15000,
     maxIntervalMs: 60000,
   });
 
@@ -141,7 +141,7 @@ const SuporteAdmin = () => {
   const { notifyActivity: notifyRepliesActivity } = useSmartPolling({
     callback: fetchReplies,
     enabled: Boolean(selectedTicket),
-    baseIntervalMs: 5000,
+    baseIntervalMs: 15000,
     maxIntervalMs: 60000,
   });
 
