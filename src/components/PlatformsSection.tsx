@@ -1,13 +1,18 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
-import brasilbetLogo from "@/assets/brasilbet.png";
-import estrelabetLogo from "@/assets/estrelabet.png";
-import geralbetLogo from "@/assets/geralbet.png";
-import goldbetLogo from "@/assets/goldbet.png";
-import luvabetLogo from "@/assets/luvabet.png";
-import mgmbetLogo from "@/assets/MGMbet.png";
-import betsulLogo from "@/assets/betsul.png";
-import multibetLogo from "@/assets/multibet2.png";
+import enegiaLogo from "@/assets/logos/Enegia.png";
+import bravoLogo from "@/assets/logos/Bravo.png";
+import mcGamesLogo from "@/assets/logos/MCGames.png";
+import playBetLogo from "@/assets/logos/PlayBet.png";
+import galeraBetLogo from "@/assets/logos/Galerabet.png";
+import braBetLogo from "@/assets/logos/BraBet.png";
+import betDaSorteLogo from "@/assets/logos/BetdaSorte.png";
+import estrelaBetLogo from "@/assets/logos/estrelabet.png";
+import betsulLogo from "@/assets/logos/betsul.png";
+import goldbetLogo from "@/assets/logos/goldbet.png";
+import multibetLogo from "@/assets/logos/multibet2.png";
+import geralbetLogo from "@/assets/logos/geralbet.png";
+import seubetLogo from "@/assets/logos/seubet.png";
 
 // Import Swiper styles
 import "swiper/css";
@@ -15,14 +20,19 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 
 const partnerLogos = [
-  { name: "BrasilBet", src: brasilbetLogo },
-  { name: "EstrelaBet", src: estrelabetLogo },
-  { name: "GeralBet", src: geralbetLogo },
+  { name: "Energia Bet", src: enegiaLogo },
+  { name: "Bravo Bet", src: bravoLogo },
+  { name: "MC Games", src: mcGamesLogo },
+  { name: "Play Bet", src: playBetLogo },
+  { name: "Galera Bet", src: galeraBetLogo },
+  { name: "BraBet", src: braBetLogo },
+  { name: "Bet da Sorte", src: betDaSorteLogo },
+  { name: "EstrelaBet", src: estrelaBetLogo },
+  { name: "BetSul", src: betsulLogo },
   { name: "GoldBet", src: goldbetLogo },
-  { name: "LuvaBet", src: luvabetLogo },
-  { name: "BetMGM", src: mgmbetLogo },
-  { name: "Betsul", src: betsulLogo },
   { name: "Multibet", src: multibetLogo },
+  { name: "GeralBet", src: geralbetLogo },
+  { name: "SeuBet", src: seubetLogo },
 ];
 
 const PlatformsSection = () => {

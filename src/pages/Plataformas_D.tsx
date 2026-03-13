@@ -4,63 +4,63 @@ import { ExternalLink, Shield, Zap, Globe, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import brasilbetLogo from "@/assets/brasilbet.png";
-import betsulLogo from "@/assets/betsul.png";
-import multibetLogo from "@/assets/multibet2.png";
-import mgmbetLogo from "@/assets/MGMbet.png";
-import mgmbetProLogo from "@/assets/MGMbet Pro.png";
-import luvabetLogo from "@/assets/luvabet.png";
-import bigbetLogo from "@/assets/bigbbet.png";
-import seubetLogo from "@/assets/seubet.png";
+import enegiaLogo from "@/assets/Enegia.png";
+import bravoLogo from "@/assets/Bravo.png";
+import mcGamesLogo from "@/assets/MCGames.png";
+import playBetLogo from "@/assets/PlayBet.png";
+import galeraBetLogo from "@/assets/Galerabet.png";
+import braBetLogo from "@/assets/BraBet.png";
+import betDaSorteLogo from "@/assets/BetdaSorte.png";
+import estrelaBetLogo from "@/assets/estrelabet.png";
 
 const platformsFallback = [
   {
-    name: "BrasilBet",
-    logo: brasilbetLogo,
+    name: "Energia Bet",
+    logo: enegiaLogo,
     commission: "11% dos depósitos",
     features: ["Pagamento Semanal", "Saque rápido", "Suporte 24h"],
   },
   {
-    name: "BetSul",
-    logo: betsulLogo,
+    name: "Bravo Bet",
+    logo: bravoLogo,
     commission: "10% dos depósitos",
     features: ["Pagamento Semanal"],
   },
   {
-    name: "Multibet",
-    logo: multibetLogo,
+    name: "MC Games",
+    logo: mcGamesLogo,
     commission: "10% dos depósitos",
     features: ["Pagamento Semanal"],
   },
   {
-    name: "BetMGM",
-    logo: mgmbetLogo,
+    name: "Play Bet",
+    logo: playBetLogo,
     commission: "R$100 de CPA",
     features: ["BaseLine R$25", "Pagamento Mensal", "Suporte 24h"],
   },
   {
-    name: "LuvaBet",
-    logo: luvabetLogo,
+    name: "Galera Bet",
+    logo: galeraBetLogo,
     commission: "11% dos depósitos",
     features: ["Pagamento Semanal", "Saque rápido", "Suporte 24h"],
   },
   {
-    name: "BigBet",
-    logo: bigbetLogo,
+    name: "BraBet",
+    logo: braBetLogo,
     commission: "10% dos Depósitos",
     features: ["BaseLine R$25", "Suporte 24h"],
   },
   {
-    name: "BetMGM Pro",
-    logo: mgmbetProLogo,
+    name: "Bet da Sorte",
+    logo: betDaSorteLogo,
     commission: "R$80 de CPA",
     features: ["BaseLine R$25", "Pagamento Semanal", "Suporte 24h"],
   },
   {
-    name: "SeuBet",
-    logo: seubetLogo,
-    commission: "60% de Rev Share",
-    features: ["Pagamento Mensal"],
+    name: "EstrelaBet",
+    logo: estrelaBetLogo,
+    commission: "10% dos depósitos",
+    features: ["Pagamento Semanal"],
   },
 ];
 
@@ -75,14 +75,17 @@ interface PublicCasino {
 }
 
 const casinoLogoMap: Record<string, string> = {
-  brasilbet: brasilbetLogo,
-  betsul: betsulLogo,
-  multibet: multibetLogo,
-  betmgm: mgmbetLogo,
-  betmgmpro: mgmbetLogo,
-  luvabet: luvabetLogo,
-  bigbet: bigbetLogo,
-  seubet: seubetLogo,
+  enegia: enegiaLogo,
+  energiabet: enegiaLogo,
+  energia: enegiaLogo,
+  bravobet: bravoLogo,
+  bravo: bravoLogo,
+  mcgames: mcGamesLogo,
+  playbet: playBetLogo,
+  galerabet: galeraBetLogo,
+  brabet: braBetLogo,
+  betdasorte: betDaSorteLogo,
+  estrelabet: estrelaBetLogo,
 };
 
 function commissionLabel(c: PublicCasino): string {
@@ -92,7 +95,7 @@ function commissionLabel(c: PublicCasino): string {
 }
 
 function logoForCasino(c: PublicCasino): string {
-  const key = (c.id || c.name).toLowerCase();
+  const key = (c.id || c.name).toLowerCase().replace(/[^a-z0-9]/g, "");
   const assetLogo = casinoLogoMap[key];
   if (assetLogo) return assetLogo;
   return `https://placehold.co/200x80/1e293b/ffffff?text=${encodeURIComponent(c.name)}`;
