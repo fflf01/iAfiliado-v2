@@ -116,7 +116,8 @@ const Admin = () => {
     comissaoCPA: "",
     comissaoRevShare: "",
     comissaoDepositoC: "",
-    urlAfiliado: "",
+    linksAfiliado: ["" as string],
+    tipoPagamento: "semanal" as string,
   });
 
   // Entradas e carteiras vindas do banco
@@ -182,19 +183,27 @@ const Admin = () => {
       nome: "",
       comissaoCPA: "",
       comissaoRevShare: "",
-      urlAfiliado: "",
+      comissaoDepositoC: "",
+      linksAfiliado: [""],
+      tipoPagamento: "semanal",
     });
     setCasinoDialog(true);
   };
 
   const openEditCasino = (c: Casino) => {
     setEditingCasino(c);
+    const existingLinks =
+      c.urlAfiliado
+        ?.split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean) || [];
     setCasinoForm({
       nome: c.nome,
       comissaoCPA: String(c.comissaoCPA),
       comissaoRevShare: String(c.comissaoRevShare),
       comissaoDepositoC: String(c.comissaoDepositoC),
-      urlAfiliado: c.urlAfiliado,
+      linksAfiliado: existingLinks.length ? existingLinks : [""],
+      tipoPagamento: c.tipoPagamento || "semanal",
     });
     setCasinoDialog(true);
   };
@@ -209,12 +218,17 @@ const Admin = () => {
       return;
     }
 
+    const links = casinoForm.linksAfiliado
+      .map((l) => l.trim())
+      .filter(Boolean);
+
     const payload = {
       nome: casinoForm.nome,
       comissaoCPA: Number(casinoForm.comissaoCPA) || 0,
       comissaoRevShare: Number(casinoForm.comissaoRevShare) || 0,
       comissaoDepositoC: Number(casinoForm.comissaoDepositoC) || 0,
-      urlAfiliado: casinoForm.urlAfiliado,
+      urlAfiliado: links.join("\n"),
+      tipoPagamento: casinoForm.tipoPagamento || "semanal",
     };
 
     (async () => {
@@ -790,6 +804,27 @@ const Admin = () => {
                 </div>
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  Tipo de pagamento
+                </label>
+                <select
+                  className="w-full rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm text-foreground"
+                  value={casinoForm.tipoPagamento}
+                  onChange={(e) =>
+                    setCasinoForm((f) => ({
+                      ...f,
+                      tipoPagamento: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="semanal">Pagamento Semanal</option>
+                  <option value="quinzenal">Pagamento Quinzenal</option>
+                  <option value="mensal">Pagamento Mensal</option>
+                </select>
+              </div>
+            </div>
           )}
           {selectedSolicitacao?.status === "pendente" && (
             <DialogFooter className="gap-2">
@@ -898,18 +933,62 @@ const Admin = () => {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm text-muted-foreground mb-1">
-                URL do Afiliado
-              </label>
-              <Input
-                placeholder="https://casino.com/aff"
-                value={casinoForm.urlAfiliado}
-                onChange={(e) =>
-                  setCasinoForm((f) => ({ ...f, urlAfiliado: e.target.value }))
-                }
-                className="bg-muted/30 border-border/50"
-              />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="block text-sm text-muted-foreground">
+                  Links de Afiliado
+                </label>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() =>
+                    setCasinoForm((f) => ({
+                      ...f,
+                      linksAfiliado: [...f.linksAfiliado, ""],
+                    }))
+                  }
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {casinoForm.linksAfiliado.map((link, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      placeholder="https://casino.com/aff"
+                      value={link}
+                      onChange={(e) =>
+                        setCasinoForm((f) => {
+                          const next = [...f.linksAfiliado];
+                          next[index] = e.target.value;
+                          return { ...f, linksAfiliado: next };
+                        })
+                      }
+                      className="bg-muted/30 border-border/50"
+                    />
+                    {casinoForm.linksAfiliado.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() =>
+                          setCasinoForm((f) => ({
+                            ...f,
+                            linksAfiliado: f.linksAfiliado.filter(
+                              (_l, i) => i !== index,
+                            ),
+                          }))
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>

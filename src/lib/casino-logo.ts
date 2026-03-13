@@ -7,9 +7,7 @@ import braBetLogo from "@/assets/logos/BraBet.png";
 import betDaSorteLogo from "@/assets/logos/BetdaSorte.png";
 import estrelaBetLogo from "@/assets/logos/estrelabet.png";
 import betsulLogo from "@/assets/logos/betsul.png";
-import goldbetLogo from "@/assets/logos/goldbet.png";
 import multibetLogo from "@/assets/logos/multibet2.png";
-import geralbetLogo from "@/assets/logos/geralbet.png";
 import seubetLogo from "@/assets/logos/seubet.png";
 
 export const casinoLogoMap: Record<string, string> = {
@@ -25,10 +23,8 @@ export const casinoLogoMap: Record<string, string> = {
   betdasorte: betDaSorteLogo,
   estrelabet: estrelaBetLogo,
   betsul: betsulLogo,
-  goldbet: goldbetLogo,
   multibet: multibetLogo,
   multibet2: multibetLogo,
-  geralbet: geralbetLogo,
   seubet: seubetLogo,
 };
 

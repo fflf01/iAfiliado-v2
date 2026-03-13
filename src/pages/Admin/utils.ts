@@ -138,5 +138,6 @@ export function buildContractRequestsFromApi(rows: ContractRowApi[]): ContractRe
         : row.status === "rejeitado"
           ? "rejeitado"
           : "pendente",
+    tipoComissao: row.tipo ?? null,
   }));
 }

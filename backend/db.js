@@ -62,6 +62,7 @@ try {
   ensureColumn("casinos", "comissao_cpa", "REAL NOT NULL DEFAULT 0");
   ensureColumn("casinos", "comissao_revshare", "REAL NOT NULL DEFAULT 0");
   ensureColumn("casinos", "comissao_depositoc", "REAL NOT NULL DEFAULT 0");
+  ensureColumn("casinos", "payment_type", "TEXT");
   // Índices para acelerar consultas de métricas e auditoria em entradas
   db.exec(
     "CREATE INDEX IF NOT EXISTS idx_entradas_user_date ON entradas(user_id, data_hora);",

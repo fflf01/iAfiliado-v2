@@ -5,9 +5,10 @@ export interface Casino {
   nome: string;
   comissaoCPA: number;
   comissaoRevShare: number;
-   comissaoDepositoC: number;
+  comissaoDepositoC: number;
   status: "ativo" | "inativo";
   urlAfiliado: string;
+  tipoPagamento?: string | null;
 }
 
 export interface EntradaAdmin {
@@ -39,6 +40,7 @@ export interface ContractRequest {
   afiliadoPhone: string | null;
   dataCriacao: string;
   status: "pendente" | "aprovado" | "rejeitado";
+  tipoComissao?: string | null;
 }
 
 export interface Solicitacao {
@@ -80,6 +82,7 @@ export interface ContractRowApi {
   afiliado_email: string;
   afiliado_phone: string | null;
   casa_nome: string;
+  tipo?: string | null;
 }
 
 export interface WithdrawalRowApi {

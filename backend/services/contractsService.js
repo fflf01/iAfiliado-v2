@@ -22,12 +22,18 @@ export const contractsService = {
       );
     }
 
+    const rawType = payload?.commissionType
+      ? String(payload.commissionType).trim().toLowerCase()
+      : null;
+    const allowedTypes = new Set(["deposito", "cpa", "revshare"]);
+    const safeTipo = rawType && allowedTypes.has(rawType) ? rawType : null;
+
     const id = crypto.randomUUID();
     const row = contractsRepository.insertContract({
       id,
       casaId: casino.id,
       afiliadoId: userId,
-      tipo: null,
+      tipo: safeTipo,
       valor: null,
       status: "pendente",
     });

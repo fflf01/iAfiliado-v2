@@ -245,6 +245,20 @@ export function SolicitacoesSection(props: {
                       {req.casaNome}
                     </span>
                   </p>
+                  {req.tipoComissao && (
+                    <p className="text-xs text-muted-foreground">
+                      Comissão:{" "}
+                      <span className="text-foreground font-medium">
+                        {req.tipoComissao === "deposito"
+                          ? "Depósito"
+                          : req.tipoComissao === "cpa"
+                            ? "CPA"
+                            : req.tipoComissao === "revshare"
+                              ? "RevShare"
+                              : req.tipoComissao}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 

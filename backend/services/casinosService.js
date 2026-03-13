@@ -8,6 +8,8 @@ function toPublicCasino(row) {
     urlAfiliado: row.url_afiliado,
     comissaoCpa: Number(row.comissao_cpa || 0),
     comissaoRevshare: Number(row.comissao_revshare || 0),
+    comissaoDepositoc: Number(row.comissao_depositoc || 0),
+     paymentType: row.payment_type || null,
     description: row.description || null,
   };
 }

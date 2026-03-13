@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS casinos (
   comissao_cpa REAL NOT NULL DEFAULT 0,
   comissao_revshare REAL NOT NULL DEFAULT 0,
   comissao_depositoc REAL NOT NULL DEFAULT 0,
+  -- Tipo de pagamento configurado no admin (ex: semanal, mensal, quinzenal).
+  -- Quando NULL, tratamos como "semanal" no frontend.
+  payment_type TEXT,
   status      TEXT NOT NULL DEFAULT 'active',
   description TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),

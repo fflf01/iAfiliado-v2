@@ -21,6 +21,7 @@ function toCasinoUi(row) {
     comissaoDepositoC: Number(row.comissao_depositoc || 0),
     status: row.status === "inactive" ? "inativo" : "ativo",
     urlAfiliado: row.url_afiliado || row.url || "",
+    tipoPagamento: row.payment_type || null,
   };
 }
 
@@ -57,6 +58,10 @@ export const adminService = {
     if (!nome) throw new ValidationError("Nome do casino e obrigatorio.");
 
     const id = crypto.randomUUID();
+    const safePaymentType = payload?.tipoPagamento
+      ? String(payload.tipoPagamento).trim().toLowerCase()
+      : null;
+
     const created = adminRepository.createCasino({
       id,
       name: nome,
@@ -65,6 +70,7 @@ export const adminService = {
       comissaoCpa: Number(payload?.comissaoCPA) || 0,
       comissaoRevshare: Number(payload?.comissaoRevShare) || 0,
       comissaoDepositoc: Number(payload?.comissaoDepositoC) || 0,
+      paymentType: safePaymentType,
       status: normalizeCasinoStatus(payload?.status) || "active",
     });
 
@@ -82,6 +88,10 @@ export const adminService = {
       payload?.comissaoRevShare === undefined ? null : Number(payload.comissaoRevShare) || 0;
     const comissaoDepositoc =
       payload?.comissaoDepositoC === undefined ? null : Number(payload.comissaoDepositoC) || 0;
+    const paymentType =
+      payload?.tipoPagamento === undefined
+        ? null
+        : String(payload.tipoPagamento).trim().toLowerCase() || null;
 
     const result = adminRepository.updateCasino(casinoId, {
       name: payload?.nome != null ? String(payload.nome).trim() : null,
@@ -90,6 +100,7 @@ export const adminService = {
       comissaoCpa,
       comissaoRevshare,
       comissaoDepositoc,
+      paymentType,
       status,
     });
 
