@@ -4,14 +4,14 @@ import { ExternalLink, Shield, Zap, Globe, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
-import enegiaLogo from "@/assets/Enegia.png";
-import bravoLogo from "@/assets/Bravo.png";
-import mcGamesLogo from "@/assets/MCGames.png";
-import playBetLogo from "@/assets/PlayBet.png";
-import galeraBetLogo from "@/assets/Galerabet.png";
-import braBetLogo from "@/assets/BraBet.png";
-import betDaSorteLogo from "@/assets/BetdaSorte.png";
-import estrelaBetLogo from "@/assets/estrelabet.png";
+import enegiaLogo from "@/assets/logos/Enegia.png";
+import bravoLogo from "@/assets/logos/Bravo.png";
+import mcGamesLogo from "@/assets/logos/MCGames.png";
+import playBetLogo from "@/assets/logos/PlayBet.png";
+import galeraBetLogo from "@/assets/logos/Galerabet.png";
+import braBetLogo from "@/assets/logos/BraBet.png";
+import betDaSorteLogo from "@/assets/logos/BetdaSorte.png";
+import estrelaBetLogo from "@/assets/logos/estrelabet.png";
 
 const platformsFallback = [
   {
