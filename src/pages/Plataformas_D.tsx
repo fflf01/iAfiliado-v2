@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Shield, Zap, Globe, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiGet, apiPost } from "@/lib/api-client";
+import { resolveCasinoLogo } from "@/lib/casino-logo";
 import { useToast } from "@/hooks/use-toast";
 import enegiaLogo from "@/assets/logos/Enegia.png";
 import bravoLogo from "@/assets/logos/Bravo.png";
@@ -74,20 +75,6 @@ interface PublicCasino {
   description: string | null;
 }
 
-const casinoLogoMap: Record<string, string> = {
-  enegia: enegiaLogo,
-  energiabet: enegiaLogo,
-  energia: enegiaLogo,
-  bravobet: bravoLogo,
-  bravo: bravoLogo,
-  mcgames: mcGamesLogo,
-  playbet: playBetLogo,
-  galerabet: galeraBetLogo,
-  brabet: braBetLogo,
-  betdasorte: betDaSorteLogo,
-  estrelabet: estrelaBetLogo,
-};
-
 function commissionLabel(c: PublicCasino): string {
   if (c.comissaoCpa > 0) return `R$${Math.round(c.comissaoCpa)} de CPA`;
   if (c.comissaoRevshare > 0) return `${c.comissaoRevshare}% dos depósitos`;
@@ -95,10 +82,7 @@ function commissionLabel(c: PublicCasino): string {
 }
 
 function logoForCasino(c: PublicCasino): string {
-  const key = (c.id || c.name).toLowerCase().replace(/[^a-z0-9]/g, "");
-  const assetLogo = casinoLogoMap[key];
-  if (assetLogo) return assetLogo;
-  return `https://placehold.co/200x80/1e293b/ffffff?text=${encodeURIComponent(c.name)}`;
+  return resolveCasinoLogo(c.name, c.id);
 }
 
 const Plataformas = () => {
