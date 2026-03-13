@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CheckCircle, Clock, Eye, LinkOff, Search, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Eye, Link2Off, Search, XCircle } from "lucide-react";
 import type { ContractRequest, Solicitacao } from "../types";
 import { tipoClienteLabel } from "../utils";
 
@@ -394,7 +394,7 @@ export function SolicitacoesContratoSection(props: ContratoProps) {
                             className="gap-1 text-destructive border-destructive/30 hover:bg-destructive/10"
                             title="Desligar link"
                           >
-                            <LinkOff className="w-4 h-4" /> Desligar link
+                            <Link2Off className="w-4 h-4" /> Desligar link
                           </Button>
                         )}
                         {linkOff && (
@@ -487,7 +487,7 @@ export function SolicitacoesContratoSection(props: ContratoProps) {
                           onClick={() => handleLinkStatus(req.id, "off")}
                           className="gap-1 text-destructive border-destructive/30"
                         >
-                          <LinkOff className="w-4 h-4" /> Desligar link
+                          <Link2Off className="w-4 h-4" /> Desligar link
                         </Button>
                       ) : (
                         <Button
