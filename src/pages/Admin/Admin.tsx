@@ -708,123 +708,125 @@ const Admin = () => {
             </DialogDescription>
           </DialogHeader>
           {selectedSolicitacao && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <User className="w-3 h-3" /> Nome Completo
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedSolicitacao.nome}
-                  </p>
+            <>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <User className="w-3 h-3" /> Nome Completo
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedSolicitacao.nome}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <User className="w-3 h-3" /> Login
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      @{selectedSolicitacao.login}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <User className="w-3 h-3" /> Login
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    @{selectedSolicitacao.login}
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Mail className="w-3 h-3" /> Email
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedSolicitacao.email}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Phone className="w-3 h-3" /> Telefone
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedSolicitacao.telefone}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Mail className="w-3 h-3" /> Email
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedSolicitacao.email}
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">CPF/CNPJ</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedSolicitacao.cpfCnpj || "N/A"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      Opção do registro
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {tipoClienteLabel(selectedSolicitacao.tipoCliente)}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Phone className="w-3 h-3" /> Telefone
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedSolicitacao.telefone}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">CPF/CNPJ</p>
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedSolicitacao.cpfCnpj || "N/A"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">
-                    Opção do registro
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {tipoClienteLabel(selectedSolicitacao.tipoCliente)}
-                  </p>
-                </div>
-              </div>
-              {selectedSolicitacao.contatoAnalise && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">
-                    Contato para análise
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedSolicitacao.contatoAnalise}
-                  </p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> Data do Cadastro
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedSolicitacao.dataCadastro}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Status</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                        selectedSolicitacao.status === "pendente"
-                          ? "bg-secondary/15 text-secondary"
-                          : selectedSolicitacao.status === "aprovado"
-                            ? "bg-primary/15 text-primary"
-                            : "bg-destructive/15 text-destructive"
-                      }`}
-                    >
-                      {selectedSolicitacao.status.charAt(0).toUpperCase() +
-                        selectedSolicitacao.status.slice(1)}
-                    </span>
-                    {selectedSolicitacao.is_manager && (
-                      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
-                        Manager
+                {selectedSolicitacao.contatoAnalise && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">
+                      Contato para análise
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedSolicitacao.contatoAnalise}
+                    </p>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Data do Cadastro
+                    </p>
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedSolicitacao.dataCadastro}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                          selectedSolicitacao.status === "pendente"
+                            ? "bg-secondary/15 text-secondary"
+                            : selectedSolicitacao.status === "aprovado"
+                              ? "bg-primary/15 text-primary"
+                              : "bg-destructive/15 text-destructive"
+                        }`}
+                      >
+                        {selectedSolicitacao.status.charAt(0).toUpperCase() +
+                          selectedSolicitacao.status.slice(1)}
                       </span>
-                    )}
+                      {selectedSolicitacao.is_manager && (
+                        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                          Manager
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm text-muted-foreground mb-1">
-                  Tipo de pagamento
-                </label>
-                <select
-                  className="w-full rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm text-foreground"
-                  value={casinoForm.tipoPagamento}
-                  onChange={(e) =>
-                    setCasinoForm((f) => ({
-                      ...f,
-                      tipoPagamento: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="semanal">Pagamento Semanal</option>
-                  <option value="quinzenal">Pagamento Quinzenal</option>
-                  <option value="mensal">Pagamento Mensal</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-1">
+                    Tipo de pagamento
+                  </label>
+                  <select
+                    className="w-full rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm text-foreground"
+                    value={casinoForm.tipoPagamento}
+                    onChange={(e) =>
+                      setCasinoForm((f) => ({
+                        ...f,
+                        tipoPagamento: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="semanal">Pagamento Semanal</option>
+                    <option value="quinzenal">Pagamento Quinzenal</option>
+                    <option value="mensal">Pagamento Mensal</option>
+                  </select>
+                </div>
               </div>
-            </div>
+            </>
           )}
           {selectedSolicitacao?.status === "pendente" && (
             <DialogFooter className="gap-2">
