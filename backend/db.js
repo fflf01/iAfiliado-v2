@@ -98,7 +98,9 @@ try {
   });
 }
 
-// Seed: casas listadas em Plataformas_D.tsx (INSERT OR IGNORE para nao duplicar)
+// Seed inicial: casas listadas em Plataformas_D.tsx.
+// Importante: executa apenas quando a tabela estiver vazia para
+// nao "ressuscitar" casas removidas pelo admin em reinicios.
 const defaultCasinos = [
   {
     id: "brasilbet",
@@ -158,18 +160,25 @@ const defaultCasinos = [
   },
 ];
 try {
-  const insertCasino = db.prepare(
-    `INSERT OR IGNORE INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc, status)
-     VALUES (?, ?, NULL, NULL, ?, ?, ?, 'active')`,
-  );
-  for (const c of defaultCasinos) {
-    insertCasino.run(
-      c.id,
-      c.name,
-      c.comissao_cpa,
-      c.comissao_revshare,
-      c.comissao_depositoc,
+  const casinosCountRow = db
+    .prepare("SELECT COUNT(1) AS total FROM casinos")
+    .get();
+  const casinosCount = Number(casinosCountRow?.total || 0);
+
+  if (casinosCount === 0) {
+    const insertCasino = db.prepare(
+      `INSERT OR IGNORE INTO casinos (id, name, url, url_afiliado, comissao_cpa, comissao_revshare, comissao_depositoc, status)
+       VALUES (?, ?, NULL, NULL, ?, ?, ?, 'active')`,
     );
+    for (const c of defaultCasinos) {
+      insertCasino.run(
+        c.id,
+        c.name,
+        c.comissao_cpa,
+        c.comissao_revshare,
+        c.comissao_depositoc,
+      );
+    }
   }
 } catch (err) {
   logger.warn("Falha ao seed de casinos padrao", { error: err.message });
