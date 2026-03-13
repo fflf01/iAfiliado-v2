@@ -2,6 +2,13 @@ import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink, Shield, Zap, Globe, Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiGet, apiPost } from "@/lib/api-client";
 import { resolveCasinoLogo } from "@/lib/casino-logo";
 import { useToast } from "@/hooks/use-toast";
@@ -278,34 +285,40 @@ const Plataformas = () => {
             />
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           </div>
-          <select
-            className="w-full md:w-40 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm text-foreground"
+          <Select
             value={filterCommissionType}
-            onChange={(e) =>
-              setFilterCommissionType(
-                e.target.value as CommissionType | "todos",
-              )
+            onValueChange={(value) =>
+              setFilterCommissionType(value as CommissionType | "todos")
             }
           >
-            <option value="todos">Todas comissões</option>
-            <option value="deposito">Depósito</option>
-            <option value="cpa">CPA</option>
-            <option value="revshare">RevShare</option>
-          </select>
-          <select
-            className="w-full md:w-44 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm text-foreground"
+            <SelectTrigger className="w-full md:w-40">
+              <SelectValue placeholder="Todas comissões" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas comissões</SelectItem>
+              <SelectItem value="deposito">Depósito</SelectItem>
+              <SelectItem value="cpa">CPA</SelectItem>
+              <SelectItem value="revshare">RevShare</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
             value={filterPaymentType}
-            onChange={(e) =>
+            onValueChange={(value) =>
               setFilterPaymentType(
-                e.target.value as "todos" | "semanal" | "quinzenal" | "mensal",
+                value as "todos" | "semanal" | "quinzenal" | "mensal",
               )
             }
           >
-            <option value="todos">Todos pagamentos</option>
-            <option value="semanal">Pagamento semanal</option>
-            <option value="quinzenal">Pagamento quinzenal</option>
-            <option value="mensal">Pagamento mensal</option>
-          </select>
+            <SelectTrigger className="w-full md:w-44">
+              <SelectValue placeholder="Todos pagamentos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos pagamentos</SelectItem>
+              <SelectItem value="semanal">Pagamento semanal</SelectItem>
+              <SelectItem value="quinzenal">Pagamento quinzenal</SelectItem>
+              <SelectItem value="mensal">Pagamento mensal</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
