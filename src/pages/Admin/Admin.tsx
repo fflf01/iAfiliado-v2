@@ -20,6 +20,8 @@ import {
   UserX,
   ScrollText,
   UserCog,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import {
   Dialog,
