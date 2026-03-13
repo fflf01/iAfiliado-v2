@@ -1,7 +1,14 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Smartphone, Instagram, Briefcase, ChevronDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Smartphone, Instagram, Briefcase } from "lucide-react";
 
 interface IAfiliadoSectionProps {
   showOptions: boolean;
@@ -52,23 +59,32 @@ const IAfiliadoSection: React.FC<IAfiliadoSectionProps> = ({
             </Label>
             <div className="relative">
               <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-              <select
-                id="iAfiliadoType"
-                name="iAfiliadoType"
+              <Select
                 value={formData.iAfiliadoType}
-                onChange={onChange}
-                required={showOptions}
-                className="w-full h-12 pl-11 pr-10 bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-input appearance-none text-foreground cursor-pointer"
+                onValueChange={(value) =>
+                  onChange({
+                    target: { name: "iAfiliadoType", value },
+                  } as any)
+                }
               >
-                <option value="" disabled>
-                  Selecione seu perfil
-                </option>
-                <option value="gestor_vip">VIP Manager </option>
-                <option value="gestor_afiliados">Affiliate Manager</option>
-                <option value="influencer">Influencer</option>
-                <option value="vip">VIP</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+                <SelectTrigger
+                  id="iAfiliadoType"
+                  className="w-full h-12 pl-11 pr-10 bg-card border border-border text-foreground"
+                >
+                  <SelectValue placeholder="Selecione seu perfil" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">
+                    Selecione seu perfil
+                  </SelectItem>
+                  <SelectItem value="gestor_vip">VIP Manager</SelectItem>
+                  <SelectItem value="gestor_afiliados">
+                    Affiliate Manager
+                  </SelectItem>
+                  <SelectItem value="influencer">Influencer</SelectItem>
+                  <SelectItem value="vip">VIP</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

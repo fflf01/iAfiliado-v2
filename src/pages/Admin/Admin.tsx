@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Crown,
   Users,
   Calendar,
@@ -812,20 +819,26 @@ const Admin = () => {
                   <label className="block text-sm text-muted-foreground mb-1">
                     Tipo de pagamento
                   </label>
-                  <select
-                    className="w-full rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-sm text-foreground"
+                  <Select
                     value={casinoForm.tipoPagamento}
-                    onChange={(e) =>
+                    onValueChange={(value) =>
                       setCasinoForm((f) => ({
                         ...f,
-                        tipoPagamento: e.target.value,
+                        tipoPagamento: value,
                       }))
                     }
                   >
-                    <option value="semanal">Pagamento Semanal</option>
-                    <option value="quinzenal">Pagamento Quinzenal</option>
-                    <option value="mensal">Pagamento Mensal</option>
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="semanal">Pagamento Semanal</SelectItem>
+                      <SelectItem value="quinzenal">
+                        Pago Quinzenal
+                      </SelectItem>
+                      <SelectItem value="mensal">Pagamento Mensal</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </>

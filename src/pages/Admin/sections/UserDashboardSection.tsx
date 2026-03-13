@@ -2,6 +2,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "lucide-react";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   XAxis,
   YAxis,
   CartesianGrid,
@@ -70,20 +77,24 @@ export function UserDashboardSection(props: {
             onChange={(e) => props.onUserQueryChange(e.target.value)}
             className="bg-muted/30 border-border/50"
           />
-          <select
-            className="h-10 w-full px-3 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-            value={props.userId ?? ""}
-            onChange={(e) =>
-              props.onUserIdChange(e.target.value ? Number(e.target.value) : null)
+          <Select
+            value={props.userId !== null ? String(props.userId) : ""}
+            onValueChange={(value) =>
+              props.onUserIdChange(value ? Number(value) : null)
             }
           >
-            <option value="">Selecione um usuário...</option>
-            {filteredClients.slice(0, 200).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.full_name} (@{c.username}) — {c.email}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="h-10 w-full px-3">
+              <SelectValue placeholder="Selecione um usuário..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Selecione um usuário...</SelectItem>
+              {filteredClients.slice(0, 200).map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.full_name} (@{c.username}) — {c.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -114,18 +125,22 @@ export function UserDashboardSection(props: {
               <label className="text-sm text-muted-foreground">
                 Casa afiliada
               </label>
-              <select
-                className="h-10 px-3 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              <Select
                 value={props.selectedHouse}
-                onChange={(e) => props.onSelectedHouseChange(e.target.value)}
+                onValueChange={(value) => props.onSelectedHouseChange(value)}
               >
-                <option value="todas">Todas as casas</option>
-                {props.casas.map((c) => (
-                  <option key={c.casinoId} value={c.casinoId}>
-                    {c.casinoName}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 w-full px-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as casas</SelectItem>
+                  {props.casas.map((c) => (
+                    <SelectItem key={c.casinoId} value={c.casinoId}>
+                      {c.casinoName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -174,18 +189,22 @@ export function UserDashboardSection(props: {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <select
-                    className="h-10 pl-10 pr-4 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                  <Select
                     value={props.dateRange}
-                    onChange={(e) =>
-                      props.onDateRangeChange(e.target.value as DateRange)
+                    onValueChange={(value) =>
+                      props.onDateRangeChange(value as DateRange)
                     }
                   >
-                    <option value="1">Ontem</option>
-                    <option value="7">Última Semana</option>
-                    <option value="30">Último Mês</option>
-                    <option value="custom">Selecionar data</option>
-                  </select>
+                    <SelectTrigger className="h-10 pl-10 pr-4">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Ontem</SelectItem>
+                      <SelectItem value="7">Última Semana</SelectItem>
+                      <SelectItem value="30">Último Mês</SelectItem>
+                      <SelectItem value="custom">Selecionar data</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 {props.dateRange === "custom" && (
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2">

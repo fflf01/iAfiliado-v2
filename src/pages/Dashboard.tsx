@@ -2,6 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Footer from "@/components/Footer";
 import {
   Crown,
@@ -467,27 +474,31 @@ const Dashboard = () => {
                   <label className="text-sm text-muted-foreground">
                     Casa afiliada
                   </label>
-                  <select
-                    className="h-10 px-3 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                  <Select
                     value={effectiveHouse}
-                    onChange={(e) => setSelectedHouse(e.target.value)}
+                    onValueChange={(value) => setSelectedHouse(value)}
                   >
-                    <option value="todas">Todas as casas</option>
-                    {casasLoading ? (
-                      <option value="" disabled>
-                        Carregando...
-                      </option>
-                    ) : (
-                      (casasVinculadas.some((c) => c.status === "active")
-                        ? casasVinculadas.filter((c) => c.status === "active")
-                        : casasVinculadas
-                      ).map((casa) => (
-                        <option key={casa.casinoId} value={casa.casinoId}>
-                          {casa.casinoName}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                    <SelectTrigger className="h-10 w-full px-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as casas</SelectItem>
+                      {casasLoading ? (
+                        <SelectItem value="" disabled>
+                          Carregando...
+                        </SelectItem>
+                      ) : (
+                        (casasVinculadas.some((c) => c.status === "active")
+                          ? casasVinculadas.filter((c) => c.status === "active")
+                          : casasVinculadas
+                        ).map((casa) => (
+                          <SelectItem key={casa.casinoId} value={casa.casinoId}>
+                            {casa.casinoName}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -552,16 +563,20 @@ const Dashboard = () => {
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                      <select
-                        className="h-10 pl-10 pr-4 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                      <Select
                         value={dateRange}
-                        onChange={(e) => setDateRange(e.target.value)}
+                        onValueChange={(value) => setDateRange(value)}
                       >
-                        <option value="1">Ontem</option>
-                        <option value="7">Última Semana</option>
-                        <option value="30">Último Mês</option>
-                        <option value="custom">Selecionar data</option>
-                      </select>
+                        <SelectTrigger className="h-10 pl-10 pr-4">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Ontem</SelectItem>
+                          <SelectItem value="7">Última Semana</SelectItem>
+                          <SelectItem value="30">Último Mês</SelectItem>
+                          <SelectItem value="custom">Selecionar data</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     {dateRange === "custom" && (
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
