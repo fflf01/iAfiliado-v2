@@ -39,7 +39,8 @@ const DASHBOARD_VISIBLE: Record<string, UserRole[]> = {
 const ADMIN_VISIBLE: Record<string, UserRole[]> = {
   overview: ["admin_ceo", "support"],
   user_dashboard: ["admin_ceo"],
-  solicitacoes: ["admin_ceo", "support"],
+  solicitacoes_cadastro: ["admin_ceo", "support"],
+  solicitacoes_contrato: ["admin_ceo", "support"],
   casinos: ["admin_ceo", "support"],
   entradas: ["admin_ceo", "support"],
   carteiras: ["admin_ceo"],

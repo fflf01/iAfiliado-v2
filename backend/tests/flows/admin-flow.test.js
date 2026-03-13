@@ -49,6 +49,8 @@ beforeEach(() => {
   db.exec("DELETE FROM support_attachments");
   db.exec("DELETE FROM support_replies");
   db.exec("DELETE FROM support_messages");
+  db.exec("DELETE FROM admin_logs");
+  db.exec("DELETE FROM manager_managed_accounts");
   db.exec("DELETE FROM wallet_totals");
   db.exec("DELETE FROM entradas");
   db.exec("DELETE FROM affiliate_agreements");

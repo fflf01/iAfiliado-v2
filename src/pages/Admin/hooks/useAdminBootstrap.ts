@@ -12,6 +12,7 @@ import type {
 } from "../types";
 import {
   buildContractRequestsFromApi,
+  buildQuery,
   buildSolicitacoesFromClients,
   getErrorMessage,
 } from "../utils";
@@ -56,7 +57,7 @@ export function useAdminBootstrap() {
       const [casinosData, clientsData, contractsData] = await Promise.all([
         apiGet<Casino[]>("/admin/casinos"),
         apiGet<ClientRow[]>("/clients"),
-        apiGet<ContractRowApi[]>("/admin/contracts"),
+        apiGet<ContractRowApi[]>(`/admin/contracts${buildQuery({ status: "all" })}`),
       ]);
       const safeClients = Array.isArray(clientsData) ? clientsData : [];
       const safeContracts = Array.isArray(contractsData) ? contractsData : [];

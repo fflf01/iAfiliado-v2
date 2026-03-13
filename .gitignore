@@ -80,6 +80,9 @@ web_modules/
 .env.local
 .env.deploy
 
+# Schema local (não versionar)
+.github/schema.sql
+
 # Uploads de usuários (não versionar)
 backend/uploads/
 

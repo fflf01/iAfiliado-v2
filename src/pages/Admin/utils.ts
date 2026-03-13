@@ -138,6 +138,12 @@ export function buildContractRequestsFromApi(rows: ContractRowApi[]): ContractRe
         : row.status === "rejeitado"
           ? "rejeitado"
           : "pendente",
+    linkStatus:
+      row.status === "aprovado" && row.link_ativo != null
+        ? row.link_ativo === 1
+          ? "on"
+          : "off"
+        : undefined,
     tipoComissao: row.tipo ?? null,
   }));
 }

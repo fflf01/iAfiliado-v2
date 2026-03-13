@@ -59,7 +59,12 @@ import {
   getUserEntradas,
   getUserCasas,
 } from "./controllers/adminUserDashboardController.js";
-import { listPendingContracts, requestMyContract, updateContractStatus } from "./controllers/contractsController.js";
+import {
+  listPendingContracts,
+  requestMyContract,
+  updateContractStatus,
+  setContractLinkStatus,
+} from "./controllers/contractsController.js";
 import {
   createWithdrawal,
   listMyWithdrawals,
@@ -303,6 +308,16 @@ const updateContractStatusRules = [
   body("link").optional().trim().isLength({ max: 2048 }).withMessage("Link muito longo."),
 ];
 
+const updateContractLinkStatusRules = [
+  param("id").notEmpty().withMessage("ID do contrato invalido."),
+  body("status")
+    .trim()
+    .notEmpty()
+    .withMessage("Status do link e obrigatorio.")
+    .isIn(["on", "off"])
+    .withMessage("Status invalido. Use on ou off."),
+];
+
 const createWithdrawalRules = [
   body("valor").isFloat({ min: 50 }).withMessage("Valor minimo R$ 50,00."),
   body("metodo").optional().trim().isLength({ max: 50 }),
@@ -417,6 +432,14 @@ router.put(
   updateContractStatusRules,
   handleValidationErrors,
   asyncHandler(updateContractStatus),
+);
+router.put(
+  "/admin/contracts/:id/link-status",
+  authMiddleware,
+  adminAuthMiddleware,
+  updateContractLinkStatusRules,
+  handleValidationErrors,
+  asyncHandler(setContractLinkStatus),
 );
 router.get("/admin/withdrawals", authMiddleware, adminAuthMiddleware, asyncHandler(listWithdrawalsAdmin));
 router.put(

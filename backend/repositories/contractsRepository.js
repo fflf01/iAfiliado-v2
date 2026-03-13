@@ -93,6 +93,47 @@ export const contractsRepository = {
       .all(status, safeLimit, safeOffset);
   },
 
+  listAllContracts({ limit, offset } = {}) {
+    const safeLimit = clampAdminLimit(limit ?? ADMIN_MAX_LIMIT);
+    const safeOffset = Math.max(0, Number(offset) || 0);
+    return db
+      .prepare(
+        `SELECT
+           ct.id,
+           ct.status,
+           ct.tipo,
+           ct.valor,
+           ct.data_criacao,
+           ct.data_atualizacao,
+           u.id AS afiliado_id,
+           u.full_name AS afiliado_nome,
+           u.email AS afiliado_email,
+           u.phone AS afiliado_phone,
+           c.id AS casa_id,
+           c.name AS casa_nome,
+           (SELECT CASE WHEN EXISTS (
+             SELECT 1 FROM affiliate_casinos ac
+             WHERE ac.user_id = ct.afiliado_id AND ac.casino_id = ct.casa_id AND ac.status = 'active'
+           ) THEN 1 ELSE 0 END) AS link_ativo
+         FROM contracts ct
+         JOIN users u ON u.id = ct.afiliado_id
+         JOIN casinos c ON c.id = ct.casa_id
+         WHERE ct.status IN ('pendente', 'aprovado', 'rejeitado')
+         ORDER BY ct.data_criacao DESC
+         LIMIT ? OFFSET ?`,
+      )
+      .all(safeLimit, safeOffset);
+  },
+
+  updateAffiliateCasinoLinkStatus(userId, casinoId, status) {
+    const result = db
+      .prepare(
+        `UPDATE affiliate_casinos SET status = ? WHERE user_id = ? AND casino_id = ?`,
+      )
+      .run(status, userId, casinoId);
+    return { changes: result.changes };
+  },
+
   updateContractStatus(contractId, status) {
     const result = db
       .prepare(

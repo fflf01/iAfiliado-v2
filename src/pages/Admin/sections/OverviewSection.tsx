@@ -88,10 +88,17 @@ export function OverviewSection(props: {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            id: "solicitacoes",
+            id: "solicitacoes_cadastro",
             icon: ClipboardList,
-            title: "Solicitações",
+            title: "Solicitações de Cadastro",
             desc: `${props.pendentesCount} pendentes`,
+            color: "text-secondary",
+          },
+          {
+            id: "solicitacoes_contrato",
+            icon: ClipboardList,
+            title: "Solicitações de Contrato",
+            desc: `${props.contractPendentesCount} pendentes`,
             color: "text-secondary",
           },
           {

@@ -40,6 +40,8 @@ export interface ContractRequest {
   afiliadoPhone: string | null;
   dataCriacao: string;
   status: "pendente" | "aprovado" | "rejeitado";
+  /** Link concedido = on, desligado = off (apenas para contratos aprovados) */
+  linkStatus?: "on" | "off";
   tipoComissao?: string | null;
 }
 
@@ -83,6 +85,8 @@ export interface ContractRowApi {
   afiliado_phone: string | null;
   casa_nome: string;
   tipo?: string | null;
+  /** 1 = link ativo (on), 0 = desligado (off); apenas quando listagem inclui todos os status */
+  link_ativo?: number;
 }
 
 export interface WithdrawalRowApi {

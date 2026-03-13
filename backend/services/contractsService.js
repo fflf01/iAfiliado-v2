@@ -42,7 +42,35 @@ export const contractsService = {
 
   listPendingContracts(query = {}) {
     const { limit, offset } = resolveAdminListLimit(query);
+    const status = String(query?.status || "").trim().toLowerCase();
+    if (status === "all") {
+      return contractsRepository.listAllContracts({ limit, offset });
+    }
     return contractsRepository.listContractsByStatus("pendente", { limit, offset });
+  },
+
+  setContractLinkStatus(contractId, payload) {
+    const id = String(contractId || "").trim();
+    if (!id) throw new ValidationError("ID do contrato invalido.");
+
+    const linkStatus = String(payload?.status || "").trim().toLowerCase();
+    if (!["on", "off", "active", "inactive"].includes(linkStatus)) {
+      throw new ValidationError("Status do link invalido. Use on/off ou active/inactive.");
+    }
+    const acStatus = linkStatus === "on" || linkStatus === "active" ? "active" : "inactive";
+
+    const existing = contractsRepository.findContractById(id);
+    if (!existing) throw new NotFoundError("Contrato nao encontrado.");
+    if (existing.status !== "aprovado") {
+      throw new ValidationError("So e possivel alterar link de contrato aprovado.");
+    }
+
+    const result = contractsRepository.updateAffiliateCasinoLinkStatus(
+      existing.afiliado_id,
+      existing.casa_id,
+      acStatus,
+    );
+    return { ok: true, changes: result.changes };
   },
 
   updateContractStatus(contractId, payload) {

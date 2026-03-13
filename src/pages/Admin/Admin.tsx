@@ -69,7 +69,10 @@ import { useAdminBootstrap } from "./hooks/useAdminBootstrap";
 import { useAdminUserDashboard } from "./hooks/useAdminUserDashboard";
 import { UserDashboardSection } from "./sections/UserDashboardSection";
 import { OverviewSection } from "./sections/OverviewSection";
-import { SolicitacoesSection } from "./sections/SolicitacoesSection";
+import {
+  SolicitacoesCadastroSection,
+  SolicitacoesContratoSection,
+} from "./sections/SolicitacoesSection";
 import { CasinosSection } from "./sections/CasinosSection";
 import { EntradasSection } from "./sections/EntradasSection";
 import { CarteirasSection } from "./sections/CarteirasSection";
@@ -84,7 +87,16 @@ import { AdminTopBar } from "./ui/AdminTopBar";
 const allAdminSidebarItems = [
   { id: "overview", label: "Visão Geral", icon: LayoutDashboard },
   { id: "user_dashboard", label: "Dashboard Usuário", icon: Users },
-  { id: "solicitacoes", label: "Solicitações", icon: ClipboardList },
+  {
+    id: "solicitacoes_cadastro",
+    label: "Solicitações Cadastro",
+    icon: ClipboardList,
+  },
+  {
+    id: "solicitacoes_contrato",
+    label: "Solicitações Contrato",
+    icon: ClipboardList,
+  },
   { id: "casinos", label: "Casinos", icon: Building2 },
   { id: "entradas", label: "Entradas", icon: Calendar },
   { id: "carteiras", label: "Carteiras", icon: Wallet },
@@ -227,9 +239,7 @@ const Admin = () => {
       return;
     }
 
-    const links = casinoForm.linksAfiliado
-      .map((l) => l.trim())
-      .filter(Boolean);
+    const links = casinoForm.linksAfiliado.map((l) => l.trim()).filter(Boolean);
 
     const payload = {
       nome: casinoForm.nome,
@@ -403,6 +413,28 @@ const Admin = () => {
     }
   };
 
+  const setContractLinkStatus = async (id: string, status: "on" | "off") => {
+    try {
+      await apiPut<{ ok: true }>(`/admin/contracts/${id}/link-status`, {
+        status,
+      });
+      refresh();
+      toast({
+        title: status === "off" ? "Link desligado" : "Link religado",
+        description:
+          status === "off"
+            ? "O link do contrato foi desligado."
+            : "O link do contrato foi religado.",
+      });
+    } catch (err) {
+      toast({
+        title: "Erro ao alterar status do link",
+        description: getErrorMessage(err),
+        variant: "destructive",
+      });
+    }
+  };
+
   const openDetail = (s: Solicitacao) => {
     setSelectedSolicitacao(s);
     setDetailDialog(true);
@@ -518,7 +550,12 @@ const Admin = () => {
         onSelectTab={handleNavClick}
         items={sidebarItems.map((i) => ({
           ...i,
-          badge: i.id === "solicitacoes" ? totalPendencias : undefined,
+          badge:
+            i.id === "solicitacoes_cadastro"
+              ? pendentesCount
+              : i.id === "solicitacoes_contrato"
+                ? contractPendentesCount
+                : undefined,
         }))}
       />
 
@@ -531,176 +568,189 @@ const Admin = () => {
 
         <main className="flex-1 overflow-auto">
           <div className="container mx-auto px-4 py-8">
-          {/* ── Overview ──────────────────────────────── */}
-          {activeTab === "overview" && canSeeAdminSection("overview", role) && (
-            <OverviewSection
-              casinos={casinos}
-              entradas={entradas}
-              wallets={wallets}
-              withdrawals={withdrawals}
-              pendentesCount={pendentesCount}
-              contractPendentesCount={contractPendentesCount}
-              totalDepositos={totalDepositos}
-              totalCPA={totalCPA}
-              totalRevShare={totalRevShare}
-              totalSaldoUsuarios={totalSaldoUsuarios}
-              fmt={fmt}
-              onNavigate={(tabId) => setActiveTab(tabId)}
-            />
-          )}
+            {/* ── Overview ──────────────────────────────── */}
+            {activeTab === "overview" &&
+              canSeeAdminSection("overview", role) && (
+                <OverviewSection
+                  casinos={casinos}
+                  entradas={entradas}
+                  wallets={wallets}
+                  withdrawals={withdrawals}
+                  pendentesCount={pendentesCount}
+                  contractPendentesCount={contractPendentesCount}
+                  totalDepositos={totalDepositos}
+                  totalCPA={totalCPA}
+                  totalRevShare={totalRevShare}
+                  totalSaldoUsuarios={totalSaldoUsuarios}
+                  fmt={fmt}
+                  onNavigate={(tabId) => setActiveTab(tabId)}
+                />
+              )}
 
-          {/* ── Solicitações ─────────────────────────── */}
-          {activeTab === "solicitacoes" &&
-            canSeeAdminSection("solicitacoes", role) && (
-              <SolicitacoesSection
-                totalPendencias={totalPendencias}
-                pendentesCount={pendentesCount}
-                contractPendentesCount={contractPendentesCount}
-                search={searchSolicitacoes}
-                onSearchChange={setSearchSolicitacoes}
-                filtroStatus={filtroStatus}
-                onFiltroStatusChange={setFiltroStatus}
-                solicitacoes={filteredSolicitacoes}
-                contractRequests={filteredContractRequests}
-                onOpenDetail={openDetail}
-                onApproveSolicitacao={aprovarSolicitacao}
-                onRejectSolicitacao={rejeitarSolicitacao}
-                onApproveContract={aprovarContrato}
-                onRejectContract={rejeitarContrato}
-              />
-            )}
+            {/* ── Solicitações Cadastro ─────────────────────────── */}
+            {activeTab === "solicitacoes_cadastro" &&
+              canSeeAdminSection("solicitacoes_cadastro", role) && (
+                <SolicitacoesCadastroSection
+                  totalPendentes={pendentesCount}
+                  search={searchSolicitacoes}
+                  onSearchChange={setSearchSolicitacoes}
+                  filtroStatus={filtroStatus}
+                  onFiltroStatusChange={setFiltroStatus}
+                  solicitacoes={filteredSolicitacoes}
+                  onOpenDetail={openDetail}
+                  onApproveSolicitacao={aprovarSolicitacao}
+                  onRejectSolicitacao={rejeitarSolicitacao}
+                />
+              )}
 
-          {/* ── Dashboard Usuário ─────────────────────────── */}
-          {activeTab === "user_dashboard" &&
-            canSeeAdminSection("user_dashboard", role) && (
-              <UserDashboardSection
-                clients={clients}
-                userId={dashUserId}
-                userQuery={dashUserQuery}
-                onUserQueryChange={setDashUserQuery}
-                onUserIdChange={setDashUserId}
-                selectedHouse={dashSelectedHouse}
-                onSelectedHouseChange={setDashSelectedHouse}
-                dateRange={dashDateRange}
-                onDateRangeChange={setDashDateRange}
-                customStart={dashCustomStart}
-                onCustomStartChange={setDashCustomStart}
-                customEnd={dashCustomEnd}
-                onCustomEndChange={setDashCustomEnd}
-                loading={userDash.loading}
-                error={userDash.error}
-                profile={userDash.profile}
-                casas={userDash.casas}
-                stats={userDash.stats}
-                performanceData={userDash.performanceData}
-              />
-            )}
+            {/* ── Solicitações Contrato ─────────────────────────── */}
+            {activeTab === "solicitacoes_contrato" &&
+              canSeeAdminSection("solicitacoes_contrato", role) && (
+                <SolicitacoesContratoSection
+                  contractPendentesCount={contractPendentesCount}
+                  search={searchSolicitacoes}
+                  onSearchChange={setSearchSolicitacoes}
+                  filtroStatus={filtroStatus}
+                  onFiltroStatusChange={setFiltroStatus}
+                  contractRequests={filteredContractRequests}
+                  allContractRequests={contractRequests}
+                  onApproveContract={aprovarContrato}
+                  onRejectContract={rejeitarContrato}
+                  onLinkStatusChange={setContractLinkStatus}
+                />
+              )}
 
-          {/* ── Casinos ──────────────────────────────── */}
-          {activeTab === "casinos" && canSeeAdminSection("casinos", role) && (
-            <CasinosSection
-              casinos={filteredCasinos}
-              search={searchCasinos}
-              onSearchChange={setSearchCasinos}
-              fmt={fmt}
-              onOpenNew={openNewCasino}
-              onEdit={openEditCasino}
-              onToggleStatus={toggleCasinoStatus}
-              onDelete={deleteCasino}
-            />
-          )}
+            {/* ── Dashboard Usuário ─────────────────────────── */}
+            {activeTab === "user_dashboard" &&
+              canSeeAdminSection("user_dashboard", role) && (
+                <UserDashboardSection
+                  clients={clients}
+                  userId={dashUserId}
+                  userQuery={dashUserQuery}
+                  onUserQueryChange={setDashUserQuery}
+                  onUserIdChange={setDashUserId}
+                  selectedHouse={dashSelectedHouse}
+                  onSelectedHouseChange={setDashSelectedHouse}
+                  dateRange={dashDateRange}
+                  onDateRangeChange={setDashDateRange}
+                  customStart={dashCustomStart}
+                  onCustomStartChange={setDashCustomStart}
+                  customEnd={dashCustomEnd}
+                  onCustomEndChange={setDashCustomEnd}
+                  loading={userDash.loading}
+                  error={userDash.error}
+                  profile={userDash.profile}
+                  casas={userDash.casas}
+                  stats={userDash.stats}
+                  performanceData={userDash.performanceData}
+                />
+              )}
 
-          {/* ── Entradas ─────────────────────────────── */}
-          {activeTab === "entradas" && canSeeAdminSection("entradas", role) && (
-            <EntradasSection
-              entradas={filteredEntradas}
-              search={searchEntradas}
-              onSearchChange={setSearchEntradas}
-              filtroTipo={filtroTipo}
-              onFiltroTipoChange={setFiltroTipo}
-              fmt={fmt}
-              formatDate={formatDatePtBr}
-            />
-          )}
-
-          {/* ── Carteiras ────────────────────────────── */}
-          {activeTab === "carteiras" &&
-            canSeeAdminSection("carteiras", role) && (
-              <CarteirasSection
-                wallets={filteredWallets}
-                search={searchWallets}
-                onSearchChange={setSearchWallets}
+            {/* ── Casinos ──────────────────────────────── */}
+            {activeTab === "casinos" && canSeeAdminSection("casinos", role) && (
+              <CasinosSection
+                casinos={filteredCasinos}
+                search={searchCasinos}
+                onSearchChange={setSearchCasinos}
                 fmt={fmt}
+                onOpenNew={openNewCasino}
+                onEdit={openEditCasino}
+                onToggleStatus={toggleCasinoStatus}
+                onDelete={deleteCasino}
               />
             )}
 
-          {/* ── Verificação de saque ────────────────────────────── */}
-          {activeTab === "saques" && canSeeAdminSection("saques", role) && (
-            <SaquesSection
-              withdrawals={withdrawals}
-              withdrawalUpdating={withdrawalUpdating}
-              fmt={fmt}
-              onReject={async (id) => {
-                setWithdrawalUpdating(id);
-                try {
-                  await apiPut(`/admin/withdrawals/${id}/status`, {
-                    status: "rejeitado",
-                  });
-                  refresh();
-                  toast({
-                    title: "Saque rejeitado.",
-                    description: "A solicitação foi rejeitada.",
-                  });
-                } catch (e) {
-                  toast({
-                    title: "Erro",
-                    description: getErrorMessage(e),
-                    variant: "destructive",
-                  });
-                } finally {
-                  setWithdrawalUpdating(null);
-                }
-              }}
-              onApprove={async (id) => {
-                setWithdrawalUpdating(id);
-                try {
-                  await apiPut(`/admin/withdrawals/${id}/status`, {
-                    status: "aprovado",
-                  });
-                  refresh();
-                  toast({
-                    title: "Saque aprovado.",
-                    description: "O saldo do usuário foi atualizado.",
-                  });
-                } catch (e) {
-                  toast({
-                    title: "Erro",
-                    description: getErrorMessage(e),
-                    variant: "destructive",
-                  });
-                } finally {
-                  setWithdrawalUpdating(null);
-                }
-              }}
-            />
-          )}
+            {/* ── Entradas ─────────────────────────────── */}
+            {activeTab === "entradas" &&
+              canSeeAdminSection("entradas", role) && (
+                <EntradasSection
+                  entradas={filteredEntradas}
+                  search={searchEntradas}
+                  onSearchChange={setSearchEntradas}
+                  filtroTipo={filtroTipo}
+                  onFiltroTipoChange={setFiltroTipo}
+                  fmt={fmt}
+                  formatDate={formatDatePtBr}
+                />
+              )}
 
-          {/* ── Contas dos Managers ────────────────────────────── */}
-          {activeTab === "contas_manager" &&
-            canSeeAdminSection("contas_manager", role) && (
-              <ManagerAccountsSection active />
+            {/* ── Carteiras ────────────────────────────── */}
+            {activeTab === "carteiras" &&
+              canSeeAdminSection("carteiras", role) && (
+                <CarteirasSection
+                  wallets={filteredWallets}
+                  search={searchWallets}
+                  onSearchChange={setSearchWallets}
+                  fmt={fmt}
+                />
+              )}
+
+            {/* ── Verificação de saque ────────────────────────────── */}
+            {activeTab === "saques" && canSeeAdminSection("saques", role) && (
+              <SaquesSection
+                withdrawals={withdrawals}
+                withdrawalUpdating={withdrawalUpdating}
+                fmt={fmt}
+                onReject={async (id) => {
+                  setWithdrawalUpdating(id);
+                  try {
+                    await apiPut(`/admin/withdrawals/${id}/status`, {
+                      status: "rejeitado",
+                    });
+                    refresh();
+                    toast({
+                      title: "Saque rejeitado.",
+                      description: "A solicitação foi rejeitada.",
+                    });
+                  } catch (e) {
+                    toast({
+                      title: "Erro",
+                      description: getErrorMessage(e),
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setWithdrawalUpdating(null);
+                  }
+                }}
+                onApprove={async (id) => {
+                  setWithdrawalUpdating(id);
+                  try {
+                    await apiPut(`/admin/withdrawals/${id}/status`, {
+                      status: "aprovado",
+                    });
+                    refresh();
+                    toast({
+                      title: "Saque aprovado.",
+                      description: "O saldo do usuário foi atualizado.",
+                    });
+                  } catch (e) {
+                    toast({
+                      title: "Erro",
+                      description: getErrorMessage(e),
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setWithdrawalUpdating(null);
+                  }
+                }}
+              />
             )}
 
-          {/* ── Usuários (punição) ────────────────────────────── */}
-          {activeTab === "usuarios" && canSeeAdminSection("usuarios", role) && (
-            <UsersSection active />
-          )}
+            {/* ── Contas dos Managers ────────────────────────────── */}
+            {activeTab === "contas_manager" &&
+              canSeeAdminSection("contas_manager", role) && (
+                <ManagerAccountsSection active />
+              )}
 
-          {/* ── Log Admin (auditoria) ─────────────────────────── */}
-          {activeTab === "log_admin" &&
-            canSeeAdminSection("log_admin", role) && (
-              <AdminLogsSection active />
-            )}
+            {/* ── Usuários (punição) ────────────────────────────── */}
+            {activeTab === "usuarios" &&
+              canSeeAdminSection("usuarios", role) && <UsersSection active />}
+
+            {/* ── Log Admin (auditoria) ─────────────────────────── */}
+            {activeTab === "log_admin" &&
+              canSeeAdminSection("log_admin", role) && (
+                <AdminLogsSection active />
+              )}
           </div>
         </main>
       </div>
@@ -833,9 +883,7 @@ const Admin = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="semanal">Pagamento Semanal</SelectItem>
-                      <SelectItem value="quinzenal">
-                        Pago Quinzenal
-                      </SelectItem>
+                      <SelectItem value="quinzenal">Pago Quinzenal</SelectItem>
                       <SelectItem value="mensal">Pagamento Mensal</SelectItem>
                     </SelectContent>
                   </Select>
