@@ -12,9 +12,7 @@ import braBetLogo from "@/assets/logos/BraBet.png";
 import betDaSorteLogo from "@/assets/logos/BetdaSorte.png";
 import estrelaBetLogo from "@/assets/logos/estrelabet.png";
 import betsulLogo from "@/assets/logos/betsul.png";
-import goldbetLogo from "@/assets/logos/goldbet.png";
 import multibetLogo from "@/assets/logos/multibet2.png";
-import geralbetLogo from "@/assets/logos/geralbet.png";
 import seubetLogo from "@/assets/logos/seubet.png";
 
 const partnerLogos = [
@@ -27,9 +25,7 @@ const partnerLogos = [
   { name: "Bet da Sorte", src: betDaSorteLogo },
   { name: "EstrelaBet", src: estrelaBetLogo },
   { name: "BetSul", src: betsulLogo },
-  { name: "GoldBet", src: goldbetLogo },
   { name: "Multibet", src: multibetLogo },
-  { name: "GeralBet", src: geralbetLogo },
   { name: "SeuBet", src: seubetLogo },
 ];
 
