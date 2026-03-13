@@ -483,11 +483,7 @@ const Dashboard = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todas as casas</SelectItem>
-                      {casasLoading ? (
-                        <SelectItem value="" disabled>
-                          Carregando...
-                        </SelectItem>
-                      ) : (
+                      {casasLoading ? null : (
                         (casasVinculadas.some((c) => c.status === "active")
                           ? casasVinculadas.filter((c) => c.status === "active")
                           : casasVinculadas
@@ -574,7 +570,9 @@ const Dashboard = () => {
                           <SelectItem value="1">Ontem</SelectItem>
                           <SelectItem value="7">Última Semana</SelectItem>
                           <SelectItem value="30">Último Mês</SelectItem>
-                          <SelectItem value="custom">Selecionar data</SelectItem>
+                          <SelectItem value="custom">
+                            Selecionar data
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

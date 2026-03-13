@@ -74,9 +74,6 @@ const IAfiliadoSection: React.FC<IAfiliadoSectionProps> = ({
                   <SelectValue placeholder="Selecione seu perfil" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">
-                    Selecione seu perfil
-                  </SelectItem>
                   <SelectItem value="gestor_vip">VIP Manager</SelectItem>
                   <SelectItem value="gestor_afiliados">
                     Affiliate Manager

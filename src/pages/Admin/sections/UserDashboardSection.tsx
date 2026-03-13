@@ -78,7 +78,7 @@ export function UserDashboardSection(props: {
             className="bg-muted/30 border-border/50"
           />
           <Select
-            value={props.userId !== null ? String(props.userId) : ""}
+            value={props.userId !== null ? String(props.userId) : undefined}
             onValueChange={(value) =>
               props.onUserIdChange(value ? Number(value) : null)
             }
@@ -87,7 +87,6 @@ export function UserDashboardSection(props: {
               <SelectValue placeholder="Selecione um usuário..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Selecione um usuário...</SelectItem>
               {filteredClients.slice(0, 200).map((c) => (
                 <SelectItem key={c.id} value={String(c.id)}>
                   {c.full_name} (@{c.username}) — {c.email}
